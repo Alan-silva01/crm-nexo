@@ -18,3 +18,9 @@ View your app in AI Studio: https://ai.studio/apps/drive/1T5xBoOHPK6_knizjcCRD7G
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Deployment
+
+Deploy to Vercel:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAlan-silva01%2Fcrm-nexo)
