@@ -21,7 +21,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  
+
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
     type: 'error',
@@ -44,7 +44,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     // Realistic simulation for a CRM demo
     setTimeout(() => {
       setIsLoading(false);
-      
+
       if (mode === 'login') {
         // Mock error scenarios
         if (email.toLowerCase() === 'erro@nexo.com') {
@@ -109,12 +109,12 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                 <label className="text-[11px] font-semibold text-zinc-500 uppercase px-1">Nome Completo</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
-                  <input 
+                  <input
                     required
-                    type="text" 
+                    type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: João Silva" 
+                    placeholder="Ex: João Silva"
                     className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-zinc-700"
                   />
                 </div>
@@ -125,12 +125,12 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               <label className="text-[11px] font-semibold text-zinc-500 uppercase px-1">Endereço de E-mail</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
-                <input 
+                <input
                   required
-                  type="email" 
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="exemplo@email.com" 
+                  placeholder="exemplo@email.com"
                   className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-zinc-700"
                 />
               </div>
@@ -141,7 +141,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                 <div className="flex justify-between items-end">
                   <label className="text-[11px] font-semibold text-zinc-500 uppercase px-1">Sua Senha</label>
                   {mode === 'login' && (
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setMode('recover')}
                       className="text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors mb-1.5"
@@ -152,20 +152,20 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
-                  <input 
+                  <input
                     required
-                    type="password" 
+                    type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••" 
+                    placeholder="••••••••"
                     className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-zinc-700"
                   />
                 </div>
               </div>
             )}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isLoading}
               className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 mt-6"
             >
@@ -190,8 +190,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                 <button onClick={() => setMode('register')} className="text-indigo-400 hover:text-indigo-300 font-medium">Cadastre-se grátis</button>
               </p>
             ) : (
-              <button 
-                onClick={() => setMode('login')} 
+              <button
+                onClick={() => setMode('login')}
                 className="text-sm text-zinc-400 hover:text-white flex items-center justify-center gap-2 mx-auto transition-colors"
               >
                 <ChevronLeft size={16} /> Voltar para o Login
@@ -199,7 +199,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             )}
           </div>
         </div>
-        
+
         <p className="text-center text-[11px] text-zinc-600 mt-8 uppercase tracking-widest font-semibold">
           Nexo CRM &copy; {new Date().getFullYear()} - Segurança de Dados de Ponta a Ponta
         </p>
@@ -209,28 +209,26 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       {modal.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm transition-all animate-in fade-in duration-200">
           <div className="w-full max-w-sm bg-[#0c0c0e] border border-zinc-800 rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-200 text-center">
-            <div className={`mx-auto w-16 h-16 rounded-3xl mb-6 flex items-center justify-center ${
-              modal.type === 'error' ? 'bg-rose-500/10 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' :
-              modal.type === 'warning' ? 'bg-amber-500/10 text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]' :
-              'bg-emerald-500/10 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
-            }`}>
+            <div className={`mx-auto w-16 h-16 rounded-3xl mb-6 flex items-center justify-center ${modal.type === 'error' ? 'bg-rose-500/10 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' :
+                modal.type === 'warning' ? 'bg-amber-500/10 text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]' :
+                  'bg-emerald-500/10 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+              }`}>
               {modal.type === 'error' && <XCircle size={32} />}
               {modal.type === 'warning' && <AlertCircle size={32} />}
               {modal.type === 'success' && <CheckCircle2 size={32} />}
             </div>
-            
+
             <h3 className="text-xl font-bold text-white mb-3">{modal.title}</h3>
             <p className="text-sm text-zinc-500 leading-relaxed mb-8 px-2">
               {modal.message}
             </p>
-            
-            <button 
+
+            <button
               onClick={closeModal}
-              className={`w-full py-4 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-lg ${
-                modal.type === 'error' ? 'bg-rose-500 text-white hover:bg-rose-600' :
-                modal.type === 'warning' ? 'bg-amber-500 text-zinc-950 hover:bg-amber-400' :
-                'bg-emerald-500 text-white hover:bg-emerald-600'
-              }`}
+              className={`w-full py-4 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-lg ${modal.type === 'error' ? 'bg-rose-500 text-white hover:bg-rose-600' :
+                  modal.type === 'warning' ? 'bg-amber-500 text-zinc-950 hover:bg-amber-400' :
+                    'bg-emerald-500 text-white hover:bg-emerald-600'
+                }`}
             >
               Confirmar
             </button>
