@@ -1,6 +1,6 @@
 {
     "name": "n8n-nodes-nexo-crm",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "n8n Community Nodes para o Nexo CRM - Gerencie leads e colunas do Kanban",
     "keywords": [
         "n8n-community-node-package",

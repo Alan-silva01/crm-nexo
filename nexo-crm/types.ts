@@ -16,6 +16,7 @@ export interface Lead {
   email: string | null;
   avatar: string | null;
   status: Status | null;
+  last_message?: string | null;
   created_at?: string;
   updated_at?: string;
   // UI-only fields (not in database)

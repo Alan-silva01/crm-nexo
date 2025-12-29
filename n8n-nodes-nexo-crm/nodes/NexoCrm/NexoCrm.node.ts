@@ -184,7 +184,20 @@ export class NexoCrm implements INodeType {
                         operation: ['create'],
                     },
                 },
-                description: 'Nome da coluna onde o lead será criado (ex: Novos Leads, Em Atendimento)',
+                description: 'Nome da coluna onde o lead será criado (será criada automaticamente se não existir)',
+            },
+            {
+                displayName: 'Descrição',
+                name: 'description',
+                type: 'string',
+                default: '',
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['create'],
+                    },
+                },
+                description: 'Descrição ou observação sobre o lead (aparece no card)',
             },
             // Fields for Lead Update
             {
@@ -237,6 +250,13 @@ export class NexoCrm implements INodeType {
                         name: 'status',
                         type: 'string',
                         default: '',
+                    },
+                    {
+                        displayName: 'Descrição',
+                        name: 'last_message',
+                        type: 'string',
+                        default: '',
+                        description: 'Descrição ou observação sobre o lead',
                     },
                 ],
             },
@@ -337,6 +357,49 @@ export class NexoCrm implements INodeType {
                         const phone = this.getNodeParameter('phone', i) as string;
                         const email = this.getNodeParameter('email', i) as string;
                         const status = this.getNodeParameter('status', i) as string;
+                        const description = this.getNodeParameter('description', i) as string;
+
+                        // Check if column exists, create if not
+                        const existingColumns = await this.helpers.request({
+                            method: 'GET',
+                            url: `${supabaseUrl}/rest/v1/kanban_columns?user_id=eq.${userId}&name=eq.${encodeURIComponent(status)}`,
+                            headers: {
+                                'apikey': apiKey,
+                                'Authorization': `Bearer ${apiKey}`,
+                            },
+                            json: true,
+                        }) as IDataObject[];
+
+                        // If column doesn't exist, create it
+                        if (!existingColumns || existingColumns.length === 0) {
+                            // Get max position
+                            const allColumns = await this.helpers.request({
+                                method: 'GET',
+                                url: `${supabaseUrl}/rest/v1/kanban_columns?user_id=eq.${userId}&order=position.desc&limit=1`,
+                                headers: {
+                                    'apikey': apiKey,
+                                    'Authorization': `Bearer ${apiKey}`,
+                                },
+                                json: true,
+                            }) as IDataObject[];
+                            const maxPosition = allColumns && allColumns.length > 0 ? (allColumns[0].position as number) + 1 : 0;
+
+                            await this.helpers.request({
+                                method: 'POST',
+                                url: `${supabaseUrl}/rest/v1/kanban_columns`,
+                                headers: {
+                                    'apikey': apiKey,
+                                    'Authorization': `Bearer ${apiKey}`,
+                                    'Content-Type': 'application/json',
+                                },
+                                body: {
+                                    user_id: userId,
+                                    name: status,
+                                    position: maxPosition,
+                                },
+                                json: true,
+                            });
+                        }
 
                         responseData = await this.helpers.request({
                             method: 'POST',
@@ -353,6 +416,7 @@ export class NexoCrm implements INodeType {
                                 phone: phone || null,
                                 email: email || null,
                                 status,
+                                last_message: description || null,
                                 avatar: `https://picsum.photos/seed/${encodeURIComponent(name)}/200`,
                             },
                             json: true,

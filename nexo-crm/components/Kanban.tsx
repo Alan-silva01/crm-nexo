@@ -259,10 +259,27 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                             <p className="text-[10px] text-zinc-500 mt-0.5">{lead.phone || lead.email || ''}</p>
                           </div>
                         </div>
-                        <button className="text-zinc-700 hover:text-zinc-400">
-                          <MoreVertical size={14} />
+                        <button
+                          onClick={async () => {
+                            if (confirm(`Tem certeza que deseja excluir o lead "${lead.name}"?`)) {
+                              const { error } = await supabase.from('leads').delete().eq('id', lead.id);
+                              if (error) {
+                                alert('Erro ao excluir lead');
+                              }
+                            }
+                          }}
+                          className="text-zinc-700 hover:text-red-400 transition-colors"
+                          title="Excluir lead"
+                        >
+                          <Trash2 size={14} />
                         </button>
                       </div>
+
+                      {lead.last_message && (
+                        <p className="text-[11px] text-zinc-400 mt-2 mb-2 line-clamp-2 italic">
+                          "{lead.last_message}"
+                        </p>
+                      )}
 
                       <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-800/40">
                         <div className="flex items-center gap-3">
