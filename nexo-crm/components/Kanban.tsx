@@ -13,6 +13,7 @@ import {
 import { Lead } from '../types';
 import { leadsService } from '../src/lib/leadsService';
 import { supabase } from '../src/lib/supabase';
+import ConfirmModal from './ConfirmModal';
 
 const BORDER_COLORS = [
   '#fbbf24', // yellow
@@ -43,6 +44,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
   const [newLead, setNewLead] = useState({ name: '', phone: '', email: '', status: '' });
   const [isCreating, setIsCreating] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState(true);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
 
   // Fetch columns from database
   useEffect(() => {
@@ -303,14 +305,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                           </div>
                         </div>
                         <button
-                          onClick={async () => {
-                            if (confirm(`Tem certeza que deseja excluir o lead "${lead.name}"?`)) {
-                              const { error } = await supabase.from('leads').delete().eq('id', lead.id);
-                              if (error) {
-                                alert('Erro ao excluir lead');
-                              }
-                            }
-                          }}
+                          onClick={() => setDeleteModal({ isOpen: true, lead })}
                           className="text-zinc-700 hover:text-red-400 transition-colors"
                           title="Excluir lead"
                         >
@@ -467,6 +462,25 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, lead: null })}
+        onConfirm={async () => {
+          if (deleteModal.lead) {
+            const { error } = await supabase.from('leads').delete().eq('id', deleteModal.lead.id);
+            if (error) {
+              alert('Erro ao excluir lead');
+            }
+          }
+        }}
+        title="Excluir Lead"
+        message={`Tem certeza que deseja excluir "${deleteModal.lead?.name}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 };
