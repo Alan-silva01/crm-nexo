@@ -14,6 +14,7 @@ import { Lead } from '../types';
 import { leadsService } from '../src/lib/leadsService';
 import { supabase } from '../src/lib/supabase';
 import ConfirmModal from './ConfirmModal';
+import { formatPhoneNumber } from '../src/lib/formatPhone';
 
 const BORDER_COLORS = [
   '#fbbf24', // yellow
@@ -301,7 +302,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                           </div>
                           <div>
                             <h4 className="text-[13px] font-semibold tracking-tight">{lead.name}</h4>
-                            <p className="text-[10px] text-zinc-500 mt-0.5">{lead.phone || lead.email || ''}</p>
+                            <p className="text-[10px] text-zinc-500 mt-0.5">{formatPhoneNumber(lead.phone) || lead.email || ''}</p>
                           </div>
                         </div>
                         <button

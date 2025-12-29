@@ -3,6 +3,7 @@ import React from 'react';
 import { Search, Filter, MoreHorizontal, Download, UserPlus, Phone, Mail } from 'lucide-react';
 import { STATUS_LABELS } from '../constants';
 import { Lead } from '../types';
+import { formatPhoneNumber } from '../src/lib/formatPhone';
 
 interface LeadsListProps {
   searchQuery: string;
@@ -62,15 +63,15 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, filteredLeads }) => 
                       />
                       <div>
                         <div className="text-xs font-medium">{lead.name}</div>
-                        <div className="text-[10px] text-zinc-500">{lead.phone || 'Sem telefone'}</div>
+                        <div className="text-[10px] text-zinc-500">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-md text-[9px] font-medium border ${lead.status === 'new' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                        lead.status === 'contacted' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                          lead.status === 'negotiation' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
-                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      lead.status === 'contacted' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                        lead.status === 'negotiation' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                          'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                       }`}>
                       {STATUS_LABELS[lead.status || 'new'] || 'Novo'}
                     </span>
