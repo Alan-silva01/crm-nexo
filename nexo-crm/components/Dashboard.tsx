@@ -1,27 +1,32 @@
 
 import React from 'react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   BarChart,
   Bar,
   Cell
 } from 'recharts';
-import { 
-  TrendingUp, 
-  Users, 
-  PhoneCall, 
-  DollarSign, 
+import {
+  TrendingUp,
+  Users,
+  PhoneCall,
+  DollarSign,
   MoreHorizontal,
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
 import { METRICS_DATA } from '../constants';
+import { Lead } from '../types';
+
+interface DashboardProps {
+  leads: Lead[];
+}
 
 const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) => (
   <div className="bg-zinc-900/40 border border-zinc-800/50 p-5 rounded-2xl hover:border-zinc-700 transition-colors group">
@@ -46,7 +51,12 @@ const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) 
   </div>
 );
 
-const Dashboard: React.FC = () => {
+const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
+  const totalLeads = leads.length;
+  const newLeads = leads.filter(l => l.status === 'new').length;
+  const totalPipeline = leads.reduce((acc, l) => acc + (l.value || 0), 0);
+  const conversionRate = totalLeads > 0 ? ((leads.filter(l => l.status === 'closed').length / totalLeads) * 100).toFixed(1) : '0';
+
   return (
     <div className="p-8 h-full overflow-y-auto space-y-8 min-h-0 flex flex-col">
       <header className="flex justify-between items-center shrink-0">
@@ -66,10 +76,10 @@ const Dashboard: React.FC = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
-        <StatCard title="Total de Leads" value="1,284" change="+12.5%" isPositive={true} icon={Users} color="bg-blue-500" />
-        <StatCard title="Novas Conversas" value="82" change="+4.2%" isPositive={true} icon={PhoneCall} color="bg-amber-500" />
-        <StatCard title="Pipeline Total" value="R$ 42.5k" change="+18.4%" isPositive={true} icon={DollarSign} color="bg-indigo-500" />
-        <StatCard title="Conversão Média" value="3.2%" change="-1.2%" isPositive={false} icon={TrendingUp} color="bg-emerald-500" />
+        <StatCard title="Total de Leads" value={totalLeads.toLocaleString()} change="+12.5%" isPositive={true} icon={Users} color="bg-blue-500" />
+        <StatCard title="Novos Leads" value={newLeads.toLocaleString()} change="+4.2%" isPositive={true} icon={PhoneCall} color="bg-amber-500" />
+        <StatCard title="Pipeline Total" value={`R$ ${(totalPipeline / 1000).toFixed(1)}k`} change="+18.4%" isPositive={true} icon={DollarSign} color="bg-indigo-500" />
+        <StatCard title="Conversão Média" value={`${conversionRate}%`} change="-1.2%" isPositive={false} icon={TrendingUp} color="bg-emerald-500" />
       </div>
 
       {/* Charts Section */}
@@ -93,18 +103,18 @@ const Dashboard: React.FC = () => {
               <AreaChart data={METRICS_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorConversions" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
                 <XAxis dataKey="name" stroke="#52525b" fontSize={10} tickLine={false} axisLine={false} />
                 <YAxis stroke="#52525b" fontSize={10} tickLine={false} axisLine={false} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '12px', fontSize: '10px' }}
                   itemStyle={{ color: '#fff' }}
                 />
@@ -118,22 +128,22 @@ const Dashboard: React.FC = () => {
         <div className="bg-zinc-900/40 border border-zinc-800/50 p-6 rounded-3xl flex flex-col">
           <h3 className="text-sm font-semibold text-zinc-300 mb-6 shrink-0">Fontes de Tráfego</h3>
           <div className="flex-1 w-full min-h-[200px]">
-             <ResponsiveContainer width="99%" height="100%">
-               <BarChart data={[
-                 { name: 'Instagram', value: 450 },
-                 { name: 'Facebook', value: 300 },
-                 { name: 'Google', value: 600 },
-                 { name: 'Site', value: 200 },
-               ]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                 <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} stroke="#52525b" />
-                 <Tooltip cursor={{fill: '#27272a'}} contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '12px' }} />
-                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                    {[450, 300, 600, 200].map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#6366f1' : '#a78bfa'} />
-                    ))}
-                 </Bar>
-               </BarChart>
-             </ResponsiveContainer>
+            <ResponsiveContainer width="99%" height="100%">
+              <BarChart data={[
+                { name: 'Instagram', value: 450 },
+                { name: 'Facebook', value: 300 },
+                { name: 'Google', value: 600 },
+                { name: 'Site', value: 200 },
+              ]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} stroke="#52525b" />
+                <Tooltip cursor={{ fill: '#27272a' }} contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '12px' }} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {[450, 300, 600, 200].map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#6366f1' : '#a78bfa'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
           <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between shrink-0">
             <div className="text-center">

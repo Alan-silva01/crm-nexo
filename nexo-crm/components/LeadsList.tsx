@@ -32,7 +32,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, filteredLeads }) => 
       <div className="bg-zinc-900/20 border border-zinc-800/50 rounded-2xl overflow-hidden flex flex-col flex-1">
         <div className="p-4 border-b border-zinc-800/50 flex items-center justify-between gap-4">
           <div className="text-xs text-zinc-500">
-            Filtrando <span className="text-zinc-200 font-bold">{filteredLeads.length}</span> resultados de 1.284 contatos
+            Mostrando <span className="text-zinc-200 font-bold">{filteredLeads.length}</span> contatos
           </div>
           <button className="flex items-center gap-2 px-3 py-2 bg-zinc-900/50 border border-zinc-800 rounded-xl text-xs text-zinc-400 hover:text-white transition-colors">
             <Filter size={14} />
@@ -46,8 +46,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, filteredLeads }) => 
               <tr className="bg-zinc-900/40 border-b border-zinc-800/50 text-center sm:text-left">
                 <th className="px-6 py-4 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Contato</th>
                 <th className="px-6 py-4 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Última Atividade</th>
-                <th className="px-6 py-4 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider text-right">Valor</th>
+                <th className="px-6 py-4 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">E-mail</th>
                 <th className="px-6 py-4 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider text-center">Ações</th>
               </tr>
             </thead>
@@ -56,26 +55,28 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, filteredLeads }) => 
                 <tr key={lead.id} className="hover:bg-zinc-800/20 transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <img src={lead.avatar} className="w-8 h-8 rounded-full border border-zinc-800" alt={lead.name} />
+                      <img
+                        src={lead.avatar || `https://picsum.photos/seed/${lead.name}/200`}
+                        className="w-8 h-8 rounded-full border border-zinc-800"
+                        alt={lead.name}
+                      />
                       <div>
                         <div className="text-xs font-medium">{lead.name}</div>
-                        <div className="text-[10px] text-zinc-500">{lead.phone}</div>
+                        <div className="text-[10px] text-zinc-500">{lead.phone || 'Sem telefone'}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-md text-[9px] font-medium border ${
-                      lead.status === 'new' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                      lead.status === 'contacted' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                      lead.status === 'negotiation' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
-                      'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                    }`}>
-                      {STATUS_LABELS[lead.status]}
+                    <span className={`px-2 py-1 rounded-md text-[9px] font-medium border ${lead.status === 'new' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                        lead.status === 'contacted' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                          lead.status === 'negotiation' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      }`}>
+                      {STATUS_LABELS[lead.status || 'new'] || 'Novo'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-[11px] text-zinc-500 whitespace-nowrap">{lead.lastActive}</td>
-                  <td className="px-6 py-4 text-right whitespace-nowrap">
-                    <div className="text-xs font-semibold">R$ {lead.value.toLocaleString('pt-BR')}</div>
+                  <td className="px-6 py-4 text-[11px] text-zinc-500 whitespace-nowrap">
+                    {lead.email || 'Sem e-mail'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
@@ -94,25 +95,20 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, filteredLeads }) => 
               ))}
               {filteredLeads.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-zinc-600 text-sm">
-                    Nenhum contato corresponde à sua pesquisa "{searchQuery}"
+                  <td colSpan={4} className="px-6 py-12 text-center text-zinc-600 text-sm">
+                    {searchQuery ? `Nenhum contato corresponde à sua pesquisa "${searchQuery}"` : 'Nenhum contato encontrado. Crie seu primeiro lead!'}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        
-        <div className="p-4 border-t border-zinc-800/50 flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-500 gap-4">
-          <div>Página 1 de 25</div>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 border border-zinc-800 rounded-md hover:bg-zinc-800 transition-colors">Anterior</button>
-            <button className="px-3 py-1 border border-zinc-800 rounded-md bg-zinc-800 text-white">1</button>
-            <button className="px-3 py-1 border border-zinc-800 rounded-md hover:bg-zinc-800 transition-colors">2</button>
-            <button className="px-3 py-1 border border-zinc-800 rounded-md hover:bg-zinc-800 transition-colors">3</button>
-            <button className="px-3 py-1 border border-zinc-800 rounded-md hover:bg-zinc-800 transition-colors">Próximo</button>
+
+        {filteredLeads.length > 0 && (
+          <div className="p-4 border-t border-zinc-800/50 flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-500 gap-4">
+            <div>Total: {filteredLeads.length} contatos</div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

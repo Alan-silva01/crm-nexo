@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Kanban from './components/Kanban';
@@ -7,49 +7,113 @@ import WhatsAppChat from './components/WhatsAppChat';
 import DetailedAnalytics from './components/DetailedAnalytics';
 import Auth from './components/Auth';
 import { Bell, Search, Calendar, LogOut } from 'lucide-react';
-import { INITIAL_LEADS } from './constants';
 import { Lead } from './types';
 import { AuthProvider, useAuth } from './src/lib/AuthProvider';
+import { leadsService } from './src/lib/leadsService';
+import { supabase } from './src/lib/supabase';
 
 const AppContent: React.FC = () => {
   const { session, loading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS);
+  const [leads, setLeads] = useState<Lead[]>([]);
+
+  // Fetch leads on session change
+  useEffect(() => {
+    if (session) {
+      leadsService.fetchLeads().then(data => {
+        setLeads(data);
+      });
+    }
+  }, [session]);
+
+  // Realtime subscription for leads
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const channel = supabase
+      .channel('leads-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leads',
+          filter: `user_id=eq.${session.user.id}`
+        },
+        (payload) => {
+          console.log('Realtime update:', payload);
+
+          if (payload.eventType === 'INSERT') {
+            setLeads(prev => [payload.new as Lead, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setLeads(prev => prev.map(lead =>
+              lead.id === payload.new.id ? { ...lead, ...payload.new as Lead } : lead
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setLeads(prev => prev.filter(lead => lead.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id]);
 
   const filteredLeads = useMemo(() => {
     if (!searchQuery) return leads;
     const lower = searchQuery.toLowerCase();
     return leads.filter(l =>
-      l.name.toLowerCase().includes(lower) ||
-      l.phone.includes(lower) ||
-      l.lastMessage.toLowerCase().includes(lower)
+      l.name?.toLowerCase().includes(lower) ||
+      (l.phone && l.phone.includes(lower)) ||
+      (l.email && l.email.toLowerCase().includes(lower)) ||
+      (l.lastMessage && l.lastMessage.toLowerCase().includes(lower))
     );
   }, [searchQuery, leads]);
 
   if (loading) {
-    return null;
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-[#09090b]">
+        <div className="w-8 h-8 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   if (!session) {
     return <Auth onLogin={() => { }} />;
   }
 
+  const handleLeadsUpdate = async (updatedLeads: Lead[]) => {
+    setLeads(updatedLeads);
+
+    // Find what changed and persist to Supabase
+    const changedLead = updatedLeads.find((lead, index) => {
+      const original = leads.find(l => l.id === lead.id);
+      return original && (original.status !== lead.status);
+    });
+
+    if (changedLead) {
+      await leadsService.updateLead(changedLead.id, { status: changedLead.status });
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard leads={leads} />;
       case 'kanban':
-        return <Kanban searchQuery={searchQuery} filteredLeads={filteredLeads} onLeadsUpdate={setLeads} />;
+        return <Kanban searchQuery={searchQuery} filteredLeads={filteredLeads} onLeadsUpdate={handleLeadsUpdate} />;
       case 'leads':
         return <LeadsList searchQuery={searchQuery} filteredLeads={filteredLeads} />;
       case 'chats':
-        return <WhatsAppChat leads={leads} onLeadsUpdate={setLeads} />;
+        return <WhatsAppChat leads={leads} onLeadsUpdate={handleLeadsUpdate} />;
       case 'analytics':
         return <DetailedAnalytics />;
       default:
-        return <Dashboard />;
+        return <Dashboard leads={leads} />;
     }
   };
 
@@ -64,41 +128,34 @@ const AppContent: React.FC = () => {
       <main className="flex-1 flex flex-col min-w-0 bg-[#0c0c0e] relative">
         <header className="h-16 border-b border-zinc-800/50 flex items-center justify-between px-8 bg-zinc-900/20 z-10">
           <div className="flex items-center gap-4 flex-1">
-            <div className="relative max-w-md w-full hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input
                 type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Pesquisar contatos, mensagens ou telefones..."
-                className="w-full bg-zinc-900/50 border border-zinc-800 rounded-lg pl-9 pr-4 py-1.5 text-xs focus:outline-none focus:border-indigo-500/30 focus:ring-1 focus:ring-indigo-500/20 transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-zinc-900/50 border border-zinc-800/50 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
               />
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-zinc-900/50 border border-zinc-800 rounded-lg text-zinc-400 text-[11px] font-medium">
-              <Calendar size={14} />
-              <span>{new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-full text-[11px] font-medium text-zinc-500">
+              <Calendar size={12} />
+              {new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
-            <div className="relative">
-              <button className="p-2 rounded-lg bg-zinc-900/50 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors">
-                <Bell size={16} />
-              </button>
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-indigo-500 rounded-full ring-2 ring-[#0c0c0e]"></span>
-            </div>
-            <div className="flex items-center gap-3 ml-2 pl-4 border-l border-zinc-800/50">
-              <div className="text-right hidden sm:block">
+            <button className="p-2 hover:bg-zinc-800 rounded-lg relative text-zinc-400 hover:text-white transition-colors">
+              <Bell size={18} />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
+            </button>
+            <div className="flex items-center gap-3 pl-4 border-l border-zinc-800">
+              <div className="text-right">
                 <p className="text-[11px] font-semibold leading-none">{session?.user?.email ?? 'Usuário'}</p>
-                <button
-                  onClick={signOut}
-                  className="text-[9px] text-zinc-500 mt-1 flex items-center justify-end gap-1 hover:text-red-400 transition-colors"
-                >
+                <button onClick={signOut} className="text-[9px] text-zinc-500 mt-1 flex items-center justify-end gap-1 hover:text-red-400 transition-colors">
                   Sair da conta <LogOut size={10} />
                 </button>
               </div>
-              <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
-                <img src="https://picsum.photos/seed/face/100" alt="Profile" className="w-full h-full object-cover" />
-              </div>
+              <img src={`https://picsum.photos/seed/${session?.user?.id}/100`} alt="Avatar" className="w-9 h-9 rounded-full border-2 border-indigo-500/20 shadow-sm" />
             </div>
           </div>
         </header>
@@ -110,10 +167,12 @@ const AppContent: React.FC = () => {
   );
 };
 
-const App: React.FC = () => (
-  <AuthProvider>
-    <AppContent />
-  </AuthProvider>
-);
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
 
 export default App;

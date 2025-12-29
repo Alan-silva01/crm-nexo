@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import { Mail, Lock, User, ArrowRight, ShieldCheck, ChevronLeft, XCircle, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { useAuth } from '../src/lib/AuthProvider';
+import { supabase } from '../src/lib/supabase';
 
 interface AuthProps {
   onLogin: () => void;
@@ -16,6 +18,7 @@ interface ModalState {
 }
 
 const Auth: React.FC<AuthProps> = ({ onLogin }) => {
+  const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<AuthMode>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -37,41 +40,79 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setModal(prev => ({ ...prev, isOpen: false }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Realistic simulation for a CRM demo
-    setTimeout(() => {
-      setIsLoading(false);
-
+    try {
       if (mode === 'login') {
-        // Mock error scenarios
-        if (email.toLowerCase() === 'erro@nexo.com') {
-          showModal('error', 'Falha no Acesso', 'E-mail ou senha incorretos. Por favor, verifique suas credenciais e tente novamente.');
-          return;
-        }
         if (password.length < 6) {
           showModal('warning', 'Senha Insegura', 'Sua senha deve conter pelo menos 6 caracteres para garantir a segurança da sua conta.');
+          setIsLoading(false);
           return;
         }
-        onLogin();
+
+        const { data, error } = await signIn(email, password);
+
+        if (error) {
+          console.error('Login error:', error);
+          showModal('error', 'Falha no Acesso', error.message || 'E-mail ou senha incorretos. Por favor, verifique suas credenciais e tente novamente.');
+          setIsLoading(false);
+          return;
+        }
+
+        if (data?.user) {
+          onLogin();
+        }
       } else if (mode === 'register') {
-        if (email.toLowerCase() === 'admin@nexo.com') {
-          showModal('warning', 'E-mail já Cadastrado', 'Este endereço de e-mail já está vinculado a uma conta Nexo. Tente recuperar sua senha.');
+        if (password.length < 6) {
+          showModal('warning', 'Senha Insegura', 'Sua senha deve conter pelo menos 6 caracteres para garantir a segurança da sua conta.');
+          setIsLoading(false);
           return;
         }
-        showModal('success', 'Cadastro Realizado!', 'Sua conta foi criada com sucesso! Você já pode acessar o painel administrativo.');
+
+        const { data, error } = await signUp(email, password, name);
+
+        if (error) {
+          console.error('Signup error:', error);
+          if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
+            showModal('warning', 'E-mail já Cadastrado', 'Este endereço de e-mail já está vinculado a uma conta Nexo. Tente recuperar sua senha.');
+          } else {
+            showModal('error', 'Erro no Cadastro', error.message || 'Não foi possível criar sua conta. Tente novamente.');
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        showModal('success', 'Cadastro Realizado!', 'Sua conta foi criada com sucesso! Verifique seu e-mail para confirmar o cadastro.');
         setMode('login');
       } else if (mode === 'recover') {
         if (!email.includes('@')) {
           showModal('error', 'E-mail Inválido', 'Por favor, insira um endereço de e-mail válido para receber o link de recuperação.');
+          setIsLoading(false);
           return;
         }
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+
+        if (error) {
+          console.error('Password reset error:', error);
+          showModal('error', 'Erro ao Enviar', error.message || 'Não foi possível enviar o e-mail de recuperação.');
+          setIsLoading(false);
+          return;
+        }
+
         showModal('success', 'E-mail Enviado', 'Se este e-mail estiver cadastrado, você receberá um link de redefinição de senha em instantes.');
         setMode('login');
       }
-    }, 1200);
+    } catch (err) {
+      console.error('Auth error:', err);
+      showModal('error', 'Erro Inesperado', 'Ocorreu um erro inesperado. Por favor, tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderTitle = () => {
@@ -210,8 +251,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm transition-all animate-in fade-in duration-200">
           <div className="w-full max-w-sm bg-[#0c0c0e] border border-zinc-800 rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-200 text-center">
             <div className={`mx-auto w-16 h-16 rounded-3xl mb-6 flex items-center justify-center ${modal.type === 'error' ? 'bg-rose-500/10 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' :
-                modal.type === 'warning' ? 'bg-amber-500/10 text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]' :
-                  'bg-emerald-500/10 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+              modal.type === 'warning' ? 'bg-amber-500/10 text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]' :
+                'bg-emerald-500/10 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
               }`}>
               {modal.type === 'error' && <XCircle size={32} />}
               {modal.type === 'warning' && <AlertCircle size={32} />}
@@ -226,8 +267,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             <button
               onClick={closeModal}
               className={`w-full py-4 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-lg ${modal.type === 'error' ? 'bg-rose-500 text-white hover:bg-rose-600' :
-                  modal.type === 'warning' ? 'bg-amber-500 text-zinc-950 hover:bg-amber-400' :
-                    'bg-emerald-500 text-white hover:bg-emerald-600'
+                modal.type === 'warning' ? 'bg-amber-500 text-zinc-950 hover:bg-amber-400' :
+                  'bg-emerald-500 text-white hover:bg-emerald-600'
                 }`}
             >
               Confirmar

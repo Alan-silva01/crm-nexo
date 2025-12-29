@@ -10,15 +10,20 @@ export interface Message {
 
 export interface Lead {
   id: string;
+  user_id?: string;
   name: string;
-  phone: string;
-  avatar: string;
-  status: Status;
-  lastMessage: string;
-  lastActive: string;
-  unreadCount: number;
-  value: number;
-  messages: Message[];
+  phone: string | null;
+  email: string | null;
+  avatar: string | null;
+  status: Status | null;
+  created_at?: string;
+  updated_at?: string;
+  // UI-only fields (not in database)
+  lastMessage?: string;
+  lastActive?: string;
+  unreadCount?: number;
+  value?: number;
+  messages?: Message[];
 }
 
 export interface MetricData {

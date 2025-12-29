@@ -1,0 +1,491 @@
+import {
+    IDataObject,
+    IExecuteFunctions,
+    INodeExecutionData,
+    INodeType,
+    INodeTypeDescription,
+    NodeOperationError,
+} from 'n8n-workflow';
+
+export class NexoCrm implements INodeType {
+    description: INodeTypeDescription = {
+        displayName: 'Nexo CRM',
+        name: 'nexoCrm',
+        icon: 'file:nexocrm.svg',
+        group: ['transform'],
+        version: 1,
+        subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
+        description: 'Gerencie leads e colunas do Kanban no Nexo CRM',
+        defaults: {
+            name: 'Nexo CRM',
+        },
+        inputs: ['main'],
+        outputs: ['main'],
+        credentials: [
+            {
+                name: 'nexoCrmApi',
+                required: true,
+            },
+        ],
+        properties: [
+            // Resource
+            {
+                displayName: 'Recurso',
+                name: 'resource',
+                type: 'options',
+                noDataExpression: true,
+                options: [
+                    {
+                        name: 'Lead',
+                        value: 'lead',
+                        description: 'Gerenciar leads',
+                    },
+                    {
+                        name: 'Coluna',
+                        value: 'column',
+                        description: 'Gerenciar colunas do Kanban',
+                    },
+                ],
+                default: 'lead',
+            },
+            // Operations for Lead
+            {
+                displayName: 'Operação',
+                name: 'operation',
+                type: 'options',
+                noDataExpression: true,
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                    },
+                },
+                options: [
+                    {
+                        name: 'Criar',
+                        value: 'create',
+                        description: 'Criar um novo lead',
+                        action: 'Criar um lead',
+                    },
+                    {
+                        name: 'Atualizar',
+                        value: 'update',
+                        description: 'Atualizar um lead existente',
+                        action: 'Atualizar um lead',
+                    },
+                    {
+                        name: 'Deletar',
+                        value: 'delete',
+                        description: 'Deletar um lead',
+                        action: 'Deletar um lead',
+                    },
+                    {
+                        name: 'Buscar',
+                        value: 'get',
+                        description: 'Buscar um lead por ID',
+                        action: 'Buscar um lead',
+                    },
+                    {
+                        name: 'Listar',
+                        value: 'list',
+                        description: 'Listar todos os leads',
+                        action: 'Listar leads',
+                    },
+                    {
+                        name: 'Mover',
+                        value: 'move',
+                        description: 'Mover lead para uma coluna (cria a coluna se não existir)',
+                        action: 'Mover um lead',
+                    },
+                ],
+                default: 'create',
+            },
+            // Operations for Column
+            {
+                displayName: 'Operação',
+                name: 'operation',
+                type: 'options',
+                noDataExpression: true,
+                displayOptions: {
+                    show: {
+                        resource: ['column'],
+                    },
+                },
+                options: [
+                    {
+                        name: 'Criar',
+                        value: 'create',
+                        description: 'Criar uma nova coluna',
+                        action: 'Criar uma coluna',
+                    },
+                    {
+                        name: 'Listar',
+                        value: 'list',
+                        description: 'Listar todas as colunas',
+                        action: 'Listar colunas',
+                    },
+                    {
+                        name: 'Deletar',
+                        value: 'delete',
+                        description: 'Deletar uma coluna',
+                        action: 'Deletar uma coluna',
+                    },
+                ],
+                default: 'list',
+            },
+            // Fields for Lead Create
+            {
+                displayName: 'Nome',
+                name: 'name',
+                type: 'string',
+                default: '',
+                required: true,
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['create'],
+                    },
+                },
+                description: 'Nome do lead',
+            },
+            {
+                displayName: 'Telefone',
+                name: 'phone',
+                type: 'string',
+                default: '',
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['create'],
+                    },
+                },
+                description: 'Telefone do lead',
+            },
+            {
+                displayName: 'E-mail',
+                name: 'email',
+                type: 'string',
+                default: '',
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['create'],
+                    },
+                },
+                description: 'E-mail do lead',
+            },
+            {
+                displayName: 'Coluna',
+                name: 'status',
+                type: 'string',
+                default: 'Novos Leads',
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['create'],
+                    },
+                },
+                description: 'Nome da coluna onde o lead será criado (ex: Novos Leads, Em Atendimento)',
+            },
+            // Fields for Lead Update
+            {
+                displayName: 'Lead ID',
+                name: 'leadId',
+                type: 'string',
+                default: '',
+                required: true,
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['update', 'delete', 'get'],
+                    },
+                },
+                description: 'UUID do lead',
+            },
+            {
+                displayName: 'Campos para Atualizar',
+                name: 'updateFields',
+                type: 'collection',
+                placeholder: 'Adicionar Campo',
+                default: {},
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['update'],
+                    },
+                },
+                options: [
+                    {
+                        displayName: 'Nome',
+                        name: 'name',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'Telefone',
+                        name: 'phone',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'E-mail',
+                        name: 'email',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'Coluna/Status',
+                        name: 'status',
+                        type: 'string',
+                        default: '',
+                    },
+                ],
+            },
+            // Fields for Lead Move
+            {
+                displayName: 'Lead ID',
+                name: 'leadId',
+                type: 'string',
+                default: '',
+                required: true,
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['move'],
+                    },
+                },
+                description: 'UUID do lead a ser movido',
+            },
+            {
+                displayName: 'Nova Coluna',
+                name: 'targetColumn',
+                type: 'string',
+                default: '',
+                required: true,
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['move'],
+                    },
+                },
+                description: 'Nome da coluna destino (será criada automaticamente se não existir)',
+            },
+            // Fields for Column Create
+            {
+                displayName: 'Nome da Coluna',
+                name: 'columnName',
+                type: 'string',
+                default: '',
+                required: true,
+                displayOptions: {
+                    show: {
+                        resource: ['column'],
+                        operation: ['create'],
+                    },
+                },
+                description: 'Nome da nova coluna',
+            },
+            {
+                displayName: 'Posição',
+                name: 'position',
+                type: 'number',
+                default: 0,
+                displayOptions: {
+                    show: {
+                        resource: ['column'],
+                        operation: ['create'],
+                    },
+                },
+                description: 'Posição da coluna no Kanban (0 = primeira)',
+            },
+            // Fields for Column Delete
+            {
+                displayName: 'Coluna ID',
+                name: 'columnId',
+                type: 'string',
+                default: '',
+                required: true,
+                displayOptions: {
+                    show: {
+                        resource: ['column'],
+                        operation: ['delete'],
+                    },
+                },
+                description: 'UUID da coluna a ser deletada',
+            },
+        ],
+    };
+
+    async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
+        const items = this.getInputData();
+        const returnData: INodeExecutionData[] = [];
+
+        const credentials = await this.getCredentials('nexoCrmApi');
+        const supabaseUrl = credentials.supabaseUrl as string;
+        const apiKey = credentials.apiKey as string;
+        const userId = credentials.userId as string;
+
+        const resource = this.getNodeParameter('resource', 0) as string;
+        const operation = this.getNodeParameter('operation', 0) as string;
+
+        for (let i = 0; i < items.length; i++) {
+            try {
+                let responseData;
+
+                if (resource === 'lead') {
+                    if (operation === 'create') {
+                        const name = this.getNodeParameter('name', i) as string;
+                        const phone = this.getNodeParameter('phone', i) as string;
+                        const email = this.getNodeParameter('email', i) as string;
+                        const status = this.getNodeParameter('status', i) as string;
+
+                        responseData = await this.helpers.request({
+                            method: 'POST',
+                            url: `${supabaseUrl}/rest/v1/leads`,
+                            headers: {
+                                'apikey': apiKey,
+                                'Authorization': `Bearer ${apiKey}`,
+                                'Content-Type': 'application/json',
+                                'Prefer': 'return=representation',
+                            },
+                            body: {
+                                user_id: userId,
+                                name,
+                                phone: phone || null,
+                                email: email || null,
+                                status,
+                                avatar: `https://picsum.photos/seed/${encodeURIComponent(name)}/200`,
+                            },
+                            json: true,
+                        });
+                    } else if (operation === 'update') {
+                        const leadId = this.getNodeParameter('leadId', i) as string;
+                        const updateFields = this.getNodeParameter('updateFields', i) as object;
+
+                        responseData = await this.helpers.request({
+                            method: 'PATCH',
+                            url: `${supabaseUrl}/rest/v1/leads?id=eq.${leadId}`,
+                            headers: {
+                                'apikey': apiKey,
+                                'Authorization': `Bearer ${apiKey}`,
+                                'Content-Type': 'application/json',
+                                'Prefer': 'return=representation',
+                            },
+                            body: updateFields,
+                            json: true,
+                        });
+                    } else if (operation === 'delete') {
+                        const leadId = this.getNodeParameter('leadId', i) as string;
+
+                        responseData = await this.helpers.request({
+                            method: 'DELETE',
+                            url: `${supabaseUrl}/rest/v1/leads?id=eq.${leadId}`,
+                            headers: {
+                                'apikey': apiKey,
+                                'Authorization': `Bearer ${apiKey}`,
+                            },
+                        });
+                        responseData = { success: true, deleted: leadId };
+                    } else if (operation === 'get') {
+                        const leadId = this.getNodeParameter('leadId', i) as string;
+
+                        responseData = await this.helpers.request({
+                            method: 'GET',
+                            url: `${supabaseUrl}/rest/v1/leads?id=eq.${leadId}`,
+                            headers: {
+                                'apikey': apiKey,
+                                'Authorization': `Bearer ${apiKey}`,
+                            },
+                            json: true,
+                        });
+                    } else if (operation === 'list') {
+                        responseData = await this.helpers.request({
+                            method: 'GET',
+                            url: `${supabaseUrl}/rest/v1/leads?user_id=eq.${userId}&order=created_at.desc`,
+                            headers: {
+                                'apikey': apiKey,
+                                'Authorization': `Bearer ${apiKey}`,
+                            },
+                            json: true,
+                        });
+                    } else if (operation === 'move') {
+                        const leadId = this.getNodeParameter('leadId', i) as string;
+                        const targetColumn = this.getNodeParameter('targetColumn', i) as string;
+
+                        // Use the Edge Function to move lead (auto-creates column if needed)
+                        responseData = await this.helpers.request({
+                            method: 'POST',
+                            url: `${supabaseUrl}/functions/v1/mover_lead`,
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: {
+                                lead_id: leadId,
+                                coluna: targetColumn,
+                                user_id: userId,
+                            },
+                            json: true,
+                        });
+                    }
+                } else if (resource === 'column') {
+                    if (operation === 'create') {
+                        const columnName = this.getNodeParameter('columnName', i) as string;
+                        const position = this.getNodeParameter('position', i) as number;
+
+                        responseData = await this.helpers.request({
+                            method: 'POST',
+                            url: `${supabaseUrl}/rest/v1/kanban_columns`,
+                            headers: {
+                                'apikey': apiKey,
+                                'Authorization': `Bearer ${apiKey}`,
+                                'Content-Type': 'application/json',
+                                'Prefer': 'return=representation',
+                            },
+                            body: {
+                                user_id: userId,
+                                name: columnName,
+                                position,
+                            },
+                            json: true,
+                        });
+                    } else if (operation === 'list') {
+                        responseData = await this.helpers.request({
+                            method: 'GET',
+                            url: `${supabaseUrl}/rest/v1/kanban_columns?user_id=eq.${userId}&order=position`,
+                            headers: {
+                                'apikey': apiKey,
+                                'Authorization': `Bearer ${apiKey}`,
+                            },
+                            json: true,
+                        });
+                    } else if (operation === 'delete') {
+                        const columnId = this.getNodeParameter('columnId', i) as string;
+
+                        responseData = await this.helpers.request({
+                            method: 'DELETE',
+                            url: `${supabaseUrl}/rest/v1/kanban_columns?id=eq.${columnId}`,
+                            headers: {
+                                'apikey': apiKey,
+                                'Authorization': `Bearer ${apiKey}`,
+                            },
+                        });
+                        responseData = { success: true, deleted: columnId };
+                    }
+                }
+
+                const executionData = this.helpers.constructExecutionMetaData(
+                    this.helpers.returnJsonArray(responseData as IDataObject | IDataObject[]),
+                    { itemData: { item: i } },
+                );
+                returnData.push(...executionData);
+            } catch (error) {
+                if (this.continueOnFail()) {
+                    returnData.push({ json: { error: (error as Error).message }, pairedItem: i });
+                    continue;
+                }
+                throw new NodeOperationError(this.getNode(), error as Error, { itemIndex: i });
+            }
+        }
+
+        return [returnData];
+    }
+}

@@ -7,8 +7,16 @@ const supabase = createClient(supabaseUrl, supabaseServiceRole);
 
 serve(async (req) => {
     const url = new URL(req.url);
-    const pathname = url.pathname;
+    // Normalize path: remove /crm_api prefix and trailing slashes
+    let pathname = url.pathname.replace(/^\/crm_api/, '');
+    if (pathname.endsWith('/') && pathname.length > 1) {
+        pathname = pathname.slice(0, -1);
+    }
+    if (!pathname) pathname = '/';
+
     const method = req.method;
+
+    console.log(`${method} ${url.pathname} -> normalized to ${pathname}`);
 
     // Helper to parse JSON body
     const json = async () => {
