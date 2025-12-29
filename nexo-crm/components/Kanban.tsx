@@ -75,6 +75,49 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
     fetchColumns();
   }, []);
 
+  // Real-time subscription for leads updates
+  useEffect(() => {
+    const setupRealtimeSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const channel = supabase
+        .channel('kanban-leads-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'leads',
+            filter: `user_id=eq.${user.id}`,
+          },
+          async (payload) => {
+            console.log('Realtime event:', payload.eventType);
+            // Refetch all leads when any change happens
+            const { data: newLeads } = await supabase
+              .from('leads')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false });
+
+            if (newLeads) {
+              onLeadsUpdate(newLeads);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    const cleanup = setupRealtimeSubscription();
+    return () => {
+      cleanup.then(fn => fn && fn());
+    };
+  }, [onLeadsUpdate]);
+
   const onDragStart = (e: React.DragEvent, id: string) => {
     setDraggingId(id);
     e.dataTransfer.setData('leadId', id);
