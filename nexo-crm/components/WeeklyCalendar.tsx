@@ -16,27 +16,29 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onDateChange }) => {
 
     const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
-    // Generate 11 days centered around the selected date
+    // Generate all days for the current month
     const visibleDays = useMemo(() => {
+        const year = selectedDate.getFullYear();
+        const month = selectedDate.getMonth();
+        const lastDay = new Date(year, month + 1, 0).getDate();
+
         const days = [];
-        for (let i = -5; i <= 5; i++) {
-            const date = new Date(selectedDate);
-            date.setDate(selectedDate.getDate() + i);
-            days.push(date);
+        for (let i = 1; i <= lastDay; i++) {
+            days.push(new Date(year, month, i));
         }
         return days;
-    }, [selectedDate]);
+    }, [selectedDate.getMonth(), selectedDate.getFullYear()]);
 
-    const handlePrevWeek = () => {
+    const handlePrevMonth = () => {
         const newDate = new Date(selectedDate);
-        newDate.setDate(selectedDate.getDate() - 7);
+        newDate.setMonth(selectedDate.getMonth() - 1);
         setSelectedDate(newDate);
         onDateChange?.(newDate);
     };
 
-    const handleNextWeek = () => {
+    const handleNextMonth = () => {
         const newDate = new Date(selectedDate);
-        newDate.setDate(selectedDate.getDate() + 7);
+        newDate.setMonth(selectedDate.getMonth() + 1);
         setSelectedDate(newDate);
         onDateChange?.(newDate);
     };
@@ -61,8 +63,8 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onDateChange }) => {
     };
 
     return (
-        <div className="glass rounded-xl p-2 mb-4 border border-zinc-800/40 max-w-fit mx-auto">
-            <div className="flex items-center justify-between mb-2 px-2 gap-8">
+        <div className="glass rounded-xl p-2 mb-4 border border-zinc-800/40 w-full overflow-hidden">
+            <div className="flex items-center justify-between mb-2 px-2">
                 <div className="flex items-center gap-1.5 text-zinc-400">
                     <CalendarIcon size={12} className="text-indigo-400 opacity-60" />
                     <span className="text-[11px] font-medium tracking-wide first-letter:uppercase">
@@ -80,13 +82,13 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onDateChange }) => {
                     </button>
                     <div className="flex items-center gap-1">
                         <button
-                            onClick={handlePrevWeek}
+                            onClick={handlePrevMonth}
                             className="p-0.5 hover:text-white text-zinc-600 transition-colors"
                         >
                             <ChevronLeft size={12} />
                         </button>
                         <button
-                            onClick={handleNextWeek}
+                            onClick={handleNextMonth}
                             className="p-0.5 hover:text-white text-zinc-600 transition-colors"
                         >
                             <ChevronRight size={12} />
@@ -95,7 +97,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onDateChange }) => {
                 </div>
             </div>
 
-            <div className="flex items-center justify-center gap-1">
+            <div className="flex items-center justify-between overflow-x-auto no-scrollbar gap-0.5 pb-1 px-1">
                 {visibleDays.map((date, index) => (
                     <button
                         key={index}
@@ -103,9 +105,9 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onDateChange }) => {
                             setSelectedDate(date);
                             onDateChange?.(date);
                         }}
-                        className={`flex flex-col items-center justify-center w-8 h-10 rounded-lg transition-all duration-200
+                        className={`flex flex-col items-center justify-center flex-1 min-w-[32px] h-10 rounded-lg transition-all duration-200 relative
                             ${isSelected(date)
-                                ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-500/50'
+                                ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-500/50 z-10'
                                 : 'hover:bg-zinc-800/30 text-zinc-400'}`}
                     >
                         <span className={`text-[7px] uppercase font-bold tracking-tighter leading-none mb-0.5
@@ -116,10 +118,10 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onDateChange }) => {
                             {date.getDate()}
                         </span>
                         {isToday(date) && !isSelected(date) && (
-                            <div className="absolute -bottom-0.5 w-1 h-1 bg-indigo-500 rounded-full" />
+                            <div className="absolute bottom-1 w-1 h-1 bg-indigo-500 rounded-full" />
                         )}
                         {isToday(date) && isSelected(date) && (
-                            <div className="absolute -bottom-0.5 w-1 h-1 bg-white rounded-full" />
+                            <div className="absolute bottom-1 w-1 h-1 bg-white rounded-full" />
                         )}
                     </button>
                 ))}
