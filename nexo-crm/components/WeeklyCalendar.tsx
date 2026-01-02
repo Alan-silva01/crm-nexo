@@ -61,45 +61,41 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onDateChange }) => {
     };
 
     return (
-        <div className="glass rounded-3xl p-6 mb-8 border border-zinc-800/50">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-500/10 rounded-lg">
-                        <CalendarIcon size={20} className="text-indigo-400" />
-                    </div>
-                    <h2 className="text-xl font-semibold tracking-tight">
-                        {months[selectedDate.getMonth()]} <span className="text-zinc-500 font-normal">{selectedDate.getFullYear()}</span>
-                    </h2>
+        <div className="glass rounded-xl p-2 mb-4 border border-zinc-800/40 max-w-fit mx-auto">
+            <div className="flex items-center justify-between mb-2 px-2 gap-8">
+                <div className="flex items-center gap-1.5 text-zinc-400">
+                    <CalendarIcon size={12} className="text-indigo-400 opacity-60" />
+                    <span className="text-[11px] font-medium tracking-wide first-letter:uppercase">
+                        {months[selectedDate.getMonth()]}
+                    </span>
+                    <span className="text-[11px] font-light opacity-50">{selectedDate.getFullYear()}</span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     <button
                         onClick={handleToday}
-                        className="px-4 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-full transition-all border border-zinc-700/50"
+                        className="text-[9px] font-semibold text-zinc-500 hover:text-indigo-400 transition-colors uppercase tracking-tighter"
                     >
                         Hoje
                     </button>
-                    <div className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-full border border-zinc-800/50">
+                    <div className="flex items-center gap-1">
                         <button
                             onClick={handlePrevWeek}
-                            className="p-1.5 hover:bg-zinc-800 text-zinc-500 hover:text-white rounded-full transition-colors"
+                            className="p-0.5 hover:text-white text-zinc-600 transition-colors"
                         >
-                            <ChevronLeft size={16} />
+                            <ChevronLeft size={12} />
                         </button>
-                        <div className="px-2 text-[10px] font-medium text-zinc-500 uppercase tracking-widest">
-                            Semana
-                        </div>
                         <button
                             onClick={handleNextWeek}
-                            className="p-1.5 hover:bg-zinc-800 text-zinc-500 hover:text-white rounded-full transition-colors"
+                            className="p-0.5 hover:text-white text-zinc-600 transition-colors"
                         >
-                            <ChevronRight size={16} />
+                            <ChevronRight size={12} />
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div className="flex items-center justify-between overflow-x-auto no-scrollbar gap-2 pb-2">
+            <div className="flex items-center justify-center gap-1">
                 {visibleDays.map((date, index) => (
                     <button
                         key={index}
@@ -107,21 +103,23 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onDateChange }) => {
                             setSelectedDate(date);
                             onDateChange?.(date);
                         }}
-                        className={`flex flex-col items-center min-w-[60px] py-4 rounded-2xl transition-all duration-300 group
-              ${isSelected(date)
-                                ? 'bg-indigo-600 shadow-lg shadow-indigo-600/20 scale-110 -translate-y-1'
-                                : 'hover:bg-zinc-800/50'}`}
+                        className={`flex flex-col items-center justify-center w-8 h-10 rounded-lg transition-all duration-200
+                            ${isSelected(date)
+                                ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-500/50'
+                                : 'hover:bg-zinc-800/30 text-zinc-400'}`}
                     >
-                        <span className={`text-[10px] uppercase font-bold tracking-tighter mb-1
-              ${isSelected(date) ? 'text-indigo-100' : 'text-zinc-500 group-hover:text-zinc-300'}`}>
+                        <span className={`text-[7px] uppercase font-bold tracking-tighter leading-none mb-0.5
+                            ${isSelected(date) ? 'text-indigo-100' : 'text-zinc-600'}`}>
                             {daysOfWeek[date.getDay()]}
                         </span>
-                        <span className={`text-lg font-bold
-              ${isSelected(date) ? 'text-white' : 'text-zinc-200'}`}>
+                        <span className="text-[12px] font-bold leading-none">
                             {date.getDate()}
                         </span>
                         {isToday(date) && !isSelected(date) && (
-                            <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-1.5 ring-2 ring-indigo-500/20 shadow-sm shadow-indigo-500/50 animate-pulse" />
+                            <div className="absolute -bottom-0.5 w-1 h-1 bg-indigo-500 rounded-full" />
+                        )}
+                        {isToday(date) && isSelected(date) && (
+                            <div className="absolute -bottom-0.5 w-1 h-1 bg-white rounded-full" />
                         )}
                     </button>
                 ))}
