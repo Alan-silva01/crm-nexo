@@ -45,6 +45,7 @@ interface KanbanProps {
 const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpdate, onUpdateLeadStatus, onSelectChat }) => {
   const [columns, setColumns] = useState<KanbanColumn[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [draggingColumnId, setDraggingColumnId] = useState<string | null>(null);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
   const [isAddingLead, setIsAddingLead] = useState(false);
@@ -96,6 +97,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
 
   const onDragEnd = () => {
     setDraggingId(null);
+    setDraggingColumnId(null);
   };
 
   const onDragOver = (e: React.DragEvent) => {
@@ -105,9 +107,75 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
   const onDrop = useCallback((e: React.DragEvent, targetColumnName: string) => {
     e.preventDefault();
     const leadId = e.dataTransfer.getData('leadId');
-    onUpdateLeadStatus(leadId, targetColumnName);
+    if (leadId) {
+      onUpdateLeadStatus(leadId, targetColumnName);
+    }
     setDraggingId(null);
   }, [onUpdateLeadStatus]);
+
+  const onColumnDragStart = (e: React.DragEvent, columnId: string) => {
+    setDraggingColumnId(columnId);
+    e.dataTransfer.setData('columnId', columnId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const onColumnDrop = async (e: React.DragEvent, targetPosition: number) => {
+    e.preventDefault();
+    const sourceColumnId = e.dataTransfer.getData('columnId');
+    if (!sourceColumnId) return;
+
+    const sourceColumn = columns.find(c => c.id === sourceColumnId);
+    if (!sourceColumn || sourceColumn.position === targetPosition) {
+      setDraggingColumnId(null);
+      return;
+    }
+
+    const newColumns = [...columns];
+    const sourceIndex = newColumns.findIndex(c => c.id === sourceColumnId);
+    const [movedColumn] = newColumns.splice(sourceIndex, 1);
+
+    // Find where the target is in the array after the slice
+    const targetIndex = newColumns.findIndex(c => c.position === targetPosition);
+    newColumns.splice(targetPosition > sourceColumn.position ? targetIndex : targetIndex, 0, movedColumn);
+
+    // Update positions
+    const updatedColumns = newColumns.map((col, index) => ({
+      ...col,
+      position: index
+    }));
+
+    setColumns(updatedColumns);
+    setDraggingColumnId(null);
+
+    // Persist to Supabase
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('kanban_columns')
+      .upsert(
+        updatedColumns.map(col => ({
+          id: col.id,
+          position: col.position,
+          user_id: user.id
+        }))
+      );
+
+    if (error) {
+      console.error('Error updating column positions:', error);
+    } else {
+      // Re-fetch to be safe and get correctly ordered data
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('kanban_columns')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('position');
+        if (data) setColumns(data);
+      }
+    }
+  };
 
   const addColumn = async () => {
     if (!newColumnName.trim()) return;
@@ -229,11 +297,24 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
         {columns.map((col, colIndex) => (
           <div
             key={col.id}
-            className="flex-shrink-0 w-80 flex flex-col group"
+            className={`flex-shrink-0 w-80 flex flex-col group transition-all duration-300
+              ${draggingColumnId === col.id ? 'opacity-40 scale-95' : ''}`}
             onDragOver={onDragOver}
-            onDrop={(e) => onDrop(e, col.name)}
+            onDrop={(e) => {
+              const leadId = e.dataTransfer.getData('leadId');
+              if (leadId) {
+                onDrop(e, col.name);
+              } else {
+                onColumnDrop(e, colIndex);
+              }
+            }}
           >
-            <div className="flex items-center justify-between mb-4 px-1">
+            <div
+              draggable
+              onDragStart={(e) => onColumnDragStart(e, col.id)}
+              onDragEnd={onDragEnd}
+              className="flex items-center justify-between mb-4 px-1 cursor-grab active:cursor-grabbing hover:bg-zinc-800/30 rounded-lg py-1 transition-colors"
+            >
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: BORDER_COLORS[colIndex % BORDER_COLORS.length] }}></span>
                 <h3 className="text-sm font-semibold text-zinc-300">{col.name}</h3>
