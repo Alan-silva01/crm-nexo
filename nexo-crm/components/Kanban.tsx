@@ -119,26 +119,22 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const onColumnDrop = async (e: React.DragEvent, targetPosition: number) => {
+  const onColumnDrop = async (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
     const sourceColumnId = e.dataTransfer.getData('columnId');
     if (!sourceColumnId) return;
 
-    const sourceColumn = columns.find(c => c.id === sourceColumnId);
-    if (!sourceColumn || sourceColumn.position === targetPosition) {
+    const sourceIndex = columns.findIndex(c => c.id === sourceColumnId);
+    if (sourceIndex === -1 || sourceIndex === targetIndex) {
       setDraggingColumnId(null);
       return;
     }
 
     const newColumns = [...columns];
-    const sourceIndex = newColumns.findIndex(c => c.id === sourceColumnId);
     const [movedColumn] = newColumns.splice(sourceIndex, 1);
+    newColumns.splice(targetIndex, 0, movedColumn);
 
-    // Find where the target is in the array after the slice
-    const targetIndex = newColumns.findIndex(c => c.position === targetPosition);
-    newColumns.splice(targetPosition > sourceColumn.position ? targetIndex : targetIndex, 0, movedColumn);
-
-    // Update positions
+    // Update positions locally
     const updatedColumns = newColumns.map((col, index) => ({
       ...col,
       position: index
@@ -158,22 +154,12 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
           id: col.id,
           position: col.position,
           user_id: user.id
-        }))
+        })),
+        { onConflict: 'id' }
       );
 
     if (error) {
       console.error('Error updating column positions:', error);
-    } else {
-      // Re-fetch to be safe and get correctly ordered data
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('kanban_columns')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('position');
-        if (data) setColumns(data);
-      }
     }
   };
 
