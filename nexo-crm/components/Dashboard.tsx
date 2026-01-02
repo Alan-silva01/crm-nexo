@@ -167,9 +167,9 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
 
         <div className="bg-zinc-900/40 border border-zinc-800/50 p-6 rounded-3xl flex flex-col">
           <h3 className="text-sm font-semibold text-zinc-300 mb-6 shrink-0">Leads por Etapa</h3>
-          <div className="flex-1 w-full min-h-[200px]">
-            <ResponsiveContainer width="99%" height="100%">
-              <BarChart data={barChartData} margin={{ top: 20, right: 10, left: -10, bottom: 40 }}>
+          <div className="flex-1 w-full min-h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={barChartData} margin={{ top: 20, right: 20, left: 10, bottom: 60 }}>
                 <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} stroke="#71717a" interval={0} angle={-30} textAnchor="end" />
                 <Tooltip cursor={{ fill: '#27272a' }} contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '12px' }} />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
