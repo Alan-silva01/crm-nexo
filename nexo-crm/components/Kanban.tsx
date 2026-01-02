@@ -16,6 +16,7 @@ import { supabase } from '../src/lib/supabase';
 import ConfirmModal from './ConfirmModal';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
 import { formatRelativeTime } from '../src/lib/formatRelativeTime';
+import WeeklyCalendar from './WeeklyCalendar';
 
 const BORDER_COLORS = [
   '#fbbf24', // yellow
@@ -218,6 +219,8 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
           </button>
         </div>
       </header>
+
+      <WeeklyCalendar onDateChange={(date) => console.log('Selected date:', date)} />
 
       {/* Kanban Board */}
       <div className="flex-1 flex gap-6 overflow-x-auto pb-4 scroll-smooth">
