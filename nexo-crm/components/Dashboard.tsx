@@ -52,10 +52,49 @@ const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) 
 );
 
 const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
+  // Stats calculations
   const totalLeads = leads.length;
-  const newLeads = leads.filter(l => l.status === 'new').length;
+
+  // Assume first status is "New" or similar. In a real scenario we'd get the columns.
+  // For now, let's look at the distribution.
+  const newLeads = leads.filter(l => l.status === 'Aguardando' || l.status === 'new').length;
+
   const totalPipeline = leads.reduce((acc, l) => acc + (l.value || 0), 0);
-  const conversionRate = totalLeads > 0 ? ((leads.filter(l => l.status === 'closed').length / totalLeads) * 100).toFixed(1) : '0';
+
+  // Assume last status is "Vendido" or "closed"
+  const closedLeads = leads.filter(l => l.status === 'Vendido' || l.status === 'closed').length;
+  const conversionRate = totalLeads > 0 ? ((closedLeads / totalLeads) * 100).toFixed(1) : '0';
+
+  // Group leads by status for the Bar Chart
+  const leadsPerStatus = leads.reduce((acc: any, lead) => {
+    acc[lead.status] = (acc[lead.status] || 0) + 1;
+    return acc;
+  }, {});
+
+  const barChartData = Object.entries(leadsPerStatus).map(([name, value]) => ({
+    name,
+    value
+  })).sort((a, b) => (b.value as number) - (a.value as number));
+
+  // Generate 7-day flow for Area Chart
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().split('T')[0];
+  });
+
+  const areaChartData = last7Days.map(dateStr => {
+    const count = leads.filter(l => l.created_at?.split('T')[0] === dateStr).length;
+    const dateObj = new Date(dateStr + 'T12:00:00');
+    return {
+      name: dateObj.toLocaleDateString('pt-BR', { weekday: 'short' }),
+      leads: count,
+      conversions: leads.filter(l =>
+        l.created_at?.split('T')[0] === dateStr &&
+        (l.status === 'Vendido' || l.status === 'closed')
+      ).length
+    };
+  });
 
   return (
     <div className="p-8 h-full overflow-y-auto space-y-8 min-h-0 flex flex-col">
@@ -100,7 +139,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
           </div>
           <div className="flex-1 w-full min-h-[300px]">
             <ResponsiveContainer width="99%" height="100%">
-              <AreaChart data={METRICS_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={areaChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -126,19 +165,14 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
         </div>
 
         <div className="bg-zinc-900/40 border border-zinc-800/50 p-6 rounded-3xl flex flex-col">
-          <h3 className="text-sm font-semibold text-zinc-300 mb-6 shrink-0">Fontes de Tráfego</h3>
+          <h3 className="text-sm font-semibold text-zinc-300 mb-6 shrink-0">Leads por Etapa</h3>
           <div className="flex-1 w-full min-h-[200px]">
             <ResponsiveContainer width="99%" height="100%">
-              <BarChart data={[
-                { name: 'Instagram', value: 450 },
-                { name: 'Facebook', value: 300 },
-                { name: 'Google', value: 600 },
-                { name: 'Site', value: 200 },
-              ]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} stroke="#52525b" />
                 <Tooltip cursor={{ fill: '#27272a' }} contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '12px' }} />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                  {[450, 300, 600, 200].map((_, index) => (
+                  {barChartData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#6366f1' : '#a78bfa'} />
                   ))}
                 </Bar>

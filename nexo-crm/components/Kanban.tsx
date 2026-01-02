@@ -200,7 +200,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
     <div className="h-full flex flex-col p-8 overflow-hidden relative">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Kanban de Vendas</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Kanban de Leads</h1>
           <p className="text-zinc-500 text-sm">Gerencie o fluxo de atendimento com precisão e agilidade.</p>
         </div>
 

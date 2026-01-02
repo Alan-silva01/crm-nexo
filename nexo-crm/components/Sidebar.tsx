@@ -23,7 +23,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed, setIsCollapsed }) => {
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'kanban', icon: KanbanIcon, label: 'Kanban' },
+    { id: 'kanban', icon: KanbanIcon, label: 'Kanban de Leads' },
     { id: 'leads', icon: Users, label: 'Contatos' },
     { id: 'chats', icon: MessageSquare, label: 'Conversas' },
     { id: 'analytics', icon: BarChart3, label: 'Relatórios' },
