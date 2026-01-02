@@ -17,6 +17,8 @@ import ConfirmModal from './ConfirmModal';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
 import { formatRelativeTime } from '../src/lib/formatRelativeTime';
 import WeeklyCalendar from './WeeklyCalendar';
+import LeadDetailsModal from './LeadDetailsModal';
+import LetterAvatar from './LetterAvatar';
 
 const BORDER_COLORS = [
   '#fbbf24', // yellow
@@ -36,9 +38,11 @@ interface KanbanProps {
   searchQuery: string;
   filteredLeads: Lead[];
   onLeadsUpdate: (leads: Lead[]) => void;
+  onUpdateLeadStatus: (id: string, newStatus: string) => void;
+  onSelectChat: (id: string) => void;
 }
 
-const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpdate }) => {
+const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpdate, onUpdateLeadStatus, onSelectChat }) => {
   const [columns, setColumns] = useState<KanbanColumn[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
@@ -49,6 +53,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
   const [loadingColumns, setLoadingColumns] = useState(true);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
   const [deleteColumnModal, setDeleteColumnModal] = useState<{ isOpen: boolean; column: KanbanColumn | null }>({ isOpen: false, column: null });
+  const [detailsModal, setDetailsModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
 
   // Fetch columns from database
   useEffect(() => {
@@ -100,12 +105,9 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
   const onDrop = useCallback((e: React.DragEvent, targetColumnName: string) => {
     e.preventDefault();
     const leadId = e.dataTransfer.getData('leadId');
-    const updated = filteredLeads.map(lead =>
-      lead.id === leadId ? { ...lead, status: targetColumnName } : lead
-    );
-    onLeadsUpdate(updated);
+    onUpdateLeadStatus(leadId, targetColumnName);
     setDraggingId(null);
-  }, [filteredLeads, onLeadsUpdate]);
+  }, [onUpdateLeadStatus]);
 
   const addColumn = async () => {
     if (!newColumnName.trim()) return;
@@ -258,7 +260,8 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                     draggable
                     onDragStart={(e) => onDragStart(e, lead.id)}
                     onDragEnd={onDragEnd}
-                    className={`bg-[#121214] border border-zinc-800/40 rounded-2xl cursor-grab active:cursor-grabbing hover:bg-[#18181b] transition-all duration-300 shadow-xl relative overflow-hidden
+                    onClick={() => setDetailsModal({ isOpen: true, lead })}
+                    className={`bg-[#121214] border border-zinc-800/40 rounded-2xl cursor-pointer active:cursor-grabbing hover:bg-[#18181b] transition-all duration-300 shadow-xl relative overflow-hidden
                       ${draggingId === lead.id ? 'dragging ring-2 ring-indigo-500 scale-[1.02]' : ''}`}
                     style={{ borderLeft: `4px solid ${borderColor}` }}
                   >
@@ -266,7 +269,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-3">
                           <div className="relative">
-                            <img src={lead.avatar || `https://picsum.photos/seed/${lead.name}/200`} alt={lead.name} className="w-11 h-11 rounded-full border border-zinc-800 shadow-md object-cover" />
+                            <LetterAvatar name={lead.name} size="lg" />
                           </div>
                           <div>
                             <h4 className="text-[13px] font-semibold tracking-tight">{lead.name}</h4>
@@ -275,8 +278,11 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                           </div>
                         </div>
                         <button
-                          onClick={() => setDeleteModal({ isOpen: true, lead })}
-                          className="text-zinc-700 hover:text-red-400 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteModal({ isOpen: true, lead });
+                          }}
+                          className="text-zinc-700 hover:text-red-400 transition-colors p-1"
                           title="Excluir lead"
                         >
                           <Trash2 size={14} />
@@ -468,6 +474,19 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
         confirmText="Excluir"
         cancelText="Cancelar"
         type="danger"
+      />
+
+      {/* Lead Details Modal */}
+      <LeadDetailsModal
+        isOpen={detailsModal.isOpen}
+        onClose={() => setDetailsModal({ isOpen: false, lead: null })}
+        lead={detailsModal.lead}
+        onViewConversation={() => {
+          if (detailsModal.lead) {
+            onSelectChat(detailsModal.lead.id);
+            setDetailsModal({ isOpen: false, lead: null });
+          }
+        }}
       />
     </div>
   );

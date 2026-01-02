@@ -2,16 +2,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Phone, Video, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare } from 'lucide-react';
 import { Lead, Message } from '../types';
+import LetterAvatar from './LetterAvatar';
 
 interface WhatsAppChatProps {
   leads: Lead[];
   onLeadsUpdate: (leads: Lead[]) => void;
+  selectedChatId: string | null;
+  onSelectChat: (id: string | null) => void;
 }
 
-const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate }) => {
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(leads[0]?.id || null);
+const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selectedChatId, onSelectChat }) => {
   const [inputText, setInputText] = useState('');
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const setSelectedChatId = onSelectChat;
 
   const selectedChat = leads.find(l => l.id === selectedChatId) || leads[0];
 
@@ -93,11 +97,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate }) => 
                 ${selectedChatId === chat.id ? 'bg-[#18181b] border-l-4 border-l-indigo-500' : ''}`}
             >
               <div className="relative">
-                <img
-                  src={chat.avatar || `https://picsum.photos/seed/${chat.name}/200`}
-                  alt={chat.name}
-                  className="w-12 h-12 rounded-full border border-zinc-800 shadow-sm object-cover"
-                />
+                <LetterAvatar name={chat.name} size="lg" />
                 <span className="absolute bottom-0.5 right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#09090b]"></span>
               </div>
               <div className="flex-1 min-w-0">
@@ -127,11 +127,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate }) => 
           <header className="h-[64px] px-4 border-b border-zinc-800/50 flex items-center justify-between bg-[#1e2a30] z-10 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <img
-                  src={selectedChat.avatar || `https://picsum.photos/seed/${selectedChat.name}/200`}
-                  className="w-10 h-10 rounded-full border border-zinc-700 object-cover"
-                  alt={selectedChat.name}
-                />
+                <LetterAvatar name={selectedChat.name} size="md" />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#1e2a30]"></span>
               </div>
               <div>
@@ -168,8 +164,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate }) => 
                 selectedChat.messages.map((msg) => (
                   <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[80%] md:max-w-[70%] p-2 px-3 rounded-2xl text-[13px] shadow-sm relative ${msg.sender === 'user'
-                        ? 'bg-[#056162] text-white rounded-tr-none'
-                        : 'bg-[#1e2a30] text-zinc-100 rounded-tl-none'
+                      ? 'bg-[#056162] text-white rounded-tr-none'
+                      : 'bg-[#1e2a30] text-zinc-100 rounded-tl-none'
                       }`}>
                       <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                       <div className="flex items-center justify-end gap-1.5 mt-1">

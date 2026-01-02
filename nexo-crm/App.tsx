@@ -18,6 +18,7 @@ const AppContent: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   // Fetch leads on session change
   useEffect(() => {
@@ -88,15 +89,17 @@ const AppContent: React.FC = () => {
 
   const handleLeadsUpdate = async (updatedLeads: Lead[]) => {
     setLeads(updatedLeads);
+  };
 
-    // Find what changed and persist to Supabase
-    const changedLead = updatedLeads.find((lead, index) => {
-      const original = leads.find(l => l.id === lead.id);
-      return original && (original.status !== lead.status);
-    });
+  const handleUpdateLeadStatus = async (leadId: string, newStatus: string) => {
+    // Optimistic update
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
 
-    if (changedLead) {
-      await leadsService.updateLead(changedLead.id, { status: changedLead.status });
+    // Persist to Supabase
+    const success = await leadsService.updateLead(leadId, { status: newStatus });
+    if (!success) {
+      console.error('Error updating lead status');
+      // Rollback or notify?
     }
   };
 
@@ -105,11 +108,29 @@ const AppContent: React.FC = () => {
       case 'dashboard':
         return <Dashboard leads={leads} />;
       case 'kanban':
-        return <Kanban searchQuery={searchQuery} filteredLeads={filteredLeads} onLeadsUpdate={handleLeadsUpdate} />;
+        return (
+          <Kanban
+            searchQuery={searchQuery}
+            filteredLeads={filteredLeads}
+            onLeadsUpdate={handleLeadsUpdate}
+            onUpdateLeadStatus={handleUpdateLeadStatus}
+            onSelectChat={(id) => {
+              setSelectedChatId(id);
+              setActiveTab('chats');
+            }}
+          />
+        );
       case 'leads':
         return <LeadsList searchQuery={searchQuery} filteredLeads={filteredLeads} />;
       case 'chats':
-        return <WhatsAppChat leads={leads} onLeadsUpdate={handleLeadsUpdate} />;
+        return (
+          <WhatsAppChat
+            leads={leads}
+            onLeadsUpdate={handleLeadsUpdate}
+            selectedChatId={selectedChatId}
+            onSelectChat={setSelectedChatId}
+          />
+        );
       case 'analytics':
         return <DetailedAnalytics />;
       default:
