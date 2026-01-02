@@ -10,7 +10,8 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  Cell
+  Cell,
+  LabelList
 } from 'recharts';
 import {
   TrendingUp,
@@ -139,7 +140,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
           </div>
           <div className="flex-1 w-full min-h-[300px]">
             <ResponsiveContainer width="99%" height="100%">
-              <AreaChart data={areaChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={areaChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -168,13 +169,14 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
           <h3 className="text-sm font-semibold text-zinc-300 mb-6 shrink-0">Leads por Etapa</h3>
           <div className="flex-1 w-full min-h-[200px]">
             <ResponsiveContainer width="99%" height="100%">
-              <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} stroke="#52525b" />
+              <BarChart data={barChartData} margin={{ top: 20, right: 10, left: -10, bottom: 40 }}>
+                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} stroke="#71717a" interval={0} angle={-30} textAnchor="end" />
                 <Tooltip cursor={{ fill: '#27272a' }} contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '12px' }} />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                   {barChartData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#6366f1' : '#a78bfa'} />
+                    <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#6366f1' : '#818cf8'} />
                   ))}
+                  <LabelList dataKey="value" position="top" fill="#a1a1aa" fontSize={11} offset={8} fontStyle="bold" />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
