@@ -47,6 +47,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
   const [isCreating, setIsCreating] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState(true);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
+  const [deleteColumnModal, setDeleteColumnModal] = useState<{ isOpen: boolean; column: KanbanColumn | null }>({ isOpen: false, column: null });
 
   // Fetch columns from database
   useEffect(() => {
@@ -131,27 +132,31 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
     setIsAddingColumn(false);
   };
 
-  const removeColumn = async (id: string, name: string) => {
-    const leadsInColumn = filteredLeads.filter(l => l.status === name).length;
+  const removeColumn = async (column: KanbanColumn) => {
+    const leadsInColumn = filteredLeads.filter(l => l.status === column.name).length;
     if (leadsInColumn > 0) {
       alert(`Esta coluna tem ${leadsInColumn} leads. Mova-os para outra coluna antes de deletar.`);
       return;
     }
+    setDeleteColumnModal({ isOpen: true, column });
+  };
 
-    if (confirm('Tem certeza que deseja remover esta coluna?')) {
-      const { error } = await supabase
-        .from('kanban_columns')
-        .delete()
-        .eq('id', id);
+  const confirmDeleteColumn = async () => {
+    if (!deleteColumnModal.column) return;
 
-      if (error) {
-        console.error('Error deleting column:', error);
-        alert('Erro ao deletar coluna');
-        return;
-      }
+    const { error } = await supabase
+      .from('kanban_columns')
+      .delete()
+      .eq('id', deleteColumnModal.column.id);
 
-      setColumns(columns.filter(c => c.id !== id));
+    if (error) {
+      console.error('Error deleting column:', error);
+      alert('Erro ao deletar coluna');
+      return;
     }
+
+    setColumns(columns.filter(c => c.id !== deleteColumnModal.column!.id));
+    setDeleteColumnModal({ isOpen: false, column: null });
   };
 
   const createLead = async () => {
@@ -233,7 +238,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
               </div>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
-                  onClick={() => removeColumn(col.id, col.name)}
+                  onClick={() => removeColumn(col)}
                   className="p-1 hover:text-red-400 text-zinc-600 transition-colors"
                 >
                   <Trash2 size={14} />
@@ -445,6 +450,18 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
         }}
         title="Excluir Lead"
         message={`Tem certeza que deseja excluir "${deleteModal.lead?.name}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        type="danger"
+      />
+
+      {/* Column Delete Modal */}
+      <ConfirmModal
+        isOpen={deleteColumnModal.isOpen}
+        onClose={() => setDeleteColumnModal({ isOpen: false, column: null })}
+        onConfirm={confirmDeleteColumn}
+        title="Excluir Coluna"
+        message={`Tem certeza que deseja excluir a coluna "${deleteColumnModal.column?.name}"?`}
         confirmText="Excluir"
         cancelText="Cancelar"
         type="danger"
