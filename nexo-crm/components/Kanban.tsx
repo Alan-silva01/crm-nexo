@@ -143,23 +143,28 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
     setColumns(updatedColumns);
     setDraggingColumnId(null);
 
-    // Persist to Supabase
+    // Persist to Supabase using individual UPDATE calls
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase
-      .from('kanban_columns')
-      .upsert(
-        updatedColumns.map(col => ({
-          id: col.id,
-          position: col.position,
-          user_id: user.id
-        })),
-        { onConflict: 'id' }
-      );
+    console.log('Saving column positions:', updatedColumns.map(c => ({ id: c.id, name: c.name, position: c.position })));
 
-    if (error) {
-      console.error('Error updating column positions:', error);
+    // Update each column's position individually
+    const updatePromises = updatedColumns.map(col =>
+      supabase
+        .from('kanban_columns')
+        .update({ position: col.position })
+        .eq('id', col.id)
+        .eq('user_id', user.id)
+    );
+
+    const results = await Promise.all(updatePromises);
+    const errors = results.filter(r => r.error);
+
+    if (errors.length > 0) {
+      console.error('Error updating column positions:', errors.map(e => e.error));
+    } else {
+      console.log('Column positions saved successfully!');
     }
   };
 
