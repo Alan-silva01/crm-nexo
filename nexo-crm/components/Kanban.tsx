@@ -15,6 +15,7 @@ import { leadsService } from '../src/lib/leadsService';
 import { supabase } from '../src/lib/supabase';
 import ConfirmModal from './ConfirmModal';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
+import { formatRelativeTime } from '../src/lib/formatRelativeTime';
 
 const BORDER_COLORS = [
   '#fbbf24', // yellow
@@ -261,7 +262,8 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                           </div>
                           <div>
                             <h4 className="text-[13px] font-semibold tracking-tight">{lead.name}</h4>
-                            <p className="text-[10px] text-zinc-500 mt-0.5">{formatPhoneNumber(lead.phone) || lead.email || ''}</p>
+                            <p className="text-[10px] text-zinc-500 mt-0.5">{formatPhoneNumber(lead.phone) || ''}</p>
+                            {lead.email && <p className="text-[10px] text-zinc-500">{lead.email}</p>}
                           </div>
                         </div>
                         <button
@@ -286,6 +288,12 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                             <span>Zap</span>
                           </div>
                         </div>
+                        {lead.updated_at && (
+                          <div className="flex items-center gap-1 text-[10px] text-zinc-600">
+                            <Clock size={10} />
+                            <span>{formatRelativeTime(lead.updated_at)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
