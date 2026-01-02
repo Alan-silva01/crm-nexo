@@ -88,7 +88,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
     const count = leads.filter(l => l.created_at?.split('T')[0] === dateStr).length;
     const dateObj = new Date(dateStr + 'T12:00:00');
     return {
-      name: dateObj.toLocaleDateString('pt-BR', { weekday: 'short' }),
+      name: dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', ''),
       leads: count,
       conversions: leads.filter(l =>
         l.created_at?.split('T')[0] === dateStr &&
