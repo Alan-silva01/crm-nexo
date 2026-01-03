@@ -210,15 +210,15 @@ class NexoCrm {
             {
                 displayName: 'Faturamento Mensal',
                 name: 'monthly_revenue',
-                type: 'number',
-                default: 0,
+                type: 'string',
+                default: '',
                 displayOptions: {
                     show: {
                         resource: ['lead'],
                         operation: ['create'],
                     },
                 },
-                description: 'Faturamento mensal do lead em reais (R$)',
+                description: 'Faturamento mensal do lead (ex: R$ 50.000,00)',
             },
             // Fields for Lead Update
             {
@@ -288,9 +288,9 @@ class NexoCrm {
                     {
                         displayName: 'Faturamento Mensal',
                         name: 'monthly_revenue',
-                        type: 'number',
-                        default: 0,
-                        description: 'Faturamento mensal em reais (R$)',
+                        type: 'string',
+                        default: '',
+                        description: 'Faturamento mensal (ex: R$ 50.000,00)',
                     },
                 ],
             },
