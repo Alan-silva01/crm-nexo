@@ -19,6 +19,8 @@ export interface Lead {
   last_message?: string | null;
   created_at?: string;
   updated_at?: string;
+  company_name?: string | null;
+  monthly_revenue?: number | null;
   // UI-only fields (not in database)
   lastMessage?: string;
   lastActive?: string;

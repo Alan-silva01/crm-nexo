@@ -199,6 +199,32 @@ export class NexoCrm implements INodeType {
                 },
                 description: 'Descrição ou observação sobre o lead (aparece no card)',
             },
+            {
+                displayName: 'Nome da Empresa',
+                name: 'company_name',
+                type: 'string',
+                default: '',
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['create'],
+                    },
+                },
+                description: 'Nome da empresa do lead',
+            },
+            {
+                displayName: 'Faturamento Mensal',
+                name: 'monthly_revenue',
+                type: 'number',
+                default: 0,
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['create'],
+                    },
+                },
+                description: 'Faturamento mensal do lead em reais (R$)',
+            },
             // Fields for Lead Update
             {
                 displayName: 'Lead ID',
@@ -257,6 +283,19 @@ export class NexoCrm implements INodeType {
                         type: 'string',
                         default: '',
                         description: 'Descrição ou observação sobre o lead',
+                    },
+                    {
+                        displayName: 'Nome da Empresa',
+                        name: 'company_name',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'Faturamento Mensal',
+                        name: 'monthly_revenue',
+                        type: 'number',
+                        default: 0,
+                        description: 'Faturamento mensal em reais (R$)',
                     },
                 ],
             },
@@ -358,6 +397,8 @@ export class NexoCrm implements INodeType {
                         const email = this.getNodeParameter('email', i) as string;
                         const status = this.getNodeParameter('status', i) as string;
                         const description = this.getNodeParameter('description', i) as string;
+                        const company_name = this.getNodeParameter('company_name', i) as string;
+                        const monthly_revenue = this.getNodeParameter('monthly_revenue', i) as number;
 
                         // Check if column exists, create if not
                         const existingColumns = await this.helpers.request({
@@ -417,6 +458,8 @@ export class NexoCrm implements INodeType {
                                 email: email || null,
                                 status,
                                 last_message: description || null,
+                                company_name: company_name || null,
+                                monthly_revenue: monthly_revenue || null,
                                 avatar: `https://picsum.photos/seed/${encodeURIComponent(name)}/200`,
                             },
                             json: true,

@@ -49,7 +49,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
   const [isAddingLead, setIsAddingLead] = useState(false);
-  const [newLead, setNewLead] = useState({ name: '', phone: '', email: '', status: '' });
+  const [newLead, setNewLead] = useState({ name: '', phone: '', email: '', status: '', company_name: '', monthly_revenue: '' });
   const [isCreating, setIsCreating] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState(true);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
@@ -77,7 +77,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
       if (data && data.length > 0) {
         console.log('Columns fetched successfully:', data);
         setColumns(data);
-        setNewLead(prev => ({ ...prev, status: data[0].name }));
+        setNewLead(prev => ({ ...prev, status: data[0].name, company_name: '', monthly_revenue: '' }));
       } else {
         console.log('No columns found in DB, using defaults.');
         const defaults = [
@@ -87,7 +87,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
           { id: '4', name: 'Venda Concluída', position: 3 }
         ];
         setColumns(defaults);
-        setNewLead(prev => ({ ...prev, status: defaults[0].name }));
+        setNewLead(prev => ({ ...prev, status: defaults[0].name, company_name: '', monthly_revenue: '' }));
       }
       setLoadingColumns(false);
     };
@@ -242,12 +242,14 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
       email: newLead.email || null,
       status: newLead.status || columns[0]?.name || 'Novos Leads',
       avatar: `https://picsum.photos/seed/${newLead.name}/200`,
+      company_name: newLead.company_name || null,
+      monthly_revenue: newLead.monthly_revenue ? parseFloat(newLead.monthly_revenue) : null,
     });
 
     if (created) {
       const updatedLeads = await leadsService.fetchLeads();
       onLeadsUpdate(updatedLeads);
-      setNewLead({ name: '', phone: '', email: '', status: columns[0]?.name || '' });
+      setNewLead({ name: '', phone: '', email: '', status: columns[0]?.name || '', company_name: '', monthly_revenue: '' });
       setIsAddingLead(false);
     } else {
       alert('Erro ao criar lead. Tente novamente.');
@@ -353,8 +355,10 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                           </div>
                           <div>
                             <h4 className="text-[13px] font-semibold tracking-tight">{lead.name}</h4>
+                            {lead.company_name && <p className="text-[10px] text-indigo-400 font-medium">{lead.company_name}</p>}
                             <p className="text-[10px] text-zinc-500 mt-0.5">{formatPhoneNumber(lead.phone) || ''}</p>
                             {lead.email && <p className="text-[10px] text-zinc-500">{lead.email}</p>}
+                            {lead.monthly_revenue && <p className="text-[10px] text-emerald-400">R$ {lead.monthly_revenue.toLocaleString('pt-BR')}/mês</p>}
                           </div>
                         </div>
                         <button
@@ -478,6 +482,28 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                   value={newLead.email}
                   onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
                   placeholder="exemplo@email.com"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-zinc-500 font-semibold uppercase mb-2 block">Nome da Empresa</label>
+                <input
+                  type="text"
+                  value={newLead.company_name}
+                  onChange={(e) => setNewLead({ ...newLead, company_name: e.target.value })}
+                  placeholder="Ex: Tech Solutions Ltda"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-zinc-500 font-semibold uppercase mb-2 block">Faturamento Mensal (R$)</label>
+                <input
+                  type="number"
+                  value={newLead.monthly_revenue}
+                  onChange={(e) => setNewLead({ ...newLead, monthly_revenue: e.target.value })}
+                  placeholder="Ex: 50000"
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
