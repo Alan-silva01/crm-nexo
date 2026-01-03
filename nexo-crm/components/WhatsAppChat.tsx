@@ -98,7 +98,34 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
       setLoadingMessages(true);
       const messages = await chatsSdrService.fetchChatsByPhone(selectedChat.phone);
-      setSdrMessages(messages);
+
+      // Process messages to split by \n\n
+      const processedMessages: SDRMessage[] = [];
+
+      messages.forEach((msg) => {
+        const rawContent = msg.message.content || '';
+        // Clean content first to handle JSON wrappers and escaped newlines
+        const cleaned = cleanContent(rawContent);
+
+        // Split by double newline
+        const parts = cleaned.split(/\n\n+/);
+
+        parts.forEach((part, index) => {
+          if (part.trim() && !shouldHideMessage(part)) {
+            processedMessages.push({
+              ...msg,
+              // Use a composite ID to ensure uniqueness for React keys
+              id: msg.id * 10000 + index,
+              message: {
+                ...msg.message,
+                content: part.trim()
+              }
+            });
+          }
+        });
+      });
+
+      setSdrMessages(processedMessages);
       setLoadingMessages(false);
     };
 
