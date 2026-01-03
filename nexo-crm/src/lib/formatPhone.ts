@@ -37,10 +37,13 @@ export function formatPhoneNumber(phone: string | null | undefined): string {
     }
 
     // Se tiver 10 dígitos (sem o 9): DDD (2) + número (8)
+    // Provavelmente é celular sem o 9 - adiciona o 9
     if (cleaned.length === 10) {
         const ddd = cleaned.substring(0, 2);
-        const firstPart = cleaned.substring(2, 6);  // 4 dígitos
-        const secondPart = cleaned.substring(6, 10); // 4 dígitos
+        const numero = cleaned.substring(2);
+        // Adiciona o 9 para celulares
+        const firstPart = '9' + numero.substring(0, 4);  // 9 + 4 dígitos
+        const secondPart = numero.substring(4, 8); // 4 dígitos
         return `(${ddd}) ${firstPart}-${secondPart}`;
     }
 

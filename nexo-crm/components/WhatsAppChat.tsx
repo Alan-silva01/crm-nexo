@@ -30,12 +30,39 @@ function parseMessageContent(content: string): { quote: string | null; mainText:
 
 // Clean content from JSON wrapper like {\"o cliente falou: ...}
 function cleanContent(content: string): string {
-  // Remove wrapper like {"o cliente falou: ...}
-  const wrapperPattern = /^\{?"o cliente falou:\s*/i;
-  let cleaned = content.replace(wrapperPattern, '');
-  cleaned = cleaned.replace(/"\s*\}?$/, '');
+  let cleaned = content;
+
+  // Remove wrapper JSON como {"o cliente falou: ...}
+  const jsonWrapperMatch = cleaned.match(/\{["\s]*o cliente falou:\s*([^}]+)\}/i);
+  if (jsonWrapperMatch) {
+    cleaned = jsonWrapperMatch[1];
+  }
+
+  // Remove "o cliente falou:" do início (mesmo fora de JSON)
+  cleaned = cleaned.replace(/^["\s]*o cliente falou:\s*/i, '');
+
+  // Remove aspas do início e fim
+  cleaned = cleaned.replace(/^["'\s]+|["'\s]+$/g, '');
+
+  // Remove chaves soltas
+  cleaned = cleaned.replace(/^\{+|\}+$/g, '');
+
+  // Substitui \n\n por quebras de linha reais
+  cleaned = cleaned.replace(/\\n\\n/g, '\n\n');
   cleaned = cleaned.replace(/\\n/g, '\n');
+
+  // Remove mensagens que são só ponto(s)
+  if (/^[\.\s]+$/.test(cleaned)) {
+    return '';
+  }
+
   return cleaned.trim();
+}
+
+// Verifica se a mensagem deve ser ocultada (só pontos, vazia, etc)
+function shouldHideMessage(content: string): boolean {
+  const cleaned = cleanContent(content);
+  return !cleaned || /^[\.\s]*$/.test(cleaned);
 }
 
 const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selectedChatId, onSelectChat }) => {
@@ -297,7 +324,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                   <p className="text-zinc-600 text-sm">Nenhuma mensagem ainda. Comece a conversa!</p>
                 </div>
               ) : (
-                sdrMessages.map(renderMessage)
+                sdrMessages.filter(msg => !shouldHideMessage(msg.message.content || '')).map(renderMessage)
               )}
             </div>
           </div>
