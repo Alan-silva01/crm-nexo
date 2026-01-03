@@ -164,9 +164,11 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   // Render message bubble
   const renderMessage = (msg: SDRMessage) => {
     const messageType = msg.message.type;
+    const agentName = msg.message.agent_name;
     const isFromClient = messageType === 'human';
-    const isFromAI = messageType === 'ai';
-    const isFromAgent = messageType === 'agent';
+    // Se tiver agent_name, trata como agente mesmo que o tipo seja 'ai'
+    const isFromAgent = messageType === 'agent' || (messageType === 'ai' && !!agentName);
+    const isFromAI = messageType === 'ai' && !agentName;
 
     const rawContent = msg.message.content || '';
     const cleanedContent = cleanContent(rawContent);
@@ -199,7 +201,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               ) : (
                 <>
                   <User size={12} />
-                  <span>{msg.message.agent_name || 'Agente'}</span>
+                  <span>{agentName || 'Agente'}</span>
                 </>
               )}
             </div>

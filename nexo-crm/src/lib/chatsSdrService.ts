@@ -70,10 +70,31 @@ export const chatsSdrService = {
             sessionId = existingChats[0].session_id;
         }
 
+        // Enviar para o Webhook
+        try {
+            await fetch('https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/intervencaohumana', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    phone: sessionId,
+                    message: content,
+                    agent_name: agentName
+                })
+            });
+        } catch (error) {
+            console.error('Error sending to webhook:', error);
+            // Continua mesmo com erro no webhook para salvar no banco?
+            // O usuário pediu "e enviar", mas vamos garantir que salve pelo menos.
+        }
+
+        // Salvar no banco como requested: "como se fosse a ia falando"
+        // Vamos usar type: 'ai' mas mantendo agent_name para o frontend identificar
         const messagePayload = {
-            type: 'agent' as const,
+            type: 'ai' as const, // Solicitado: salvar como IA
             content,
-            agent_name: agentName,
+            agent_name: agentName, // Mantemos para o frontend saber que foi agente
             additional_kwargs: {},
             response_metadata: {}
         };
