@@ -83,6 +83,18 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, le
                             </div>
                             <p className="text-sm font-medium text-zinc-200">{lead.lastActive || 'Nenhuma atividade registrada'}</p>
                         </div>
+
+                        {lead.last_message && (
+                            <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/50 group hover:border-zinc-700/50 transition-colors">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400">
+                                        <User size={16} />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Descrição do Lead</span>
+                                </div>
+                                <p className="text-sm font-medium text-zinc-300 leading-relaxed whitespace-pre-wrap">{lead.last_message}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

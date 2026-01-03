@@ -62,6 +62,8 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log('Fetching columns for user:', user.id);
+
       const { data, error } = await supabase
         .from('kanban_columns')
         .select('*')
@@ -70,16 +72,22 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
 
       if (error) {
         console.error('Error fetching columns:', error);
-        // Use default columns if fetch fails
-        setColumns([
+      }
+
+      if (data && data.length > 0) {
+        console.log('Columns fetched successfully:', data);
+        setColumns(data);
+        setNewLead(prev => ({ ...prev, status: data[0].name }));
+      } else {
+        console.log('No columns found in DB, using defaults.');
+        const defaults = [
           { id: '1', name: 'Novos Leads', position: 0 },
           { id: '2', name: 'Em Atendimento', position: 1 },
           { id: '3', name: 'Negociação', position: 2 },
           { id: '4', name: 'Venda Concluída', position: 3 }
-        ]);
-      } else if (data && data.length > 0) {
-        setColumns(data);
-        setNewLead(prev => ({ ...prev, status: data[0].name }));
+        ];
+        setColumns(defaults);
+        setNewLead(prev => ({ ...prev, status: defaults[0].name }));
       }
       setLoadingColumns(false);
     };
