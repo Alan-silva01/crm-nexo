@@ -92,14 +92,27 @@ const AppContent: React.FC = () => {
   };
 
   const handleUpdateLeadStatus = async (leadId: string, newStatus: string) => {
+    // Find the lead to get its original status for potential rollback
+    const originalLead = leads.find(l => l.id === leadId);
+    if (!originalLead) {
+      console.error(`Lead ${leadId} not found in state!`);
+      return;
+    }
+    const originalStatus = originalLead.status;
+
+    console.log(`Moving lead ${leadId} from "${originalStatus}" to "${newStatus}"`);
+
     // Optimistic update
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
 
     // Persist to Supabase
     const success = await leadsService.updateLead(leadId, { status: newStatus });
     if (!success) {
-      console.error('Error updating lead status');
-      // Rollback or notify?
+      console.error('Error updating lead status, rolling back...');
+      // Rollback
+      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: originalStatus } : l));
+    } else {
+      console.log(`Lead ${leadId} successfully moved to "${newStatus}"`);
     }
   };
 
