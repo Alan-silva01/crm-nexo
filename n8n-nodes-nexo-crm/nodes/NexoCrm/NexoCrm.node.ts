@@ -466,7 +466,19 @@ export class NexoCrm implements INodeType {
                         });
                     } else if (operation === 'update') {
                         const leadId = this.getNodeParameter('leadId', i) as string;
-                        const updateFields = this.getNodeParameter('updateFields', i) as object;
+                        const updateFields = this.getNodeParameter('updateFields', i) as Record<string, unknown>;
+
+                        // Filter out empty/undefined values and process the fields
+                        const filteredFields: Record<string, unknown> = {};
+                        for (const [key, value] of Object.entries(updateFields)) {
+                            if (value !== undefined && value !== '' && value !== null) {
+                                filteredFields[key] = value;
+                            }
+                        }
+
+                        if (Object.keys(filteredFields).length === 0) {
+                            throw new NodeOperationError(this.getNode(), 'Nenhum campo para atualizar foi fornecido', { itemIndex: i });
+                        }
 
                         responseData = await this.helpers.request({
                             method: 'PATCH',
@@ -477,7 +489,7 @@ export class NexoCrm implements INodeType {
                                 'Content-Type': 'application/json',
                                 'Prefer': 'return=representation',
                             },
-                            body: updateFields,
+                            body: filteredFields,
                             json: true,
                         });
                     } else if (operation === 'delete') {

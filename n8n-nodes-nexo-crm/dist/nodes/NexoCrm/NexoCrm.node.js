@@ -454,6 +454,16 @@ class NexoCrm {
                     else if (operation === 'update') {
                         const leadId = this.getNodeParameter('leadId', i);
                         const updateFields = this.getNodeParameter('updateFields', i);
+                        // Filter out empty/undefined values and process the fields
+                        const filteredFields = {};
+                        for (const [key, value] of Object.entries(updateFields)) {
+                            if (value !== undefined && value !== '' && value !== null) {
+                                filteredFields[key] = value;
+                            }
+                        }
+                        if (Object.keys(filteredFields).length === 0) {
+                            throw new n8n_workflow_1.NodeOperationError(this.getNode(), 'Nenhum campo para atualizar foi fornecido', { itemIndex: i });
+                        }
                         responseData = await this.helpers.request({
                             method: 'PATCH',
                             url: `${supabaseUrl}/rest/v1/leads?id=eq.${leadId}`,
@@ -463,7 +473,7 @@ class NexoCrm {
                                 'Content-Type': 'application/json',
                                 'Prefer': 'return=representation',
                             },
-                            body: updateFields,
+                            body: filteredFields,
                             json: true,
                         });
                     }
