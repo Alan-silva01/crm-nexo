@@ -70,19 +70,26 @@ export const chatsSdrService = {
             sessionId = existingChats[0].session_id;
         }
 
-        // Enviar para o Webhook
+        // Enviar para o Webhook (Intervenção Humana)
         try {
+            // Usando no-cors e URLSearchParams para tentar evitar bloqueio CORS do navegador
+            // O n8n deve estar preparado para receber dados via Query Params ou Form Data
+            const params = new URLSearchParams({
+                phone: sessionId,
+                message: content,
+                agent_name: agentName
+            });
+
+            // Tenta enviar POST form-encoded
             await fetch('https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/intervencaohumana', {
                 method: 'POST',
+                mode: 'no-cors',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: JSON.stringify({
-                    phone: sessionId,
-                    message: content,
-                    agent_name: agentName
-                })
+                body: params
             });
+
         } catch (error) {
             console.error('Error sending to webhook:', error);
             // Continua mesmo com erro no webhook para salvar no banco?
@@ -144,15 +151,18 @@ export const chatsSdrService = {
         }
 
         try {
+            const params = new URLSearchParams({
+                phone: sessionId,
+                action
+            });
+
             await fetch('https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/pausa-ia', {
                 method: 'POST',
+                mode: 'no-cors',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: JSON.stringify({
-                    phone: sessionId,
-                    action
-                })
+                body: params
             });
             console.log(`AI ${action} sent for ${sessionId}`);
         } catch (error) {

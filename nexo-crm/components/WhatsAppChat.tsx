@@ -338,14 +338,23 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
             <div className="flex items-center gap-5 text-zinc-400 px-2">
               <button
                 onClick={handleToggleAI}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${aiPaused
-                  ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20'
-                  : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${aiPaused
+                    ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20'
+                    : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20'
                   }`}
-                title={aiPaused ? "Ativar IA" : "Pausar IA"}
+                title={aiPaused ? "Clique para ativar a IA" : "Clique para pausar a IA"}
               >
-                {aiPaused ? <Play size={14} /> : <Pause size={14} />}
-                {aiPaused ? "Ativar IA" : "Pausar IA"}
+                {aiPaused ? (
+                  <>
+                    <Pause size={12} className="fill-current" />
+                    <span>IA Pausada</span>
+                  </>
+                ) : (
+                  <>
+                    <Bot size={14} />
+                    <span>IA Ativa</span>
+                  </>
+                )}
               </button>
               <button className="hover:text-white transition-colors"><Phone size={20} /></button>
               <button className="hover:text-white transition-colors"><Paperclip size={20} /></button>
