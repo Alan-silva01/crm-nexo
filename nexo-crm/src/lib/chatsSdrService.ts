@@ -92,11 +92,12 @@ export const chatsSdrService = {
             console.error('Error sending to webhook via proxy:', error);
         }
 
-        // Salvar no banco
+        // Salvar no banco (Exatamente no formato solicitado pela IA para manter compatibilidade)
         const messagePayload = {
             type: 'ai' as const,
             content,
-            agent_name: agentName,
+            tool_calls: [],
+            invalid_tool_calls: [],
             additional_kwargs: {},
             response_metadata: {}
         };

@@ -181,8 +181,10 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     const messageType = msg.message.type;
     const agentName = msg.message.agent_name;
     const isFromClient = messageType === 'human';
-    // Se tiver agent_name, trata como agente mesmo que o tipo seja 'ai'
-    const isFromAgent = messageType === 'agent' || (messageType === 'ai' && !!agentName);
+
+    // Se a mensagem foi enviada nesta sessão, ela terá agentName no objeto local
+    // Se foi carregada do banco e é type: 'ai' sem agent_name, exibimos como IA
+    const isFromAgent = messageType === 'agent' || (!!agentName);
     const isFromAI = messageType === 'ai' && !agentName;
 
     const rawContent = msg.message.content || '';
