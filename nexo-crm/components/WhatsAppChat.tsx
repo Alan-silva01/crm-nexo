@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Phone, Video, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare } from 'lucide-react';
-import { Lead, Message } from '../types';
+import { Search, Phone, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare, Bot, User } from 'lucide-react';
+import { Lead, SDRMessage } from '../types';
 import LetterAvatar from './LetterAvatar';
+import { chatsSdrService } from '../src/lib/chatsSdrService';
+import { supabase } from '../src/lib/supabase';
 
 interface WhatsAppChatProps {
   leads: Lead[];
@@ -11,53 +13,181 @@ interface WhatsAppChatProps {
   onSelectChat: (id: string | null) => void;
 }
 
+// Parse message content to extract quoted reply
+function parseMessageContent(content: string): { quote: string | null; mainText: string } {
+  const quotePattern = /O cliente mencionou esta mensagem que você enviou:\s*"([^"]+)"\s*/i;
+  const match = content.match(quotePattern);
+
+  if (match) {
+    const quote = match[1];
+    const mainText = content.replace(match[0], '').trim();
+    return { quote, mainText };
+  }
+
+  return { quote: null, mainText: content };
+}
+
+// Clean content from JSON wrapper like {\"o cliente falou: ...}
+function cleanContent(content: string): string {
+  // Remove wrapper like {"o cliente falou: ...}
+  const wrapperPattern = /^\{?"o cliente falou:\s*/i;
+  let cleaned = content.replace(wrapperPattern, '');
+  cleaned = cleaned.replace(/"\s*\}?$/, '');
+  cleaned = cleaned.replace(/\\n/g, '\n');
+  return cleaned.trim();
+}
+
 const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selectedChatId, onSelectChat }) => {
   const [inputText, setInputText] = useState('');
+  const [sdrMessages, setSdrMessages] = useState<SDRMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [currentUserName, setCurrentUserName] = useState<string>('Agente');
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const setSelectedChatId = onSelectChat;
-
   const selectedChat = leads.find(l => l.id === selectedChatId) || leads[0];
 
+  // Get current user name
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.user_metadata?.name) {
+        setCurrentUserName(user.user_metadata.name);
+      } else if (user?.email) {
+        setCurrentUserName(user.email.split('@')[0]);
+      }
+    };
+    getUser();
+  }, []);
+
+  // Fetch SDR messages when chat changes
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!selectedChat?.phone) {
+        setSdrMessages([]);
+        return;
+      }
+
+      setLoadingMessages(true);
+      const messages = await chatsSdrService.fetchChatsByPhone(selectedChat.phone);
+      setSdrMessages(messages);
+      setLoadingMessages(false);
+    };
+
+    fetchMessages();
+  }, [selectedChat?.phone]);
+
+  // Auto-scroll to bottom
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [selectedChat?.messages]);
+  }, [sdrMessages]);
 
+  // Set initial selected chat
   useEffect(() => {
     if (leads.length > 0 && !selectedChatId) {
       setSelectedChatId(leads[0].id);
     }
   }, [leads, selectedChatId]);
 
-  const handleSendMessage = () => {
-    if (!inputText.trim() || !selectedChat) return;
+  const handleSendMessage = async () => {
+    if (!inputText.trim() || !selectedChat?.phone) return;
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: inputText,
-      sender: 'user',
-      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    };
+    const sentMessage = await chatsSdrService.sendMessage(
+      selectedChat.phone,
+      inputText,
+      currentUserName
+    );
 
-    const updatedLeads = leads.map(l => {
-      if (l.id === selectedChatId) {
-        return {
-          ...l,
-          messages: [...(l.messages || []), newMessage],
-          lastMessage: inputText,
-          lastActive: 'Agora'
-        };
-      }
-      return l;
-    });
-
-    onLeadsUpdate(updatedLeads);
+    if (sentMessage) {
+      setSdrMessages(prev => [...prev, sentMessage]);
+    }
     setInputText('');
   };
 
-  // Show empty state if no leads
+  // Render message bubble
+  const renderMessage = (msg: SDRMessage) => {
+    const messageType = msg.message.type;
+    const isFromClient = messageType === 'human';
+    const isFromAI = messageType === 'ai';
+    const isFromAgent = messageType === 'agent';
+
+    const rawContent = msg.message.content || '';
+    const cleanedContent = cleanContent(rawContent);
+    const { quote, mainText } = parseMessageContent(cleanedContent);
+
+    // Positioning
+    const isRight = isFromAI || isFromAgent;
+
+    // Colors
+    let bgColor = 'bg-[#1e2a30]'; // client - left
+    let textColor = 'text-zinc-100';
+
+    if (isFromAI) {
+      bgColor = 'bg-[#056162]';
+    } else if (isFromAgent) {
+      bgColor = 'bg-[#005c4b]';
+    }
+
+    return (
+      <div key={msg.id} className={`flex ${isRight ? 'justify-end' : 'justify-start'}`}>
+        <div className={`max-w-[80%] md:max-w-[70%] rounded-2xl text-[13px] shadow-sm relative overflow-hidden ${bgColor} ${textColor} ${isRight ? 'rounded-tr-none' : 'rounded-tl-none'}`}>
+          {/* Sender badge */}
+          {(isFromAI || isFromAgent) && (
+            <div className={`px-3 py-1.5 text-[10px] font-medium flex items-center gap-1.5 border-b ${isFromAI ? 'bg-[#04514f] border-[#03403e] text-emerald-200' : 'bg-[#004d40] border-[#003d33] text-teal-200'}`}>
+              {isFromAI ? (
+                <>
+                  <Bot size={12} />
+                  <span>IA Assistente</span>
+                </>
+              ) : (
+                <>
+                  <User size={12} />
+                  <span>{msg.message.agent_name || 'Agente'}</span>
+                </>
+              )}
+            </div>
+          )}
+
+          {isFromClient && (
+            <div className="px-3 py-1.5 text-[10px] font-medium flex items-center gap-1.5 border-b bg-[#1a242a] border-[#151d22] text-zinc-400">
+              <User size={12} />
+              <span>Cliente</span>
+            </div>
+          )}
+
+          <div className="p-2 px-3">
+            {/* Quoted message (reply) */}
+            {quote && (
+              <div className="mb-2 p-2 rounded-lg bg-black/20 border-l-4 border-emerald-400">
+                <p className="text-[11px] text-zinc-300 italic line-clamp-2">{quote}</p>
+              </div>
+            )}
+
+            {/* Main message */}
+            <p className="leading-relaxed whitespace-pre-wrap">{mainText}</p>
+
+            {/* Timestamp */}
+            <div className="flex items-center justify-end gap-1.5 mt-1">
+              <span className={`text-[9px] ${isRight ? 'text-emerald-100/70' : 'text-zinc-500'}`}>
+                {msg.created_at ? new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+              </span>
+              {isRight && <CheckCheck size={12} className="text-[#34b7f1]" />}
+            </div>
+          </div>
+
+          {/* Tail */}
+          <div
+            className={`absolute top-0 ${isRight ? '-right-1.5' : '-left-1.5'} w-4 h-4 rounded-full ${bgColor}`}
+            style={{ clipPath: isRight ? 'polygon(0 0, 100% 0, 0 100%)' : 'polygon(100% 0, 0 0, 100% 100%)' }}
+          ></div>
+        </div>
+      </div>
+    );
+  };
+
+  // Empty state
   if (leads.length === 0) {
     return (
       <div className="h-full flex items-center justify-center bg-[#0b141a]">
@@ -107,7 +237,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                 </div>
                 <div className="flex justify-between items-center">
                   <p className="text-[11px] text-zinc-500 truncate pr-4">
-                    {chat.lastMessage || chat.phone || 'Clique para conversar'}
+                    {chat.last_message || chat.phone || 'Clique para conversar'}
                   </p>
                   {chat.unreadCount && chat.unreadCount > 0 && (
                     <span className="min-w-[16px] h-[16px] px-1 bg-[#25d366] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
@@ -156,30 +286,17 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
             ></div>
 
             <div className="relative flex flex-col space-y-4 max-w-4xl mx-auto z-0">
-              {(!selectedChat.messages || selectedChat.messages.length === 0) ? (
+              {loadingMessages ? (
+                <div className="text-center py-12">
+                  <div className="w-8 h-8 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto"></div>
+                  <p className="text-zinc-600 text-sm mt-4">Carregando mensagens...</p>
+                </div>
+              ) : sdrMessages.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-zinc-600 text-sm">Nenhuma mensagem ainda. Comece a conversa!</p>
                 </div>
               ) : (
-                selectedChat.messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] md:max-w-[70%] p-2 px-3 rounded-2xl text-[13px] shadow-sm relative ${msg.sender === 'user'
-                      ? 'bg-[#056162] text-white rounded-tr-none'
-                      : 'bg-[#1e2a30] text-zinc-100 rounded-tl-none'
-                      }`}>
-                      <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                      <div className="flex items-center justify-end gap-1.5 mt-1">
-                        <span className={`text-[9px] ${msg.sender === 'user' ? 'text-emerald-100/70' : 'text-zinc-500'}`}>{msg.timestamp}</span>
-                        {msg.sender === 'user' && <CheckCheck size={12} className="text-[#34b7f1]" />}
-                      </div>
-                      {/* Tail */}
-                      <div
-                        className={`absolute top-0 ${msg.sender === 'user' ? '-right-1.5 bg-[#056162]' : '-left-1.5 bg-[#1e2a30]'} w-4 h-4 rounded-full`}
-                        style={{ clipPath: msg.sender === 'user' ? 'polygon(0 0, 100% 0, 0 100%)' : 'polygon(100% 0, 0 0, 100% 100%)' }}
-                      ></div>
-                    </div>
-                  </div>
-                ))
+                sdrMessages.map(renderMessage)
               )}
             </div>
           </div>
@@ -195,7 +312,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Mensagem"
+                  placeholder={`Mensagem como ${currentUserName}`}
                   className="w-full py-2 px-4 bg-[#2a3942] border-none rounded-xl text-sm text-zinc-100 focus:outline-none focus:ring-0"
                 />
               </div>

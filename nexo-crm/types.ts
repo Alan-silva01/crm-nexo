@@ -34,3 +34,19 @@ export interface MetricData {
   leads: number;
   conversions: number;
 }
+
+export interface SDRMessageContent {
+  type: 'human' | 'ai' | 'agent';
+  content: string;
+  agent_name?: string;
+  additional_kwargs?: Record<string, unknown>;
+  response_metadata?: Record<string, unknown>;
+  tool_calls?: unknown[];
+}
+
+export interface SDRMessage {
+  id: number;
+  session_id: string;
+  message: SDRMessageContent;
+  created_at?: string;
+}
