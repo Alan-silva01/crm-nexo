@@ -114,5 +114,49 @@ export const chatsSdrService = {
         }
 
         return data as SDRMessage;
+    },
+
+    async toggleAI(phone: string, action: 'pausar' | 'ativar'): Promise<void> {
+        if (!phone) return;
+
+        const phoneNumbers = extractNumbers(phone);
+        let sessionId = phone;
+
+        // Buscar session_id existente (lógica simplificada, assume que sendMessage já resolveu ou usa o phone direto)
+        // Tentamos buscar exato primeiro
+        const { data: existingChats } = await supabase
+            .from('chats_sdr')
+            .select('session_id')
+            .eq('session_id', phone)
+            .limit(1);
+
+        if (existingChats && existingChats.length > 0) {
+            sessionId = existingChats[0].session_id;
+        } else if (phoneNumbers) {
+            const { data: byNumbers } = await supabase
+                .from('chats_sdr')
+                .select('session_id')
+                .like('session_id', `${phoneNumbers}%`)
+                .limit(1);
+            if (byNumbers && byNumbers.length > 0) {
+                sessionId = byNumbers[0].session_id;
+            }
+        }
+
+        try {
+            await fetch('https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/pausa-ia', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    phone: sessionId,
+                    action
+                })
+            });
+            console.log(`AI ${action} sent for ${sessionId}`);
+        } catch (error) {
+            console.error(`Error toggling AI (${action}):`, error);
+        }
     }
 };

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Phone, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare, Bot, User } from 'lucide-react';
+import { Search, Phone, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare, Bot, User, Pause, Play } from 'lucide-react';
 import { Lead, SDRMessage } from '../types';
 import LetterAvatar from './LetterAvatar';
 import { chatsSdrService } from '../src/lib/chatsSdrService';
@@ -70,6 +70,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const [sdrMessages, setSdrMessages] = useState<SDRMessage[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [currentUserName, setCurrentUserName] = useState<string>('Agente');
+  const [aiPaused, setAiPaused] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const setSelectedChatId = onSelectChat;
@@ -97,6 +98,9 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       }
 
       setLoadingMessages(true);
+      // Reset AI status to active (not paused) when switching chats
+      setAiPaused(false);
+
       const messages = await chatsSdrService.fetchChatsByPhone(selectedChat.phone);
 
       // Process messages to split by \n\n
@@ -159,6 +163,15 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       setSdrMessages(prev => [...prev, sentMessage]);
     }
     setInputText('');
+  };
+
+  const handleToggleAI = async () => {
+    if (!selectedChat?.phone) return;
+
+    const newStatus = !aiPaused;
+    setAiPaused(newStatus);
+
+    await chatsSdrService.toggleAI(selectedChat.phone, newStatus ? 'pausar' : 'ativar');
   };
 
   // Render message bubble
@@ -323,6 +336,17 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               </div>
             </div>
             <div className="flex items-center gap-5 text-zinc-400 px-2">
+              <button
+                onClick={handleToggleAI}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${aiPaused
+                  ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20'
+                  : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'
+                  }`}
+                title={aiPaused ? "Ativar IA" : "Pausar IA"}
+              >
+                {aiPaused ? <Play size={14} /> : <Pause size={14} />}
+                {aiPaused ? "Ativar IA" : "Pausar IA"}
+              </button>
               <button className="hover:text-white transition-colors"><Phone size={20} /></button>
               <button className="hover:text-white transition-colors"><Paperclip size={20} /></button>
               <button className="hover:text-white transition-colors"><MoreVertical size={20} /></button>
