@@ -80,34 +80,31 @@ export const chatsSdrService = {
             // Idealmente o banco SEMPRE tem o session_id correto.
         }
 
-        // Webhook URL com Query Params (Redundância para garantir que n8n receba)
-        const webhookUrl = new URL('https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/intervencaohumana');
-        webhookUrl.searchParams.append('phone', finalSessionId);
-        webhookUrl.searchParams.append('agent_name', agentName);
-        webhookUrl.searchParams.append('message', content); // Cuidado com tamanho, mas ok para msg curta
+        // Webhook Proxy URL (Edge Function)
+        const proxyUrl = 'https://jreklrhamersmamdmjna.supabase.co/functions/v1/crm_api/proxy-webhook';
 
-        const formBody = new URLSearchParams({
-            phone: finalSessionId,
-            message: content,
-            agent_name: agentName
-        });
-
-        // Enviar para o Webhook (Intervenção Humana)
+        // Enviar para o Webhook (Intervenção Humana) via Proxy
         try {
-            console.log('Sending to Webhook (Message):', { url: webhookUrl.toString(), body: formBody.toString() });
+            console.log('Sending to Webhook (Message) via Proxy');
 
-            await fetch(webhookUrl.toString(), {
+            await fetch(proxyUrl, {
                 method: 'POST',
-                mode: 'no-cors', // Necessário para evitar bloqueio do navegador se o servidor não tiver CORS
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/json'
                 },
-                body: formBody
+                body: JSON.stringify({
+                    targetUrl: 'https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/intervencaohumana',
+                    data: {
+                        phone: finalSessionId,
+                        message: content,
+                        agent_name: agentName
+                    }
+                })
             });
-            console.log('Webhook sent (no-cors)');
+            console.log('Webhook proxy call completed');
 
         } catch (error) {
-            console.error('Error sending to webhook:', error);
+            console.error('Error sending to webhook via proxy:', error);
         }
 
         // Salvar no banco
@@ -165,29 +162,28 @@ export const chatsSdrService = {
         // Preparar dados
         const actionText = action === 'pausar' ? 'Pausar IA' : 'Ativar IA';
 
-        const webhookUrl = new URL('https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/pausa-ia');
-        webhookUrl.searchParams.append('phone', sessionId);
-        webhookUrl.searchParams.append('action', actionText);
-
-        const formBody = new URLSearchParams({
-            phone: sessionId,
-            action: actionText
-        });
+        // Webhook Proxy URL
+        const proxyUrl = 'https://jreklrhamersmamdmjna.supabase.co/functions/v1/crm_api/proxy-webhook';
 
         try {
-            console.log('Sending to Webhook (Toggle AI):', { url: webhookUrl.toString(), body: formBody.toString() });
+            console.log('Sending to Webhook (Toggle AI) via Proxy');
 
-            await fetch(webhookUrl.toString(), {
+            await fetch(proxyUrl, {
                 method: 'POST',
-                mode: 'no-cors',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/json'
                 },
-                body: formBody
+                body: JSON.stringify({
+                    targetUrl: 'https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/pausa-ia',
+                    data: {
+                        phone: sessionId,
+                        action: actionText
+                    }
+                })
             });
-            console.log(`AI toggle webhook sent for ${sessionId}`);
+            console.log(`AI toggle webhook sent via proxy for ${sessionId}`);
         } catch (error) {
-            console.error(`Error toggling AI (${action}):`, error);
+            console.error(`Error toggling AI (${action}) via proxy:`, error);
         }
     }
 };
