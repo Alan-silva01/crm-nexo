@@ -5,6 +5,7 @@ import { Lead, SDRMessage } from '../types';
 import LetterAvatar from './LetterAvatar';
 import { chatsSdrService } from '../src/lib/chatsSdrService';
 import { supabase } from '../src/lib/supabase';
+import { formatPhoneNumber } from '../src/lib/formatPhone';
 
 interface WhatsAppChatProps {
   leads: Lead[];
@@ -237,7 +238,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                 </div>
                 <div className="flex justify-between items-center">
                   <p className="text-[11px] text-zinc-500 truncate pr-4">
-                    {chat.last_message || chat.phone || 'Clique para conversar'}
+                    {chat.last_message || formatPhoneNumber(chat.phone) || 'Clique para conversar'}
                   </p>
                   {chat.unreadCount && chat.unreadCount > 0 && (
                     <span className="min-w-[16px] h-[16px] px-1 bg-[#25d366] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
@@ -262,7 +263,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               </div>
               <div>
                 <h4 className="text-sm font-semibold text-zinc-100">{selectedChat.name}</h4>
-                <p className="text-[11px] text-zinc-400">{selectedChat.phone || 'online'}</p>
+                <p className="text-[11px] text-zinc-400">{formatPhoneNumber(selectedChat.phone) || 'online'}</p>
               </div>
             </div>
             <div className="flex items-center gap-5 text-zinc-400 px-2">
