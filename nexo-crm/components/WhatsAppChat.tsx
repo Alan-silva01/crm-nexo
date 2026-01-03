@@ -71,6 +71,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [currentUserName, setCurrentUserName] = useState<string>('Agente');
   const [aiPaused, setAiPaused] = useState(false);
+  const [messagesCache, setMessagesCache] = useState<Record<string, SDRMessage[]>>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const setSelectedChatId = onSelectChat;
@@ -89,53 +90,99 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     getUser();
   }, []);
 
-  // Fetch SDR messages when chat changes
+  // Fetch SDR messages when chat changes (with Cache and Realtime)
   useEffect(() => {
+    if (!selectedChat?.phone) {
+      setSdrMessages([]);
+      return;
+    }
+
+    let isMounted = true;
+    let subscription: any = null;
+
     const fetchMessages = async () => {
-      if (!selectedChat?.phone) {
-        setSdrMessages([]);
-        return;
+      const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
+      const cacheKey = phoneNumbers || selectedChat.phone;
+
+      // 1. Usar Cache imediatamente se existir
+      if (messagesCache[cacheKey]) {
+        if (isMounted) setSdrMessages(messagesCache[cacheKey]);
+      } else {
+        if (isMounted) setLoadingMessages(true);
       }
 
-      setLoadingMessages(true);
-
-      // Busca o estado real da IA no banco de dados
+      // 2. Buscar estado da IA
       const actualAiStatus = await chatsSdrService.getAIStatus(selectedChat.phone);
-      setAiPaused(actualAiStatus);
+      if (isMounted) setAiPaused(actualAiStatus);
 
+      // 3. Buscar mensagens do banco
       const messages = await chatsSdrService.fetchChatsByPhone(selectedChat.phone);
 
-      // Process messages to split by \n\n
       const processedMessages: SDRMessage[] = [];
-
       messages.forEach((msg) => {
-        const rawContent = msg.message.content || '';
-        // Clean content first to handle JSON wrappers and escaped newlines
-        const cleaned = cleanContent(rawContent);
-
-        // Split by double newline
+        const cleaned = cleanContent(msg.message.content || '');
         const parts = cleaned.split(/\n\n+/);
-
         parts.forEach((part, index) => {
           if (part.trim() && !shouldHideMessage(part)) {
             processedMessages.push({
               ...msg,
-              // Use a composite ID to ensure uniqueness for React keys
               id: msg.id * 10000 + index,
-              message: {
-                ...msg.message,
-                content: part.trim()
-              }
+              message: { ...msg.message, content: part.trim() }
             });
           }
         });
       });
 
-      setSdrMessages(processedMessages);
-      setLoadingMessages(false);
+      if (isMounted) {
+        setSdrMessages(processedMessages);
+        setMessagesCache(prev => ({ ...prev, [cacheKey]: processedMessages }));
+        setLoadingMessages(false);
+      }
+
+      // 4. Configurar Realtime para este chat
+      // Precisamos identificar o session_id correto usado no banco
+      const finalSessionIdForRealtime = messages.length > 0 ? messages[0].session_id : selectedChat.phone;
+
+      subscription = supabase
+        .channel(`chat_${cacheKey}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chats_sdr',
+          filter: `session_id=eq.${finalSessionIdForRealtime}`
+        }, (payload) => {
+          const newMsg = payload.new as SDRMessage;
+          const cleaned = cleanContent(newMsg.message.content || '');
+          const parts = cleaned.split(/\n\n+/);
+
+          const newProcessed: SDRMessage[] = parts
+            .filter(part => part.trim() && !shouldHideMessage(part))
+            .map((part, index) => ({
+              ...newMsg,
+              id: newMsg.id * 10000 + index,
+              message: { ...newMsg.message, content: part.trim() }
+            }));
+
+          if (isMounted) {
+            setSdrMessages(prev => {
+              const updated = [...prev, ...newProcessed];
+              setMessagesCache(cache => ({ ...cache, [cacheKey]: updated }));
+              return updated;
+            });
+          }
+        })
+        .subscribe();
     };
 
     fetchMessages();
+
+    // Cleanup: Remove subscription when chat changes
+    return () => {
+      isMounted = false;
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
+    };
   }, [selectedChat?.phone]);
 
   // Auto-scroll to bottom
