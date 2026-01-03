@@ -139,6 +139,23 @@ export const chatsSdrService = {
 
         // Preparar dados
         const actionText = action === 'pausar' ? 'Pausar IA' : 'Ativar IA';
+        const isPaused = action === 'pausar';
+
+        // Atualizar no banco de dados (tabela leads) para persistência real
+        try {
+            const { error: updateError } = await supabase
+                .from('leads')
+                .update({ ai_paused: isPaused })
+                .or(`phone.eq.${phone},phone.ilike.%${cleanPhone}%`);
+
+            if (updateError) {
+                console.error('Error updating AI status in leads table:', updateError);
+            } else {
+                console.log(`AI status persisted as ${action} for lead ${cleanPhone}`);
+            }
+        } catch (e) {
+            console.error('Failed to update leads table:', e);
+        }
 
         // Webhook Proxy URL
         const proxyUrl = 'https://jreklrhamersmamdmjna.supabase.co/functions/v1/crm_api/proxy-webhook';
@@ -163,6 +180,29 @@ export const chatsSdrService = {
             console.log('Webhook proxy response (Toggle):', result);
         } catch (error) {
             console.error(`Error toggling AI (${action}) via proxy:`, error);
+        }
+    },
+
+    async getAIStatus(phone: string): Promise<boolean> {
+        if (!phone) return false;
+        const cleanPhone = extractNumbers(phone);
+
+        try {
+            const { data, error } = await supabase
+                .from('leads')
+                .select('ai_paused')
+                .or(`phone.eq.${phone},phone.ilike.%${cleanPhone}%`)
+                .maybeSingle();
+
+            if (error) {
+                console.error('Error fetching AI status:', error);
+                return false;
+            }
+
+            return data?.ai_paused || false;
+        } catch (e) {
+            console.error('Exception fetching AI status:', e);
+            return false;
         }
     }
 };

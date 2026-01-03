@@ -98,8 +98,10 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       }
 
       setLoadingMessages(true);
-      // Reset AI status to active (not paused) when switching chats
-      setAiPaused(false);
+
+      // Busca o estado real da IA no banco de dados
+      const actualAiStatus = await chatsSdrService.getAIStatus(selectedChat.phone);
+      setAiPaused(actualAiStatus);
 
       const messages = await chatsSdrService.fetchChatsByPhone(selectedChat.phone);
 
@@ -339,8 +341,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               <button
                 onClick={handleToggleAI}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${aiPaused
-                    ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20'
-                    : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20'
+                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20'
+                  : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20'
                   }`}
                 title={aiPaused ? "Clique para ativar a IA" : "Clique para pausar a IA"}
               >
