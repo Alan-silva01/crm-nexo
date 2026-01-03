@@ -139,19 +139,29 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         setLoadingMessages(false);
       }
 
-      // 4. Configurar Realtime para este chat
+      // 4. Configurar Realtime para a tabela (filtramos localmente para ser mais robusto)
       // Precisamos identificar o session_id correto usado no banco
       const finalSessionIdForRealtime = messages.length > 0 ? messages[0].session_id : selectedChat.phone;
 
       subscription = supabase
-        .channel(`chat_${cacheKey}`)
+        .channel(`chat_realtime_${cacheKey}`)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
-          table: 'chats_sdr',
-          filter: `session_id=eq.${finalSessionIdForRealtime}`
+          table: 'chats_sdr'
         }, (payload) => {
-          const newMsg = payload.new as SDRMessage;
+          const newMsg = payload.new as any;
+
+          // Debug para ver se as mensagens chegam
+          console.log('Realtime message received:', newMsg);
+
+          // Verificar se a mensagem pertence a este chat
+          // Buscamos o session_id correto nos dados carregados ou no cache
+          const isRelevant = newMsg.session_id === finalSessionIdForRealtime ||
+            newMsg.session_id.includes(phoneNumbers);
+
+          if (!isRelevant) return;
+
           const cleaned = cleanContent(newMsg.message.content || '');
           const parts = cleaned.split(/\n\n+/);
 
@@ -165,13 +175,19 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
           if (isMounted) {
             setSdrMessages(prev => {
+              // Evitar duplicatas se a mensagem já foi carregada ou enviada manualmente
+              const messageExists = prev.some(m => m.id / 10000 === newMsg.id || m.id === newMsg.id);
+              if (messageExists) return prev;
+
               const updated = [...prev, ...newProcessed];
               setMessagesCache(cache => ({ ...cache, [cacheKey]: updated }));
               return updated;
             });
           }
         })
-        .subscribe();
+        .subscribe((status) => {
+          console.log(`Realtime subscription status for ${cacheKey}:`, status);
+        });
     };
 
     fetchMessages();
