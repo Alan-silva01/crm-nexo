@@ -47,37 +47,21 @@ export const chatsSdrService = {
 
         const phoneNumbers = extractNumbers(phone);
 
-        // Buscar session_id existente para este telefone
-        let sessionId = phone;
+        // Limpar o telefone para busca no banco
+        const cleanPhone = extractNumbers(phone);
+        let finalSessionId = phone;
 
+        // Buscar session_id correto no banco usando número limpo
         const { data: existingChats } = await supabase
             .from('chats_sdr')
             .select('session_id')
-            .eq('session_id', phone)
+            .or(`session_id.eq.${phone},session_id.ilike.%${cleanPhone}%`)
             .limit(1);
 
-        if (!existingChats || existingChats.length === 0) {
-            const { data: byNumbers } = await supabase
-                .from('chats_sdr')
-                .select('session_id')
-                .like('session_id', `${phoneNumbers}%`)
-                .limit(1);
-
-            if (byNumbers && byNumbers.length > 0) {
-                sessionId = byNumbers[0].session_id;
-            }
-        } else {
-            sessionId = existingChats[0].session_id;
-        }
-        // Tenta obter o session_id mais correto possível do banco
-        // Se não achar, usa o phone formatado como fallback tentativo (mas o ideal é o do banco)
-        let finalSessionId = sessionId;
-
-        // Formatar para session id do whatsapp se não parecer um
-        if (!finalSessionId.includes('@s.whatsapp.net')) {
-            // Tenta formatar: 55 + DDD + Numero + @s.whatsapp.net
-            // Mas só se tivermos certeza do numero. Por enquanto mantemos o sessionId encontrado ou o phone input.
-            // Idealmente o banco SEMPRE tem o session_id correto.
+        if (existingChats && existingChats.length > 0) {
+            finalSessionId = existingChats[0].session_id;
+        } else if (cleanPhone && !finalSessionId.includes('@s.whatsapp.net')) {
+            finalSessionId = `${cleanPhone}@s.whatsapp.net`;
         }
 
         // Webhook Proxy URL (Edge Function)
@@ -85,9 +69,9 @@ export const chatsSdrService = {
 
         // Enviar para o Webhook (Intervenção Humana) via Proxy
         try {
-            console.log('Sending to Webhook (Message) via Proxy');
+            console.log('Sending to Webhook (Message) via Proxy for:', finalSessionId);
 
-            await fetch(proxyUrl, {
+            const response = await fetch(proxyUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -101,7 +85,8 @@ export const chatsSdrService = {
                     }
                 })
             });
-            console.log('Webhook proxy call completed');
+            const result = await response.json();
+            console.log('Webhook proxy response (Message):', result);
 
         } catch (error) {
             console.error('Error sending to webhook via proxy:', error);
@@ -136,27 +121,20 @@ export const chatsSdrService = {
     async toggleAI(phone: string, action: 'pausar' | 'ativar'): Promise<void> {
         if (!phone) return;
 
-        const phoneNumbers = extractNumbers(phone);
+        const cleanPhone = extractNumbers(phone);
         let sessionId = phone;
 
-        // Buscar session_id correto no banco
+        // Buscar session_id correto no banco usando número limpo
         const { data: existingChats } = await supabase
             .from('chats_sdr')
             .select('session_id')
-            .eq('session_id', phone)
+            .or(`session_id.eq.${phone},session_id.ilike.%${cleanPhone}%`)
             .limit(1);
 
         if (existingChats && existingChats.length > 0) {
             sessionId = existingChats[0].session_id;
-        } else if (phoneNumbers) {
-            const { data: byNumbers } = await supabase
-                .from('chats_sdr')
-                .select('session_id')
-                .like('session_id', `${phoneNumbers}%`)
-                .limit(1);
-            if (byNumbers && byNumbers.length > 0) {
-                sessionId = byNumbers[0].session_id;
-            }
+        } else if (cleanPhone && !sessionId.includes('@s.whatsapp.net')) {
+            sessionId = `${cleanPhone}@s.whatsapp.net`;
         }
 
         // Preparar dados
@@ -166,9 +144,9 @@ export const chatsSdrService = {
         const proxyUrl = 'https://jreklrhamersmamdmjna.supabase.co/functions/v1/crm_api/proxy-webhook';
 
         try {
-            console.log('Sending to Webhook (Toggle AI) via Proxy');
+            console.log('Sending to Webhook (Toggle AI) via Proxy for:', sessionId);
 
-            await fetch(proxyUrl, {
+            const response = await fetch(proxyUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -181,7 +159,8 @@ export const chatsSdrService = {
                     }
                 })
             });
-            console.log(`AI toggle webhook sent via proxy for ${sessionId}`);
+            const result = await response.json();
+            console.log('Webhook proxy response (Toggle):', result);
         } catch (error) {
             console.error(`Error toggling AI (${action}) via proxy:`, error);
         }
