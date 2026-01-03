@@ -69,39 +69,52 @@ export const chatsSdrService = {
         } else {
             sessionId = existingChats[0].session_id;
         }
+        // Tenta obter o session_id mais correto possível do banco
+        // Se não achar, usa o phone formatado como fallback tentativo (mas o ideal é o do banco)
+        let finalSessionId = sessionId;
+
+        // Formatar para session id do whatsapp se não parecer um
+        if (!finalSessionId.includes('@s.whatsapp.net')) {
+            // Tenta formatar: 55 + DDD + Numero + @s.whatsapp.net
+            // Mas só se tivermos certeza do numero. Por enquanto mantemos o sessionId encontrado ou o phone input.
+            // Idealmente o banco SEMPRE tem o session_id correto.
+        }
+
+        // Webhook URL com Query Params (Redundância para garantir que n8n receba)
+        const webhookUrl = new URL('https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/intervencaohumana');
+        webhookUrl.searchParams.append('phone', finalSessionId);
+        webhookUrl.searchParams.append('agent_name', agentName);
+        webhookUrl.searchParams.append('message', content); // Cuidado com tamanho, mas ok para msg curta
+
+        const formBody = new URLSearchParams({
+            phone: finalSessionId,
+            message: content,
+            agent_name: agentName
+        });
 
         // Enviar para o Webhook (Intervenção Humana)
         try {
-            // Usando no-cors e URLSearchParams para tentar evitar bloqueio CORS do navegador
-            // O n8n deve estar preparado para receber dados via Query Params ou Form Data
-            const params = new URLSearchParams({
-                phone: sessionId,
-                message: content,
-                agent_name: agentName
-            });
+            console.log('Sending to Webhook (Message):', { url: webhookUrl.toString(), body: formBody.toString() });
 
-            // Tenta enviar POST form-encoded
-            await fetch('https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/intervencaohumana', {
+            await fetch(webhookUrl.toString(), {
                 method: 'POST',
-                mode: 'no-cors',
+                mode: 'no-cors', // Necessário para evitar bloqueio do navegador se o servidor não tiver CORS
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: params
+                body: formBody
             });
+            console.log('Webhook sent (no-cors)');
 
         } catch (error) {
             console.error('Error sending to webhook:', error);
-            // Continua mesmo com erro no webhook para salvar no banco?
-            // O usuário pediu "e enviar", mas vamos garantir que salve pelo menos.
         }
 
-        // Salvar no banco como requested: "como se fosse a ia falando"
-        // Vamos usar type: 'ai' mas mantendo agent_name para o frontend identificar
+        // Salvar no banco
         const messagePayload = {
-            type: 'ai' as const, // Solicitado: salvar como IA
+            type: 'ai' as const,
             content,
-            agent_name: agentName, // Mantemos para o frontend saber que foi agente
+            agent_name: agentName,
             additional_kwargs: {},
             response_metadata: {}
         };
@@ -109,14 +122,14 @@ export const chatsSdrService = {
         const { data, error } = await supabase
             .from('chats_sdr')
             .insert([{
-                session_id: sessionId,
+                session_id: finalSessionId,
                 message: messagePayload
             }])
             .select()
             .single();
 
         if (error) {
-            console.error('Error sending message:', error);
+            console.error('Error sending message to DB:', error);
             return null;
         }
 
@@ -129,8 +142,7 @@ export const chatsSdrService = {
         const phoneNumbers = extractNumbers(phone);
         let sessionId = phone;
 
-        // Buscar session_id existente (lógica simplificada, assume que sendMessage já resolveu ou usa o phone direto)
-        // Tentamos buscar exato primeiro
+        // Buscar session_id correto no banco
         const { data: existingChats } = await supabase
             .from('chats_sdr')
             .select('session_id')
@@ -150,21 +162,30 @@ export const chatsSdrService = {
             }
         }
 
-        try {
-            const params = new URLSearchParams({
-                phone: sessionId,
-                action
-            });
+        // Preparar dados
+        const actionText = action === 'pausar' ? 'Pausar IA' : 'Ativar IA';
 
-            await fetch('https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/pausa-ia', {
+        const webhookUrl = new URL('https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/pausa-ia');
+        webhookUrl.searchParams.append('phone', sessionId);
+        webhookUrl.searchParams.append('action', actionText);
+
+        const formBody = new URLSearchParams({
+            phone: sessionId,
+            action: actionText
+        });
+
+        try {
+            console.log('Sending to Webhook (Toggle AI):', { url: webhookUrl.toString(), body: formBody.toString() });
+
+            await fetch(webhookUrl.toString(), {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: params
+                body: formBody
             });
-            console.log(`AI ${action} sent for ${sessionId}`);
+            console.log(`AI toggle webhook sent for ${sessionId}`);
         } catch (error) {
             console.error(`Error toggling AI (${action}):`, error);
         }
