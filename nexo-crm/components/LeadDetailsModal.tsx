@@ -35,7 +35,7 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, le
             onClick={onClose}
         >
             <div
-                className="bg-[#121214] w-full max-w-lg rounded-3xl border border-zinc-800/50 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+                className="bg-[#121214] w-full max-w-lg rounded-3xl border border-zinc-800/50 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -55,8 +55,8 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, le
                     </div>
                 </div>
 
-                {/* Content */}
-                <div className="pt-16 pb-8 px-8">
+                {/* Content area with internal scroll */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar pt-16 pb-8 px-8">
                     <div className="flex justify-between items-start mb-6">
                         <div>
                             <h2 className="text-2xl font-bold text-white tracking-tight leading-tight mb-1">{lead.name}</h2>
@@ -162,8 +162,8 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, le
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="px-8 py-5 bg-zinc-900/30 border-t border-zinc-800/50 flex justify-between items-center group/footer">
+                {/* Footer - Fixed at bottom of modal */}
+                <div className="px-8 py-5 bg-zinc-900/30 border-t border-zinc-800/50 flex justify-between items-center group/footer shrink-0">
                     <div className="flex items-center gap-2 text-zinc-500">
                         <Calendar size={14} className="group-hover/footer:text-indigo-400 transition-colors" />
                         <span className="text-[11px]">Lead desde {lead.created_at ? new Date(lead.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR')}</span>
