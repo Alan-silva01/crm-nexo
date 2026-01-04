@@ -436,19 +436,28 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                               <div className="w-4 h-[1px] bg-zinc-800/50 mt-[-10px]"></div>
                             </div>
 
-                            {(leadsHistory[lead.id] || []).map((step, idx, arr) => (
-                              <React.Fragment key={step.id}>
-                                <div className="flex flex-col items-center gap-1">
-                                  <div className="w-2 h-2 rounded-full bg-indigo-500/40 border border-indigo-400/50 shadow-[0_0_8px_rgba(99,102,241,0.2)]"></div>
-                                  <span className="text-[8px] text-zinc-400 font-medium truncate max-w-[60px]">
-                                    {step.to_column?.name}
-                                  </span>
-                                </div>
-                                {idx < arr.length - 1 && (
-                                  <div className="w-4 h-[1px] bg-indigo-500/20 mt-[-10px]"></div>
-                                )}
-                              </React.Fragment>
-                            ))}
+                            {(leadsHistory[lead.id] || []).map((step, idx, arr) => {
+                              // Find column index to get color
+                              const colIndex = columns.findIndex(c => c.id === step.to_column_id);
+                              const dotColor = colIndex !== -1 ? BORDER_COLORS[colIndex % BORDER_COLORS.length] : '#52525b';
+
+                              return (
+                                <React.Fragment key={step.id}>
+                                  <div className="flex flex-col items-center gap-1">
+                                    <div
+                                      className="w-2 h-2 rounded-full border border-zinc-900 shadow-[0_0_8px_rgba(0,0,0,0.2)]"
+                                      style={{ backgroundColor: dotColor }}
+                                    ></div>
+                                    <span className="text-[8px] text-zinc-400 font-medium truncate max-w-[60px]">
+                                      {step.to_column?.name}
+                                    </span>
+                                  </div>
+                                  {idx < arr.length - 1 && (
+                                    <div className="w-4 h-[1px] bg-zinc-800/80 mt-[-10px]"></div>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
