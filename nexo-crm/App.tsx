@@ -91,7 +91,7 @@ const AppContent: React.FC = () => {
     setLeads(updatedLeads);
   };
 
-  const handleUpdateLeadStatus = async (leadId: string, newStatus: string) => {
+  const handleUpdateLeadStatus = async (leadId: string, newStatus: string, fromColumnId?: string | null, toColumnId?: string) => {
     // Find the lead to get its original status for potential rollback
     const originalLead = leads.find(l => l.id === leadId);
     if (!originalLead) {
@@ -113,6 +113,10 @@ const AppContent: React.FC = () => {
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: originalStatus } : l));
     } else {
       console.log(`Lead ${leadId} successfully moved to "${newStatus}"`);
+      // Record history if we have column IDs
+      if (toColumnId) {
+        leadsService.recordHistory(leadId, fromColumnId || null, toColumnId);
+      }
     }
   };
 

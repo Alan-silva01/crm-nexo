@@ -72,5 +72,64 @@ export const leadsService = {
         }
 
         return true;
+    },
+
+    async recordHistory(leadId: string, fromColumnId: string | null, toColumnId: string): Promise<void> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+            .from('lead_column_history')
+            .insert([{
+                lead_id: leadId,
+                from_column_id: fromColumnId,
+                to_column_id: toColumnId,
+                user_id: user.id
+            }]);
+
+        if (error) {
+            console.error('Error recording lead history:', error);
+        }
+    },
+
+    async fetchHistory(leadId: string): Promise<any[]> {
+        const { data, error } = await supabase
+            .from('lead_column_history')
+            .select(`
+                *,
+                from_column:kanban_columns!from_column_id(name),
+                to_column:kanban_columns!to_column_id(name)
+            `)
+            .eq('lead_id', leadId)
+            .order('moved_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching lead history:', error);
+            return [];
+        }
+
+        return data;
+    },
+
+    async fetchAllHistory(): Promise<any[]> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+
+        const { data, error } = await supabase
+            .from('lead_column_history')
+            .select(`
+                *,
+                from_column:kanban_columns!from_column_id(name),
+                to_column:kanban_columns!to_column_id(name)
+            `)
+            .eq('user_id', user.id)
+            .order('moved_at', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching all lead history:', error);
+            return [];
+        }
+
+        return data;
     }
 };

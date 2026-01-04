@@ -8,9 +8,10 @@ import {
   Layout,
   Trash2,
   X,
-  Check
+  Check,
+  GitCommit
 } from 'lucide-react';
-import { Lead } from '../types';
+import { Lead, LeadColumnHistory } from '../types';
 import { leadsService } from '../src/lib/leadsService';
 import { supabase } from '../src/lib/supabase';
 import ConfirmModal from './ConfirmModal';
@@ -38,7 +39,7 @@ interface KanbanProps {
   searchQuery: string;
   filteredLeads: Lead[];
   onLeadsUpdate: (leads: Lead[]) => void;
-  onUpdateLeadStatus: (id: string, newStatus: string) => void;
+  onUpdateLeadStatus: (id: string, newStatus: string, fromColumnId?: string | null, toColumnId?: string) => void;
   onSelectChat: (id: string) => void;
 }
 
@@ -55,6 +56,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
   const [deleteColumnModal, setDeleteColumnModal] = useState<{ isOpen: boolean; column: KanbanColumn | null }>({ isOpen: false, column: null });
   const [detailsModal, setDetailsModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
+  const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
 
   // Fetch columns from database
   useEffect(() => {
@@ -95,6 +97,24 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
     fetchColumns();
   }, []);
 
+  // Fetch all leads history
+  useEffect(() => {
+    const fetchHistory = async () => {
+      const history = await leadsService.fetchAllHistory();
+      const grouped = history.reduce((acc: Record<string, LeadColumnHistory[]>, item) => {
+        if (!acc[item.lead_id]) acc[item.lead_id] = [];
+        acc[item.lead_id].push(item);
+        return acc;
+      }, {});
+      setLeadsHistory(grouped);
+    };
+
+    fetchHistory();
+
+    // Set up realtime sub for history if needed, but for now just fetch on mount or when onLeadsUpdate is called
+    // Actually, since we move leads here, we can update local history state too.
+  }, [filteredLeads.length]); // Re-fetch or update when leads length changes (new leads)
+
 
 
   const onDragStart = (e: React.DragEvent, id: string) => {
@@ -112,14 +132,34 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
     e.preventDefault();
   };
 
-  const onDrop = useCallback((e: React.DragEvent, targetColumnName: string) => {
+  const onDrop = useCallback(async (e: React.DragEvent, targetColumn: KanbanColumn) => {
     e.preventDefault();
     const leadId = e.dataTransfer.getData('leadId');
     if (leadId) {
-      onUpdateLeadStatus(leadId, targetColumnName);
+      const lead = filteredLeads.find(l => l.id === leadId);
+      const fromColumn = columns.find(c => c.name === lead?.status);
+      onUpdateLeadStatus(leadId, targetColumn.name, fromColumn?.id, targetColumn.id);
+
+      // Optimistically update history for the UI
+      if (leadId) {
+        const newHistoryItem: LeadColumnHistory = {
+          id: Math.random().toString(),
+          lead_id: leadId,
+          from_column_id: fromColumn?.id || null,
+          to_column_id: targetColumn.id,
+          moved_at: new Date().toISOString(),
+          user_id: null,
+          from_column: fromColumn ? { name: fromColumn.name } : undefined,
+          to_column: { name: targetColumn.name }
+        };
+        setLeadsHistory(prev => ({
+          ...prev,
+          [leadId]: [...(prev[leadId] || []), newHistoryItem]
+        }));
+      }
     }
     setDraggingId(null);
-  }, [onUpdateLeadStatus]);
+  }, [onUpdateLeadStatus, columns, filteredLeads]);
 
   const onColumnDragStart = (e: React.DragEvent, columnId: string) => {
     setDraggingColumnId(columnId);
@@ -304,7 +344,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
             onDrop={(e) => {
               const leadId = e.dataTransfer.getData('leadId');
               if (leadId) {
-                onDrop(e, col.name);
+                onDrop(e, col);
               } else {
                 onColumnDrop(e, colIndex);
               }
@@ -378,6 +418,40 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
                           "{lead.last_message}"
                         </p>
                       )}
+
+                      {/* Horizontal Timeline */}
+                      <div className="mt-3 mb-3">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <GitCommit size={10} className="text-zinc-500" />
+                          <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Trajetória</span>
+                        </div>
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide no-scrollbar">
+                          <div className="flex items-center gap-2 min-w-max px-1">
+                            {/* Initial point if no history or to show entry */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex flex-col items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-zinc-800 border border-zinc-700"></div>
+                                <span className="text-[8px] text-zinc-600 font-medium">Início</span>
+                              </div>
+                              <div className="w-4 h-[1px] bg-zinc-800/50 mt-[-10px]"></div>
+                            </div>
+
+                            {(leadsHistory[lead.id] || []).map((step, idx, arr) => (
+                              <React.Fragment key={step.id}>
+                                <div className="flex flex-col items-center gap-1">
+                                  <div className="w-2 h-2 rounded-full bg-indigo-500/40 border border-indigo-400/50 shadow-[0_0_8px_rgba(99,102,241,0.2)]"></div>
+                                  <span className="text-[8px] text-zinc-400 font-medium truncate max-w-[60px]">
+                                    {step.to_column?.name}
+                                  </span>
+                                </div>
+                                {idx < arr.length - 1 && (
+                                  <div className="w-4 h-[1px] bg-indigo-500/20 mt-[-10px]"></div>
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
 
                       <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-800/40">
                         <div className="flex items-center gap-3">
@@ -599,3 +673,16 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
 };
 
 export default Kanban;
+
+// Add this at the bottom to handle scrollbar hiding
+const style = document.createElement('style');
+style.textContent = `
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`;
+document.head.appendChild(style);

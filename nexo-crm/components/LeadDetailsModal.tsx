@@ -1,6 +1,9 @@
-import { X, MessageSquare, Phone, Mail, Clock, Calendar, User } from 'lucide-react';
-import { Lead } from '../types';
+import React, { useState, useEffect } from 'react';
+import { X, MessageSquare, Phone, Mail, Clock, Calendar, User, GitCommit } from 'lucide-react';
+import { Lead, LeadColumnHistory } from '../types';
+import { leadsService } from '../src/lib/leadsService';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
+import { formatRelativeTime } from '../src/lib/formatRelativeTime';
 import LetterAvatar from './LetterAvatar';
 
 interface LeadDetailsModalProps {
@@ -11,6 +14,19 @@ interface LeadDetailsModalProps {
 }
 
 const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, lead, onViewConversation }) => {
+    const [history, setHistory] = useState<LeadColumnHistory[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && lead) {
+            setLoading(true);
+            leadsService.fetchHistory(lead.id).then(data => {
+                setHistory(data as LeadColumnHistory[]);
+                setLoading(false);
+            });
+        }
+    }, [isOpen, lead]);
+
     if (!isOpen || !lead) return null;
 
     return (
@@ -95,6 +111,45 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, le
                                 <p className="text-sm font-medium text-zinc-300 leading-relaxed whitespace-pre-wrap">{lead.last_message}</p>
                             </div>
                         )}
+
+                        {/* Pipeline Timeline */}
+                        <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/50 group hover:border-zinc-700/50 transition-colors">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-400">
+                                    <GitCommit size={16} />
+                                </div>
+                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Pipeline / Linha do Tempo</span>
+                            </div>
+
+                            {loading ? (
+                                <div className="flex items-center justify-center py-4">
+                                    <div className="w-4 h-4 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                                </div>
+                            ) : history.length > 0 ? (
+                                <div className="space-y-4 ml-2 border-l-2 border-zinc-800 pl-4 py-2 relative">
+                                    {history.map((item) => (
+                                        <div key={item.id} className="relative">
+                                            <div className="absolute -left-[25px] top-1 w-3 h-3 rounded-full bg-zinc-800 border-2 border-zinc-900 outline outline-2 outline-indigo-500/20"></div>
+                                            <div>
+                                                <p className="text-[11px] text-zinc-400 font-medium">
+                                                    {item.from_column ? (
+                                                        <>De <span className="text-zinc-300">{item.from_column.name}</span> para <span className="text-indigo-400">{item.to_column?.name}</span></>
+                                                    ) : (
+                                                        <>Entrou em <span className="text-indigo-400">{item.to_column?.name}</span></>
+                                                    )}
+                                                </p>
+                                                <p className="text-[10px] text-zinc-500 mt-1 flex items-center gap-1">
+                                                    <Clock size={10} />
+                                                    {formatRelativeTime(item.moved_at)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-zinc-500 italic py-2 text-center">Nenhum movimento registrado ainda.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
 

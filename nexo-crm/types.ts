@@ -50,3 +50,15 @@ export interface SDRMessage {
   message: SDRMessageContent;
   created_at?: string;
 }
+
+export interface LeadColumnHistory {
+  id: string;
+  lead_id: string;
+  from_column_id: string | null;
+  to_column_id: string;
+  moved_at: string;
+  user_id: string | null;
+  // Join fields
+  from_column?: { name: string };
+  to_column?: { name: string };
+}
