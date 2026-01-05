@@ -6,6 +6,7 @@ import LeadsList from './components/LeadsList';
 import CalendarPage from './components/Calendar';
 import WhatsAppChat from './components/WhatsAppChat';
 import DetailedAnalytics from './components/DetailedAnalytics';
+import Settings from './components/Settings';
 import Auth from './components/Auth';
 import { Bell, Search, Calendar, LogOut } from 'lucide-react';
 import { Lead, LeadColumnHistory } from './types';
@@ -225,6 +226,8 @@ const AppContent: React.FC = () => {
         );
       case 'analytics':
         return <DetailedAnalytics leads={leads} />;
+      case 'ajustes':
+        return <Settings user={user} onUpdate={() => {/* User metadata updates are handled by Supabase session listener, but we could add manual refresh here if needed */ }} />;
       default:
         return <Dashboard leads={leads} />;
     }

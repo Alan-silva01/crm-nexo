@@ -71,8 +71,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
       </nav>
 
       <div className="p-3 space-y-1 border-t border-zinc-800/50">
-        <button className={`w-full flex items-center ${effectiveCollapsed ? 'justify-center' : 'gap-3 px-3'} py-2.5 rounded-xl text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-all duration-200`}>
-          <Settings size={18} />
+        <button
+          onClick={() => setActiveTab('ajustes')}
+          className={`w-full flex items-center ${effectiveCollapsed ? 'justify-center' : 'gap-3 px-3'} py-2.5 rounded-xl transition-all duration-200
+            ${activeTab === 'ajustes'
+              ? 'bg-zinc-800/80 text-white shadow-sm'
+              : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'}`}
+        >
+          <Settings size={18} className={activeTab === 'ajustes' ? 'text-indigo-400' : ''} />
           {!effectiveCollapsed && <span className="text-[12px] font-medium">Ajustes</span>}
         </button>
         <div className={`pt-2 ${effectiveCollapsed ? 'flex justify-center' : ''}`}>

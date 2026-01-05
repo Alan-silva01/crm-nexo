@@ -142,14 +142,14 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
         <div className="bg-[#0c0c0e] border border-zinc-800/50 p-6 rounded-[2rem] shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316]">
           <div className="flex items-center gap-2 text-zinc-400 mb-4">
             <div className="p-2 bg-emerald-500/10 rounded-lg">
-              <Briefcase size={16} className="text-emerald-400" />
+              <Target size={16} className="text-emerald-400" />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest">LTV Realizado</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Taxa de Conversão</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold">R$ {ltvTotal.toLocaleString('pt-BR')}</span>
+            <span className="text-2xl font-bold">{conversionRate}%</span>
           </div>
-          <p className="text-[10px] text-zinc-500 mt-2">Valor vitalício dos clientes atuais</p>
+          <p className="text-[10px] text-zinc-500 mt-2">Total de leads vs concluídos</p>
         </div>
 
         <div className="bg-[#0c0c0e] border border-zinc-800/50 p-6 rounded-[2rem] shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316]">
