@@ -2,7 +2,7 @@ import React from 'react';
 import { Lead } from '../types';
 import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, Sector
+  PieChart, Pie, Cell, Legend, Sector, BarChart, Bar, LabelList
 } from 'recharts';
 import { Download, Calendar, ArrowUpRight, TrendingUp, Users, Target, DollarSign, Briefcase } from 'lucide-react';
 
@@ -11,7 +11,33 @@ interface DetailedAnalyticsProps {
   onAction?: (action: 'view-decision-kanban' | 'focus-decision') => void;
 }
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e'];
+const BORDER_COLORS = [
+  '#fbbf24', // yellow
+  '#ef4444', // red
+  '#3b82f6', // blue
+  '#22c55e', // green
+  '#a855f7'  // purple
+];
+
+const VerticalLabel = (props: any) => {
+  const { x, y, width, height, value } = props;
+  if (!value) return null;
+
+  return (
+    <text
+      x={x + width / 2}
+      y={y + height - 20}
+      fill="#0c0c0e"
+      textAnchor="start"
+      fontSize={10}
+      fontWeight="900"
+      transform={`rotate(-90, ${x + width / 2}, ${y + height - 20})`}
+      style={{ textTransform: 'uppercase', pointerEvents: 'none' }}
+    >
+      {value}
+    </text>
+  );
+};
 
 const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }) => {
   const [ticketRaw, setTicketRaw] = React.useState<string>(() => {
@@ -44,13 +70,10 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
 
   const faturamentoReal = closedLeads * ticketMedio;
   const faturamentoPotencialDecisao = waitingDecisionLeads * ticketMedio;
-  const ltvTotal = closedLeads * ltv;
-
   const conversionRate = totalLeads > 0 ? ((closedLeads / totalLeads) * 100).toFixed(1) : '0';
 
   // Projection logic
   const conversionSimulatedPercent = 30; // 30% conversion for the "opportunity" text
-  // Round to nearest whole person, minimum 1 if there are leads
   const projectedExtraLeads = Math.max(
     waitingDecisionLeads > 0 ? 1 : 0,
     Math.round(waitingDecisionLeads * (conversionSimulatedPercent / 100))
@@ -59,74 +82,23 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
   const projectedExtraRevenue = projectedExtraLeads * ticketMedio;
   const projectedExtraLTV = projectedExtraLeads * ltv;
 
-  // Distribution by status for Pie Chart
-  const statusDistribution = leads.reduce((acc: any, lead) => {
-    const status = lead.status || 'Sem Status';
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {});
+  // Distribution by status for Bar Chart
+  const barChartData = React.useMemo(() => {
+    const leadsPerStatus = leads.reduce((acc: any, lead) => {
+      const status = lead.status || 'Sem Status';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
 
-  const pieData = Object.entries(statusDistribution).map(([name, value]) => ({
-    name,
-    value
-  }));
-
-  const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
-
-  const onPieEnter = (_: any, index: number) => {
-    setActiveIndex(index);
-  };
-
-  const onPieLeave = () => {
-    setActiveIndex(null);
-  };
-
-  const renderActiveShape = (props: any) => {
-    const {
-      cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value
-    } = props;
-
-    return (
-      <g>
-        <filter id="glow-pie">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-          <feMerge>
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <text x={cx} y={cy} dy={-20} textAnchor="middle" fill="#71717a" fontSize={10} fontWeight="bold" className="uppercase tracking-widest">
-          {payload.name}
-        </text>
-        <text x={cx} y={cy} dy={10} textAnchor="middle" fill="#fff" fontSize={22} fontWeight="bold">
-          {value}
-        </text>
-        <text x={cx} y={cy} dy={25} textAnchor="middle" fill="#10b981" fontSize={10} fontWeight="bold">
-          {`${(percent * 100).toFixed(1)}%`}
-        </text>
-        <Sector
-          cx={cx}
-          cy={cy}
-          innerRadius={innerRadius}
-          outerRadius={outerRadius + 10}
-          startAngle={startAngle}
-          endAngle={endAngle}
-          fill={fill}
-          filter="url(#glow-pie)"
-          style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
-        />
-        <Sector
-          cx={cx}
-          cy={cy}
-          startAngle={startAngle}
-          endAngle={endAngle}
-          innerRadius={outerRadius + 12}
-          outerRadius={outerRadius + 15}
-          fill={fill}
-        />
-      </g>
-    );
-  };
+    return Object.entries(leadsPerStatus).map(([name, value], index) => {
+      const color = BORDER_COLORS[index % BORDER_COLORS.length] || '#3f3f46';
+      return {
+        name,
+        value,
+        color
+      };
+    }).sort((a, b) => (b.value as number) - (a.value as number));
+  }, [leads]);
 
   return (
     <div className="p-8 h-full overflow-y-auto space-y-8 custom-scrollbar">
@@ -227,47 +199,29 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] h-[450px] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316]">
           <h3 className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest pl-2 border-l-4 border-indigo-500">
-            Distribuição por Status
+            Funil por Etapa
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                {/* @ts-ignore */}
-                <Pie
-                  {...(pieData as any)} // Forçamos o tipo para evitar erros de lint com activeIndex
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={80}
-                  outerRadius={120}
-                  paddingAngle={8}
-                  dataKey="value"
-                  stroke="none"
-                  activeIndex={activeIndex !== null ? activeIndex : undefined}
-                  activeShape={renderActiveShape}
-                  onMouseEnter={onPieEnter}
-                  onMouseLeave={onPieLeave}
-                  onClick={(data, index) => {
-                    console.log('Clicked slice:', data);
-                    // Selection logic could go here
-                  }}
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                      style={{ filter: activeIndex === index ? 'drop-shadow(0 0 8px currentColor)' : 'none', transition: 'all 0.3s' }}
-                    />
-                  ))}
-                </Pie>
-                <Legend
-                  iconType="circle"
-                  layout="vertical"
-                  align="right"
-                  verticalAlign="middle"
-                  wrapperStyle={{ fontSize: '11px', paddingLeft: '20px', color: '#71717a' }}
+              <BarChart data={barChartData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" opacity={0.1} />
+                <XAxis dataKey="name" hide />
+                <YAxis hide />
+                <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.02)' }}
+                  contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '12px' }}
+                  labelStyle={{ color: '#fff', fontWeight: 'bold', fontSize: '11px', marginBottom: '4px' }}
+                  itemStyle={{ color: '#fff', fontSize: '10px' }}
+                  formatter={(value: any) => [`${value} leads`, 'Quantidade']}
                 />
-              </PieChart>
+                <Bar dataKey="value" radius={[10, 10, 0, 0]} isAnimationActive={true} barSize={60}>
+                  {barChartData.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                  <LabelList dataKey="name" content={<VerticalLabel />} />
+                  <LabelList dataKey="value" position="top" fill="#a1a1aa" fontSize={11} offset={12} fontStyle="bold" />
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>

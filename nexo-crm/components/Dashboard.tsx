@@ -7,38 +7,25 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
+  PieChart,
+  Pie,
   Cell,
-  LabelList,
-  ReferenceArea
+  Legend,
+  Sector
 } from 'recharts';
 import {
   TrendingUp,
   Users,
   PhoneCall,
-  DollarSign,
+  Clock,
+  Calendar,
   MoreHorizontal,
   ArrowUpRight,
-  ArrowDownRight,
-  Clock,
-  Calendar
+  ArrowDownRight
 } from 'lucide-react';
-import { METRICS_DATA } from '../constants';
 import { Lead } from '../types';
 
-const BORDER_COLORS = [
-  '#fbbf24', // yellow
-  '#ef4444', // red
-  '#3b82f6', // blue
-  '#22c55e', // green
-  '#a855f7'  // purple
-];
-
-interface DashboardProps {
-  leads: Lead[];
-  columns: any[];
-}
+const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e'];
 
 const DashboardClock = () => {
   const [time, setTime] = React.useState(new Date());
@@ -86,25 +73,10 @@ const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) 
   </div>
 );
 
-const VerticalLabel = (props: any) => {
-  const { x, y, width, height, value } = props;
-  if (!value) return null;
-
-  return (
-    <text
-      x={x + width / 2}
-      y={y + height - 20}
-      fill="#0c0c0e"
-      textAnchor="start"
-      fontSize={10}
-      fontWeight="900"
-      transform={`rotate(-90, ${x + width / 2}, ${y + height - 20})`}
-      style={{ textTransform: 'uppercase', pointerEvents: 'none' }}
-    >
-      {value}
-    </text>
-  );
-};
+interface DashboardProps {
+  leads: Lead[];
+  columns: any[];
+}
 
 const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
   const totalLeads = leads.length;
@@ -133,23 +105,74 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
     });
   }, [leads]);
 
-  const barChartData = React.useMemo(() => {
-    const leadsPerStatus = leads.reduce((acc: any, lead) => {
-      const status = lead.status || 'Sem Status';
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
+  // Distribution by status for Pie Chart
+  const statusDistribution = React.useMemo(() => leads.reduce((acc: any, lead) => {
+    const status = lead.status || 'Sem Status';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {}), [leads]);
 
-    return Object.entries(leadsPerStatus).map(([name, value]) => {
-      const colIndex = columns.findIndex(c => c.name === name);
-      const color = colIndex !== -1 ? BORDER_COLORS[colIndex % BORDER_COLORS.length] : '#3f3f46';
-      return {
-        name,
-        value,
-        color
-      };
-    }).sort((a, b) => (b.value as number) - (a.value as number));
-  }, [leads, columns]);
+  const pieData = React.useMemo(() => Object.entries(statusDistribution).map(([name, value]) => ({
+    name,
+    value
+  })), [statusDistribution]);
+
+  const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
+
+  const onPieEnter = (_: any, index: number) => {
+    setActiveIndex(index);
+  };
+
+  const onPieLeave = () => {
+    setActiveIndex(null);
+  };
+
+  const renderActiveShape = (props: any) => {
+    const {
+      cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value
+    } = props;
+
+    return (
+      <g>
+        <filter id="glow-pie">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <text x={cx} y={cy} dy={-20} textAnchor="middle" fill="#71717a" fontSize={10} fontWeight="bold" className="uppercase tracking-widest">
+          {payload.name}
+        </text>
+        <text x={cx} y={cy} dy={10} textAnchor="middle" fill="#fff" fontSize={22} fontWeight="bold">
+          {value}
+        </text>
+        <text x={cx} y={cy} dy={25} textAnchor="middle" fill="#10b981" fontSize={10} fontWeight="bold">
+          {`${(percent * 100).toFixed(1)}%`}
+        </text>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 10}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+          filter="url(#glow-pie)"
+          style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          innerRadius={outerRadius + 12}
+          outerRadius={outerRadius + 15}
+          fill={fill}
+        />
+      </g>
+    );
+  };
 
   const rejectedLeads = leads.filter(l =>
     l.status === 'SEM INTERESSE' ||
@@ -245,27 +268,42 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
 
         <div className="bg-[#0c0c0e] border border-zinc-800/50 p-6 rounded-[2rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
           <h3 className="text-xs font-bold text-zinc-400 mb-6 uppercase tracking-widest pl-2 border-l-4 border-indigo-500 shrink-0">
-            Funil por Etapa
+            Distribuição por Status
           </h3>
           <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barChartData} margin={{ top: 10, right: 5, left: 5, bottom: 10 }} barCategoryGap="10%">
-                <XAxis dataKey="name" hide />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.02)' }}
-                  contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '12px' }}
-                  labelStyle={{ color: '#fff', fontWeight: 'bold', fontSize: '11px', marginBottom: '4px' }}
-                  itemStyle={{ color: '#fff', fontSize: '10px' }}
-                  formatter={(value: any) => [`${value} leads`, 'Quantidade']}
-                />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]} isAnimationActive={false} maxBarSize={45}>
-                  {barChartData.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+              <PieChart>
+                {/* @ts-ignore */}
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={8}
+                  dataKey="value"
+                  stroke="none"
+                  activeIndex={activeIndex !== null ? activeIndex : undefined}
+                  activeShape={renderActiveShape}
+                  onMouseEnter={onPieEnter}
+                  onMouseLeave={onPieLeave}
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                      style={{ transition: 'all 0.3s' }}
+                    />
                   ))}
-                  <LabelList dataKey="name" content={<VerticalLabel />} />
-                  <LabelList dataKey="value" position="top" fill="#a1a1aa" fontSize={10} offset={10} fontStyle="bold" />
-                </Bar>
-              </BarChart>
+                </Pie>
+                <Legend
+                  iconType="circle"
+                  layout="horizontal"
+                  align="center"
+                  verticalAlign="bottom"
+                  wrapperStyle={{ fontSize: '9px', paddingTop: '10px', color: '#71717a' }}
+                />
+              </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-4 pt-4 border-t border-zinc-800/50 flex justify-between shrink-0">
