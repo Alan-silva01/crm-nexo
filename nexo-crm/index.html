@@ -153,15 +153,19 @@
     }
 
     /* Recharts Chart Labels - Fix contrast for both bar and pie charts */
-    .light .recharts-text[fill="#0c0c0e"],
-    .light .recharts-text[fill="#000"] {
+    .light .recharts-surface text[fill="#0c0c0e"],
+    .light .recharts-surface text[fill="#000"] {
       fill: #ffffff !important;
     }
 
-    .light .recharts-text[fill="#fff"],
-    .light .recharts-text[fill="white"],
-    .light .recharts-text[fill="#71717a"] {
+    .light .recharts-surface text[fill="#fff"],
+    .light .recharts-surface text[fill="white"] {
       fill: #18181b !important;
+    }
+
+    .light .recharts-surface text[fill="#71717a"] {
+      fill: #4b5563 !important;
+      /* Slightly darker gray for labels */
     }
 
     /* ... but keep the outside labels readable if they are not inside bars ... */
