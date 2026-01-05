@@ -139,16 +139,28 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
         }
 
         setIsSaving(true);
+        // Use the eventDate string directly to preserve local time intent if possible,
+        // or ensure it's converted to ISO but accounting for the 3h offset issue reported by user.
+        // Actually, if we send the local string as ISO, it might be interpreted as UTC by the DB.
+        // To fix "+3:00 hours in DB", we should ensure we're sending the exact local time.
+        const date = new Date(eventDate);
+        const isoString = date.toISOString();
+
         await onUpdateLead(selectedLeadId, {
-            dataHora_Agendamento: new Date(eventDate).toISOString(),
+            dataHora_Agendamento: isoString,
             servico_interesse: eventService
         });
 
         setIsSaving(false);
         setIsEventModalOpen(false);
+        resetForm();
+    };
+
+    const resetForm = () => {
         setSelectedLeadId('');
         setEventDate('');
         setEventService('');
+        setSearchTerm('');
     };
 
     const filteredLeadsForSelect = leads.filter(l =>
@@ -270,7 +282,10 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                         </div>
 
                         <button
-                            onClick={() => setIsEventModalOpen(true)}
+                            onClick={() => {
+                                resetForm();
+                                setIsEventModalOpen(true);
+                            }}
                             className="w-full py-4 mt-6 rounded-2xl bg-[#0c0c0e] shadow-[4px_4px_8px_#060607,-4px_-4px_8px_#121215] flex items-center justify-center gap-2 text-[10px] font-bold text-zinc-500 hover:text-indigo-400 transition-all active:scale-95 border border-zinc-800/10 group/btn"
                         >
                             <Plus size={14} className="group-hover/btn:scale-125 transition-transform" />
@@ -299,7 +314,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
             {isEventModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
                     <div
-                        className="bg-[#0c0c0e] w-full max-w-md rounded-[3rem] p-10 shadow-[20px_20px_40px_#050506,-20px_-20px_40px_#131316] border border-zinc-800/30 animate-in zoom-in-95 duration-300"
+                        className="bg-[#0c0c0e] w-full max-w-md rounded-[3rem] p-10 pb-16 shadow-[20px_20px_40px_#050506,-20px_-20px_40px_#131316] border border-zinc-800/30 animate-in zoom-in-95 duration-300 relative z-50 overflow-y-auto max-h-[90vh] custom-scrollbar"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex justify-between items-center mb-8">
@@ -375,14 +390,11 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                 />
                             </div>
 
-                            <div className="pt-4 flex gap-4">
+                            <div className="pt-8 flex gap-4 sticky bottom-0 bg-[#0c0c0e] mt-4 border-t border-zinc-800/30">
                                 <button
                                     onClick={() => {
                                         setIsEventModalOpen(false);
-                                        setSelectedLeadId('');
-                                        setSearchTerm('');
-                                        setEventDate('');
-                                        setEventService('');
+                                        resetForm();
                                     }}
                                     className="flex-1 py-4 rounded-[1.5rem] bg-[#0c0c0e] shadow-[6px_6px_12px_#050506,-6px_-6px_12px_#131316] text-xs font-bold text-zinc-500 hover:text-white transition-all active:scale-95"
                                 >
@@ -479,6 +491,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                         <button
                             onClick={() => {
                                 setSelectedDayEvents(null);
+                                resetForm();
                                 setIsEventModalOpen(true);
                             }}
                             className="w-full mt-8 py-4 rounded-[1.5rem] bg-[#0c0c0e] shadow-[6px_6px_12px_#050506,-6px_-6px_12px_#131316] text-xs font-bold text-zinc-500 hover:text-indigo-400 transition-all active:scale-95 flex items-center justify-center gap-2"
