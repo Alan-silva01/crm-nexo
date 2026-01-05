@@ -1,21 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import {
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    Plus,
-    Check,
-    Instagram,
-    Facebook,
-    Twitter,
-    Share2,
-    X,
-    Search,
-    Calendar
+    Search, Plus, Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, Check, X, Bell, LogOut, Trash2
 } from 'lucide-react';
 import { Lead, LeadColumnHistory } from '../types';
+import LetterAvatar from './LetterAvatar';
 import LeadDetailsModal from './LeadDetailsModal';
+import ConfirmModal from './ConfirmModal';
 
 interface CalendarProps {
     leads: Lead[];
@@ -36,6 +26,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
     const [duration, setDuration] = useState<number>(30); // Default 30 min
     const [selectedDayEvents, setSelectedDayEvents] = useState<Lead[] | null>(null);
     const [selectedDateLabel, setSelectedDateLabel] = useState<string>('');
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [detailsModal, setDetailsModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
 
     useEffect(() => {
@@ -157,8 +148,6 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
     const handleCancelEvent = async () => {
         if (!selectedLeadId) return;
 
-        if (!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
-
         setIsSaving(true);
         await onUpdateLead(selectedLeadId, {
             dataHora_Agendamento: null,
@@ -167,6 +156,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
 
         setIsSaving(false);
         setIsEventModalOpen(false);
+        setIsConfirmModalOpen(false); // Close confirm modal after action
         resetForm();
     };
 
@@ -255,7 +245,19 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
 
                         <div className="flex-1 space-y-4 overflow-y-auto custom-scrollbar pr-2 min-h-[400px] max-h-[600px]">
                             {upcomingEvents.length > 0 ? upcomingEvents.map((event, i) => (
-                                <div key={event.id} className="p-5 rounded-[2rem] bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] flex flex-col gap-3 group border border-transparent hover:border-zinc-800/50 transition-all">
+                                <div
+                                    key={event.id}
+                                    onClick={() => {
+                                        setSelectedLeadId(event.id);
+                                        setSearchTerm(event.name);
+                                        const date = new Date(event.dataHora_Agendamento!);
+                                        const localISODate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                                        setEventDate(localISODate);
+                                        setEventService(event.servico_interesse || '');
+                                        setIsEventModalOpen(true);
+                                    }}
+                                    className="p-5 rounded-[2rem] bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] flex flex-col gap-3 group border border-transparent hover:border-zinc-800/50 transition-all cursor-pointer"
+                                >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${i === 0 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]' : 'bg-zinc-700'} `}></div>
@@ -288,7 +290,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                             )) : (
                                 <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
                                     <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center shadow-lg">
-                                        <Calendar size={20} className="text-zinc-700" />
+                                        <CalendarIcon size={20} className="text-zinc-700" />
                                     </div>
                                     <p className="text-xs text-zinc-600 italic font-medium">Nenhum agendamento para os próximos dias</p>
                                 </div>
@@ -433,19 +435,46 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                     </button>
                                 </div>
                                 {selectedLeadId && (
-                                    <button
-                                        onClick={handleCancelEvent}
-                                        disabled={isSaving}
-                                        className="w-full py-3 rounded-xl text-[10px] font-bold text-red-500/50 hover:text-red-500 hover:bg-red-500/5 transition-all text-center uppercase tracking-widest"
-                                    >
-                                        Cancelar Agendamento
-                                    </button>
+                                    <div className="flex flex-col gap-2">
+                                        <button
+                                            onClick={() => {
+                                                const lead = leads.find(l => l.id === selectedLeadId);
+                                                if (lead) {
+                                                    setDetailsModal({ isOpen: true, lead });
+                                                    setIsEventModalOpen(false);
+                                                }
+                                            }}
+                                            className="w-full py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-[10px] font-bold text-zinc-400 hover:text-white transition-all text-center uppercase tracking-widest"
+                                        >
+                                            Ver Detalhes do Lead
+                                        </button>
+                                        <button
+                                            onClick={() => setIsConfirmModalOpen(true)}
+                                            disabled={isSaving}
+                                            className="w-full py-3 rounded-xl text-[10px] font-bold text-red-500/50 hover:text-red-500 hover:bg-red-500/5 transition-all text-center uppercase tracking-widest flex items-center justify-center gap-2 group"
+                                        >
+                                            <Trash2 size={12} className="group-hover:scale-110 transition-transform" />
+                                            Cancelar Agendamento
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         </div>
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={handleCancelEvent}
+                title="Cancelar Agendamento"
+                message="Tem certeza que deseja cancelar este agendamento? Esta ação removerá a data e o serviço de interesse do lead, mas não excluirá o lead do sistema."
+                confirmText="Sim, Cancelar"
+                cancelText="Manter Agendamento"
+                type="danger"
+            />
+
             {/* Day Detail Modal */}
             {selectedDayEvents && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
