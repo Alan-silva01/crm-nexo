@@ -14,7 +14,7 @@ import { leadsService } from './src/lib/leadsService';
 import { supabase } from './src/lib/supabase';
 
 const AppContent: React.FC = () => {
-  const { session, loading, signOut } = useAuth();
+  const { user, session, loading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -237,6 +237,7 @@ const AppContent: React.FC = () => {
         setActiveTab={setActiveTab}
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
+        user={user}
       />
       <main className="flex-1 flex flex-col min-w-0 bg-[#0c0c0e] relative">
         <header className="h-16 border-b border-zinc-800/50 flex items-center justify-between px-8 bg-zinc-900/20 z-10">
@@ -263,7 +264,7 @@ const AppContent: React.FC = () => {
             </button>
             <div className="flex items-center gap-3 pl-4 border-l border-zinc-800">
               <div className="text-right">
-                <p className="text-[11px] font-semibold leading-none">{session?.user?.email ?? 'Usuário'}</p>
+                <p className="text-[11px] font-semibold leading-none">{(user?.user_metadata?.full_name || session?.user?.email) ?? 'Usuário'}</p>
                 <button onClick={signOut} className="text-[9px] text-zinc-500 mt-1 flex items-center justify-end gap-1 hover:text-red-400 transition-colors">
                   Sair da conta <LogOut size={10} />
                 </button>

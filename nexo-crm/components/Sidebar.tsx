@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { User } from '@supabase/supabase-js';
 import {
   LayoutDashboard,
   Kanban as KanbanIcon,
@@ -19,9 +19,10 @@ interface SidebarProps {
   setActiveTab: (tab: string) => void;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
+  user?: User | null;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed, setIsCollapsed }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed, setIsCollapsed, user }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   const effectiveCollapsed = isCollapsed && !isHovered;
 
@@ -76,11 +77,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
         </button>
         <div className={`pt-2 ${effectiveCollapsed ? 'flex justify-center' : ''}`}>
           <div className={`flex items-center ${effectiveCollapsed ? 'w-10 h-10 justify-center' : 'gap-3 p-2'} rounded-xl bg-zinc-900/50 border border-zinc-800/50`}>
-            <img src="https://picsum.photos/seed/user/100" alt="Avatar" className="w-6 h-6 rounded-full border border-zinc-700" />
+            <img src={`https://picsum.photos/seed/${user?.id || 'default'}/100`} alt="Avatar" className="w-6 h-6 rounded-full border border-zinc-700" />
             {!effectiveCollapsed && (
               <div className="flex-1 overflow-hidden">
-                <p className="text-[10px] font-medium truncate">João Silva</p>
-                <p className="text-[8px] text-zinc-500 truncate">Administrador</p>
+                <p className="text-[10px] font-medium truncate">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuário'}</p>
+                <p className="text-[8px] text-zinc-500 truncate">{user?.email || 'Membro'}</p>
               </div>
             )}
           </div>
