@@ -8,6 +8,7 @@ import { Download, Calendar, ArrowUpRight, TrendingUp, Users, Target, DollarSign
 
 interface DetailedAnalyticsProps {
   leads: Lead[];
+  onAction?: (action: 'view-decision-kanban' | 'focus-decision') => void;
 }
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e'];

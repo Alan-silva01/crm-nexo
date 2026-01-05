@@ -185,6 +185,13 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleAnalysisAction = (action: 'view-decision-kanban' | 'focus-decision') => {
+    if (action === 'view-decision-kanban' || action === 'focus-decision') {
+      setActiveTab('kanban');
+      // In a more advanced version, we could set a filter state here
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -203,6 +210,7 @@ const AppContent: React.FC = () => {
             }}
           />
         );
+      case 'leads':
         return <LeadsList searchQuery={searchQuery} filteredLeads={filteredLeads} />;
       case 'calendar':
         return (
@@ -226,7 +234,7 @@ const AppContent: React.FC = () => {
           />
         );
       case 'analytics':
-        return <DetailedAnalytics leads={leads} />;
+        return <DetailedAnalytics leads={leads} onAction={handleAnalysisAction} />;
       case 'ajustes':
         return <Settings user={user} onUpdate={() => {/* User metadata updates are handled by Supabase session listener, but we could add manual refresh here if needed */ }} />;
       default:

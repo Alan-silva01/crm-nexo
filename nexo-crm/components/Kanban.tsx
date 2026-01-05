@@ -346,26 +346,26 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
               draggable
               onDragStart={(e) => onColumnDragStart(e, col.id)}
               onDragEnd={onDragEnd}
-              className="flex items-center justify-between mb-4 px-1 cursor-grab active:cursor-grabbing hover:bg-zinc-800/30 rounded-lg py-1 transition-colors"
+              className="flex items-center justify-between mb-6 px-4 cursor-grab active:cursor-grabbing hover:bg-zinc-800/20 rounded-2xl py-3 transition-all border border-transparent hover:border-zinc-800/50"
             >
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: BORDER_COLORS[colIndex % BORDER_COLORS.length] }}></span>
-                <h3 className="text-sm font-semibold text-zinc-300">{col.name}</h3>
-                <span className="text-[10px] bg-zinc-800/80 text-zinc-500 px-1.5 py-0.5 rounded-md">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: BORDER_COLORS[colIndex % BORDER_COLORS.length], color: BORDER_COLORS[colIndex % BORDER_COLORS.length] }}></div>
+                <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">{col.name}</h3>
+                <span className="text-[10px] bg-zinc-900/80 text-zinc-500 px-2 py-0.5 rounded-full border border-zinc-800/50 font-bold shadow-inner">
                   {filteredLeads.filter(l => l.status === col.name).length}
                 </span>
               </div>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => removeColumn(col)}
-                  className="p-1 hover:text-red-400 text-zinc-600 transition-colors"
+                  className="p-1.5 hover:bg-zinc-800 rounded-lg hover:text-red-400 text-zinc-600 transition-all"
                 >
                   <Trash2 size={14} />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 space-y-4 kanban-column overflow-y-auto pr-1">
+            <div className="flex-1 space-y-6 kanban-column overflow-y-auto pr-2 custom-scrollbar">
               {filteredLeads.filter(lead => lead.status === col.name).map((lead) => {
                 const borderColor = BORDER_COLORS[parseInt(lead.id.slice(0, 8), 16) % BORDER_COLORS.length];
                 return (
@@ -375,22 +375,23 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
                     onDragStart={(e) => onDragStart(e, lead.id)}
                     onDragEnd={onDragEnd}
                     onClick={() => setDetailsModal({ isOpen: true, lead })}
-                    className={`bg-[#121214] border border-zinc-800/40 rounded-2xl cursor-pointer active:cursor-grabbing hover:bg-[#18181b] transition-all duration-300 shadow-xl relative overflow-hidden
-                      ${draggingId === lead.id ? 'dragging ring-2 ring-indigo-500 scale-[1.02]' : ''}`}
-                    style={{ borderLeft: `4px solid ${borderColor}` }}
+                    className={`bg-[#0c0c0e] border border-zinc-800/40 rounded-[2rem] cursor-pointer active:cursor-grabbing hover:border-zinc-700/50 transition-all duration-300 shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316] relative overflow-hidden group/card
+                      ${draggingId === lead.id ? 'dragging ring-2 ring-indigo-500/50 scale-[1.02]' : ''}`}
                   >
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-3">
+                    <div className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-4">
                           <div className="relative">
                             <LetterAvatar name={lead.name} size="lg" />
+                            <div
+                              className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#0c0c0e] shadow-sm"
+                              style={{ backgroundColor: borderColor }}
+                            ></div>
                           </div>
                           <div>
-                            <h4 className="text-[13px] font-semibold tracking-tight">{lead.name}</h4>
-                            {lead.company_name && <p className="text-[10px] text-indigo-400 font-medium">{lead.company_name}</p>}
-                            <p className="text-[10px] text-zinc-500 mt-0.5">{formatPhoneNumber(lead.phone) || ''}</p>
-                            {lead.email && <p className="text-[10px] text-zinc-500">{lead.email}</p>}
-                            {lead.monthly_revenue && <p className="text-[10px] text-emerald-400">R$ {lead.monthly_revenue.toLocaleString('pt-BR')}/mês</p>}
+                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-200 group-hover/card:text-white transition-colors">{lead.name}</h4>
+                            {lead.company_name && <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter">{lead.company_name}</p>}
+                            <p className="text-[10px] text-zinc-500 font-medium mt-1">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
                           </div>
                         </div>
                         <button
@@ -398,7 +399,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
                             e.stopPropagation();
                             setDeleteModal({ isOpen: true, lead });
                           }}
-                          className="text-zinc-700 hover:text-red-400 transition-colors p-1"
+                          className="text-zinc-800 hover:text-red-400 transition-all p-1.5 hover:bg-zinc-900 rounded-lg opacity-0 group-hover/card:opacity-100"
                           title="Excluir lead"
                         >
                           <Trash2 size={14} />
@@ -406,64 +407,71 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
                       </div>
 
                       {lead.last_message && (
-                        <p className="text-[11px] text-zinc-400 mt-2 mb-2 line-clamp-2 italic">
-                          "{lead.last_message}"
-                        </p>
+                        <div className="bg-zinc-900/30 rounded-xl p-3 border border-zinc-800/30 mb-4">
+                          <p className="text-[11px] text-zinc-400 line-clamp-2 italic leading-relaxed">
+                            "{lead.last_message}"
+                          </p>
+                        </div>
                       )}
 
                       {/* Horizontal Timeline */}
-                      <div className="mt-3 mb-3">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <GitCommit size={10} className="text-zinc-500" />
-                          <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Trajetória</span>
-                        </div>
-                        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide no-scrollbar">
-                          <div className="flex items-center gap-2 min-w-max px-1">
-                            {/* Initial point if no history or to show entry */}
-                            <div className="flex items-center gap-2">
-                              <div className="flex flex-col items-center gap-1">
-                                <div className="w-2 h-2 rounded-full bg-zinc-800 border border-zinc-700"></div>
-                                <span className="text-[8px] text-zinc-600 font-medium">Início</span>
+                      {(leadsHistory[lead.id] || []).length > 0 && (
+                        <div className="mt-4 mb-5 px-1">
+                          <div className="flex items-center gap-2 mb-3">
+                            <GitCommit size={12} className="text-zinc-600" />
+                            <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Jornada do Lead</span>
+                          </div>
+                          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                            <div className="flex items-center gap-2 min-w-max">
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col items-center gap-1.5">
+                                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-800 border-2 border-zinc-700 shadow-inner"></div>
+                                  <span className="text-[8px] text-zinc-600 font-bold uppercase">Entrada</span>
+                                </div>
+                                <div className="w-6 h-[2px] bg-gradient-to-r from-zinc-800 to-zinc-800/20 mt-[-14px]"></div>
                               </div>
-                              <div className="w-4 h-[1px] bg-zinc-800/50 mt-[-10px]"></div>
+
+                              {(leadsHistory[lead.id] || []).slice().reverse().map((step, idx, arr) => {
+                                const stepColIndex = columns.findIndex(c => c.id === step.to_column_id);
+                                const dotColor = stepColIndex !== -1 ? BORDER_COLORS[stepColIndex % BORDER_COLORS.length] : '#52525b';
+
+                                return (
+                                  <React.Fragment key={step.id}>
+                                    <div className="flex flex-col items-center gap-1.5">
+                                      <div
+                                        className="w-2.5 h-2.5 rounded-full border-2 border-zinc-900 shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                                        style={{ backgroundColor: dotColor }}
+                                      ></div>
+                                      <span className="text-[8px] text-zinc-400 font-bold uppercase truncate max-w-[65px]">
+                                        {step.to_column?.name || 'Status'}
+                                      </span>
+                                    </div>
+                                    {idx < arr.length - 1 && (
+                                      <div className="w-6 h-[2px] bg-zinc-800/50 mt-[-14px]"></div>
+                                    )}
+                                  </React.Fragment>
+                                );
+                              })}
                             </div>
-
-                            {(leadsHistory[lead.id] || []).slice().reverse().map((step, idx, arr) => {
-                              // Find column index to get color
-                              const colIndex = columns.findIndex(c => c.id === step.to_column_id);
-                              const dotColor = colIndex !== -1 ? BORDER_COLORS[colIndex % BORDER_COLORS.length] : '#52525b';
-
-                              return (
-                                <React.Fragment key={step.id}>
-                                  <div className="flex flex-col items-center gap-1">
-                                    <div
-                                      className="w-2 h-2 rounded-full border border-zinc-900 shadow-[0_0_8px_rgba(0,0,0,0.2)]"
-                                      style={{ backgroundColor: dotColor }}
-                                    ></div>
-                                    <span className="text-[8px] text-zinc-400 font-medium truncate max-w-[60px]">
-                                      {step.to_column?.name}
-                                    </span>
-                                  </div>
-                                  {idx < arr.length - 1 && (
-                                    <div className="w-4 h-[1px] bg-zinc-800/80 mt-[-10px]"></div>
-                                  )}
-                                </React.Fragment>
-                              );
-                            })}
                           </div>
                         </div>
-                      </div>
+                      )}
 
-                      <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-800/40">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1.5 text-[10px] text-zinc-500">
-                            <MessageSquare size={11} className="text-zinc-600" />
-                            <span>Zap</span>
+                      <div className="flex items-center justify-between mt-auto pt-4 border-t border-zinc-800/30">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-1.5 text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/10">
+                            <MessageSquare size={12} />
+                            <span>SDR</span>
                           </div>
+                          {lead.monthly_revenue && (
+                            <span className="text-[10px] text-emerald-400 font-bold">
+                              R$ {lead.monthly_revenue.toLocaleString('pt-BR')}
+                            </span>
+                          )}
                         </div>
                         {lead.updated_at && (
-                          <div className="flex items-center gap-1 text-[10px] text-zinc-600">
-                            <Clock size={10} />
+                          <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-medium">
+                            <Clock size={11} />
                             <span>{formatRelativeTime(lead.updated_at)}</span>
                           </div>
                         )}
@@ -474,8 +482,9 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
               })}
 
               {filteredLeads.filter(l => l.status === col.name).length === 0 && (
-                <div className="border-2 border-dashed border-zinc-900/50 rounded-2xl h-24 flex flex-col items-center justify-center text-zinc-700 text-xs italic p-4 text-center">
-                  Vazio
+                <div className="border border-dashed border-zinc-800/50 rounded-[2rem] h-32 flex flex-col items-center justify-center text-zinc-700 text-[10px] font-bold uppercase tracking-widest p-6 text-center bg-zinc-900/10">
+                  <Layout size={24} className="mb-2 opacity-20" />
+                  Nenhum lead nesta etapa
                 </div>
               )}
             </div>
