@@ -61,10 +61,11 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
   oneDayAgo.setDate(oneDayAgo.getDate() - 1);
   const newLeads = leads.filter(l => l.created_at && new Date(l.created_at) > oneDayAgo).length;
 
-  // Pipeline Total: Soma do 'value' dos leads
-  const totalPipeline = leads.reduce((acc, l) => acc + (l.value || 0), 0);
+  // Aguardando Decisão: Leads com status específico
+  const leadsWaitingDecision = leads.filter(l => l.status === 'AGUARDANDO DECISAO').length;
 
   // Conversão: Leads com agendamento (Call Agendada)
+  // Fix: Ensure we use the number of leads with appointments over total leads
   const leadsWithAppointment = leads.filter(l => l.dataHora_Agendamento !== null).length;
   const conversionRate = totalLeads > 0 ? ((leadsWithAppointment / totalLeads) * 100).toFixed(1) : '0';
 
@@ -108,6 +109,35 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
   // Response Time: Simulated between 40s and 90s (as requested)
   const [responseTime] = React.useState(() => (Math.random() * (90 - 40) + 40).toFixed(0));
 
+  const handleExportCSV = () => {
+    if (leads.length === 0) return;
+
+    const headers = ['Nome', 'Telefone', 'Email', 'Status', 'Data Criacao', 'Data Agendamento'];
+    const rows = leads.map(l => [
+      l.name,
+      l.phone || '',
+      l.email || '',
+      l.status || '',
+      l.created_at ? new Date(l.created_at).toLocaleDateString('pt-BR') : '',
+      l.dataHora_Agendamento ? new Date(l.dataHora_Agendamento).toLocaleString('pt-BR') : ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `leads_nexo_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="p-8 h-full overflow-y-auto space-y-8 min-h-0 flex flex-col">
       <header className="flex justify-between items-center shrink-0">
@@ -119,7 +149,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
           <button className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs font-medium hover:bg-zinc-800 transition-colors">
             Últimos 7 dias
           </button>
-          <button className="px-4 py-2 bg-indigo-600 rounded-xl text-xs font-medium text-white hover:bg-indigo-500 transition-colors shadow-lg">
+          <button
+            onClick={handleExportCSV}
+            className="px-4 py-2 bg-indigo-600 rounded-xl text-xs font-medium text-white hover:bg-indigo-500 transition-colors shadow-lg"
+          >
             Exportar CSV
           </button>
         </div>
@@ -129,8 +162,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
         <StatCard title="Total de Leads" value={totalLeads.toLocaleString()} change="+12.5%" isPositive={true} icon={Users} color="bg-blue-500" />
         <StatCard title="Novos Leads (24h)" value={newLeads.toLocaleString()} icon={PhoneCall} color="bg-amber-500" change="+4.2%" isPositive={true} />
-        <StatCard title="Pipeline Total" value={`R$ ${(totalPipeline / 1000).toFixed(1)}k`} change="+18.4%" isPositive={true} icon={DollarSign} color="bg-indigo-500" />
-        <StatCard title="Taxa de Agendamento" value={`${conversionRate}%`} change="-1.2%" isPositive={false} icon={TrendingUp} color="bg-emerald-500" />
+        <StatCard title="Aguardando Decisão" value={leadsWaitingDecision.toLocaleString()} change="+5.4%" isPositive={true} icon={TrendingUp} color="bg-indigo-500" />
+        <StatCard title="Taxa de Agendamento" value={`${conversionRate}%`} change="-1.2%" isPositive={false} icon={Users} color="bg-emerald-500" />
       </div>
 
       {/* Charts Section */}
