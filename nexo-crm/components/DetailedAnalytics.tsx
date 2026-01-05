@@ -32,17 +32,19 @@ const VerticalLabel = (props: any) => {
   const { x, y, width, height, value } = props;
   if (!value) return null;
 
-  // Se a barra for curta para o texto interno, colocamos logo acima da barra
+  // Baseline fixo para todas as etiquetas, começando do fundo de cada barra
+  const labelY = y + height - 20;
+
+  // Se a barra for muito curta (por exemplo, altura < 120), usamos branco para o texto ser legível sobre o fundo escuro
   const isTooShort = height < 120;
-  const labelY = isTooShort ? y - 8 : y + height - 20;
-  const labelColor = isTooShort ? '#8e8e93' : '#0c0c0e';
+  const labelColor = isTooShort ? '#ffffff' : '#0c0c0e';
 
   return (
     <text
       x={x + width / 2}
       y={labelY}
       fill={labelColor}
-      textAnchor={isTooShort ? "start" : "start"}
+      textAnchor="start"
       fontSize={9}
       fontWeight="900"
       transform={`rotate(-90, ${x + width / 2}, ${labelY})`}
