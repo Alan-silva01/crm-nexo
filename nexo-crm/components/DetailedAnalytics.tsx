@@ -13,7 +13,7 @@ interface DetailedAnalyticsProps {
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e'];
 
-const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
+const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }) => {
   const [ticketRaw, setTicketRaw] = React.useState<string>(() => {
     return localStorage.getItem('crm_ticket_medio') || '1000';
   });
@@ -70,6 +70,45 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
     name,
     value
   }));
+
+  const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
+
+  const onPieEnter = (_: any, index: number) => {
+    setActiveIndex(index);
+  };
+
+  const onPieLeave = () => {
+    setActiveIndex(null);
+  };
+
+  const renderActiveShape = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+
+    return (
+      <g>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <path
+          d={`M ${cx},${cy} L ${cx},${cy} L ${cx},${cy} Z`}
+          fill={fill}
+          filter="url(#glow)"
+        />
+        <Pie
+          {...props}
+          outerRadius={outerRadius + 12}
+          innerRadius={innerRadius - 4}
+          stroke={fill}
+          strokeWidth={2}
+          style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+        />
+      </g>
+    );
+  };
 
   return (
     <div className="p-8 h-full overflow-y-auto space-y-8 custom-scrollbar">
@@ -184,9 +223,23 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
                   paddingAngle={8}
                   dataKey="value"
                   stroke="none"
+                  {/* @ts-ignore */}
+                  activeIndex={activeIndex !== null ? activeIndex : undefined}
+                  {/* @ts-ignore */}
+                  activeShape={renderActiveShape}
+                  onMouseEnter={onPieEnter}
+                  onMouseLeave={onPieLeave}
+                  onClick={(data, index) => {
+                    console.log('Clicked slice:', data);
+                    // Selection logic could go here
+                  }}
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                      style={{ filter: activeIndex === index ? 'drop-shadow(0 0 8px currentColor)' : 'none', transition: 'all 0.3s' }}
+                    />
                   ))}
                 </Pie>
                 <Tooltip
@@ -225,32 +278,50 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
       </div>
 
       {/* Analysis Text */}
-      <div className="bg-indigo-600/10 border border-indigo-500/20 p-8 rounded-[2.5rem] relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
-          <TrendingUp size={120} className="text-indigo-500" />
+      <div className="bg-[#0c0c0e] border border-zinc-800/50 p-10 rounded-[3rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] relative overflow-hidden group border-l-4 border-l-indigo-500/50">
+        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-700">
+          <Briefcase size={160} className="text-white" />
         </div>
-        <div className="relative z-10 max-w-2xl">
-          <h3 className="text-lg font-bold text-indigo-100 mb-4 flex items-center gap-2">
-            <ArrowUpRight size={20} />
-            Análise de Oportunidade Nexo
-          </h3>
-          <p className="text-zinc-300 leading-relaxed text-sm">
-            Atualmente, você possui <span className="text-white font-bold">{waitingDecisionLeads} {waitingDecisionLeads === 1 ? 'lead' : 'leads'}</span> na etapa de <span className="italic text-indigo-300">Aguardando Decisão</span>.
+        <div className="relative z-10 max-w-3xl">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 bg-indigo-500/10 rounded-xl">
+              <ArrowUpRight size={20} className="text-indigo-400" />
+            </div>
+            <h3 className="text-[13px] font-bold text-zinc-400 uppercase tracking-widest">
+              Análise de Oportunidade Nexo
+            </h3>
+          </div>
+
+          <div className="space-y-4">
+            <p className="text-zinc-400 leading-relaxed text-[15px] font-medium">
+              Identificamos <span className="text-zinc-100 font-bold underline decoration-indigo-500/40 underline-offset-4">{waitingDecisionLeads} {waitingDecisionLeads === 1 ? 'cliente' : 'clientes'}</span> estagnados na etapa de decisão.
+            </p>
+
             {waitingDecisionLeads > 0 ? (
-              <>
-                {' '}Considerando o fechamento {waitingDecisionLeads === 1 ? 'deste lead' : `de ${projectedExtraLeads} deles (~${conversionSimulatedPercent}%)`},
-                você terá um incremento imediato de <span className="text-emerald-400 font-bold text-lg">R$ {projectedExtraRevenue.toLocaleString('pt-BR')}</span> no faturamento.
-                Além disso, pensando no longo prazo com seu LTV de <span className="text-white font-bold">R$ {ltv.toLocaleString('pt-BR')}</span>, esse movimento representa um valor de marca de <span className="text-indigo-400 font-bold">R$ {projectedExtraLTV.toLocaleString('pt-BR')}</span>.
-              </>
+              <p className="text-zinc-500 leading-loose text-sm">
+                Com base na sua taxa histórica, a conversão de apenas {projectedExtraLeads} deles injetaria
+                <span className="text-emerald-400 font-bold mx-1.5">R$ {projectedExtraRevenue.toLocaleString('pt-BR')}</span>
+                imediatamente em seu caixa. Em valor de vida útil (LTV), o impacto estratégico é de
+                <span className="text-indigo-400 font-bold ml-1.5">R$ {projectedExtraLTV.toLocaleString('pt-BR')}</span>.
+              </p>
             ) : (
-              ' Traga mais leads para esta etapa para projetar seu crescimento.'
+              <p className="text-zinc-500 text-sm italic">
+                Sua fila de decisão está vazia. Mova leads qualificados para esta etapa para gerar novas projeções de faturamento.
+              </p>
             )}
-          </p>
-          <div className="mt-6 flex gap-4">
-            <button className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20">
+          </div>
+
+          <div className="mt-10 flex gap-4">
+            <button
+              onClick={() => onAction?.('focus-decision')}
+              className="px-8 py-3 bg-zinc-100 text-zinc-950 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-white transition-all shadow-xl active:scale-95"
+            >
               Focar em Decisão
             </button>
-            <button className="px-6 py-2.5 bg-zinc-900 text-zinc-300 rounded-2xl text-xs font-bold hover:bg-zinc-800 transition-colors border border-zinc-800">
+            <button
+              onClick={() => onAction?.('view-decision-kanban')}
+              className="px-8 py-3 bg-zinc-900 text-zinc-400 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:text-white hover:bg-zinc-800 transition-all border border-zinc-800 active:scale-95"
+            >
               Ver Leads
             </button>
           </div>

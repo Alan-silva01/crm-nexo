@@ -134,7 +134,7 @@ const AppContent: React.FC = () => {
       l.name?.toLowerCase().includes(lower) ||
       (l.phone && l.phone.includes(lower)) ||
       (l.email && l.email.toLowerCase().includes(lower)) ||
-      (l.lastMessage && l.lastMessage.toLowerCase().includes(lower))
+      (l.last_message && l.last_message.toLowerCase().includes(lower))
     );
   }, [searchQuery, leads]);
 
