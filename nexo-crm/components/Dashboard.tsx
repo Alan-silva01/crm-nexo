@@ -267,19 +267,19 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
         </div>
 
         <div className="bg-[#0c0c0e] border border-zinc-800/50 p-6 rounded-[2rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
-          <h3 className="text-xs font-bold text-zinc-400 mb-6 uppercase tracking-widest pl-2 border-l-4 border-indigo-500 shrink-0">
+          <h3 className="text-xs font-bold text-zinc-400 mb-4 uppercase tracking-widest pl-2 border-l-4 border-indigo-500 shrink-0">
             Distribuição por Status
           </h3>
-          <div className="flex-1 w-full min-h-0">
+          <div className="flex-1 w-full min-h-0" style={{ minHeight: '200px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 {/* @ts-ignore */}
                 <Pie
                   data={pieData}
                   cx="50%"
-                  cy="45%"
-                  innerRadius={75}
-                  outerRadius={105}
+                  cy="50%"
+                  innerRadius={85}
+                  outerRadius={115}
                   paddingAngle={8}
                   dataKey="value"
                   stroke="none"
@@ -298,13 +298,13 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
                 </Pie>
                 {activeIndex === null && (
                   <g>
-                    <text x="50%" y="45%" dy={-35} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest">
+                    <text x="50%" y="50%" dy={-35} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest">
                       Colunas do Kanban
                     </text>
-                    <text x="50%" y="45%" dy={10} textAnchor="middle" fill="#fff" fontSize={24} fontWeight="bold">
+                    <text x="50%" y="50%" dy={10} textAnchor="middle" fill="#fff" fontSize={24} fontWeight="bold">
                       100%
                     </text>
-                    <text x="50%" y="45%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold">
+                    <text x="50%" y="50%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold">
                       Visão Geral
                     </text>
                   </g>
@@ -312,7 +312,29 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-4 pt-4 border-t border-zinc-800/50 flex justify-between shrink-0">
+
+          {/* Custom Grid Legend */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 shrink-0">
+            {pieData.map((entry, index) => {
+              const isLastOdd = pieData.length % 2 === 1 && index === pieData.length - 1;
+              return (
+                <div
+                  key={`legend-${index}`}
+                  className={`flex items-center gap-1.5 ${isLastOdd ? 'col-span-2 justify-center' : ''}`}
+                >
+                  <div
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  />
+                  <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight truncate">
+                    {entry.name.length > 12 ? `${entry.name.substring(0, 10)}...` : entry.name}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-zinc-800/50 flex justify-between shrink-0">
             <div className="text-center group">
               <p className="text-[9px] text-zinc-500 uppercase tracking-tighter font-bold">Conv.</p>
               <p className="text-lg font-bold text-emerald-400">{conversionRate}%</p>
