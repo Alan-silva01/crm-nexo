@@ -13,24 +13,25 @@ interface DetailedAnalyticsProps {
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e'];
 
 const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
-  const [ticketMedio, setTicketMedio] = React.useState<number>(() => {
-    const saved = localStorage.getItem('crm_ticket_medio');
-    return saved ? parseFloat(saved) : 1000;
+  const [ticketRaw, setTicketRaw] = React.useState<string>(() => {
+    return localStorage.getItem('crm_ticket_medio') || '1000';
   });
-  const [ltv, setLtv] = React.useState<number>(() => {
-    const saved = localStorage.getItem('crm_ltv');
-    return saved ? parseFloat(saved) : 5000;
+  const [ltvRaw, setLtvRaw] = React.useState<string>(() => {
+    return localStorage.getItem('crm_ltv') || '5000';
   });
 
+  const ticketMedio = parseFloat(ticketRaw) || 0;
+  const ltv = parseFloat(ltvRaw) || 0;
+
   const handleTicketChange = (val: string) => {
+    setTicketRaw(val);
     const num = parseFloat(val) || 0;
-    setTicketMedio(num);
     localStorage.setItem('crm_ticket_medio', num.toString());
   };
 
   const handleLtvChange = (val: string) => {
+    setLtvRaw(val);
     const num = parseFloat(val) || 0;
-    setLtv(num);
     localStorage.setItem('crm_ltv', num.toString());
   };
 
@@ -47,8 +48,15 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
   const conversionRate = totalLeads > 0 ? ((closedLeads / totalLeads) * 100).toFixed(1) : '0';
 
   // Projection logic
-  const conversionSimulatedPerncent = 30; // 30% conversion for the "opportunity" text
-  const projectedExtraRevenue = (waitingDecisionLeads * (conversionSimulatedPerncent / 100)) * ticketMedio;
+  const conversionSimulatedPercent = 30; // 30% conversion for the "opportunity" text
+  // Round to nearest whole person, minimum 1 if there are leads
+  const projectedExtraLeads = Math.max(
+    waitingDecisionLeads > 0 ? 1 : 0,
+    Math.round(waitingDecisionLeads * (conversionSimulatedPercent / 100))
+  );
+
+  const projectedExtraRevenue = projectedExtraLeads * ticketMedio;
+  const projectedExtraLTV = projectedExtraLeads * ltv;
 
   // Distribution by status for Pie Chart
   const statusDistribution = leads.reduce((acc: any, lead) => {
@@ -77,9 +85,10 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
                 <span className="text-xs text-zinc-400">R$</span>
                 <input
                   type="number"
-                  value={ticketMedio}
+                  value={ticketRaw}
                   onChange={(e) => handleTicketChange(e.target.value)}
                   className="bg-transparent border-none p-0 text-sm font-bold w-20 focus:ring-0 text-indigo-400"
+                  placeholder="0"
                 />
               </div>
             </div>
@@ -91,9 +100,10 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
                 <span className="text-xs text-zinc-400">R$</span>
                 <input
                   type="number"
-                  value={ltv}
+                  value={ltvRaw}
                   onChange={(e) => handleLtvChange(e.target.value)}
                   className="bg-transparent border-none p-0 text-sm font-bold w-20 focus:ring-0 text-emerald-400"
+                  placeholder="0"
                 />
               </div>
             </div>
@@ -167,10 +177,16 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
             Análise de Oportunidade Nexo
           </h3>
           <p className="text-zinc-300 leading-relaxed text-sm">
-            Atualmente, você possui <span className="text-white font-bold">{waitingDecisionLeads} leads</span> na etapa de <span className="italic text-indigo-300">Aguardando Decisão</span>.
-            Considerando o seu Ticket Médio de <span className="text-white font-bold">R$ {ticketMedio.toLocaleString('pt-BR')}</span>,
-            se conseguirmos converter apenas <span className="text-indigo-300 font-bold">{conversionSimulatedPerncent}%</span> desses contatos,
-            você terá um incremento imediato de <span className="text-emerald-400 font-bold text-lg">R$ {projectedExtraRevenue.toLocaleString('pt-BR')}</span> no seu faturamento mensal.
+            Atualmente, você possui <span className="text-white font-bold">{waitingDecisionLeads} {waitingDecisionLeads === 1 ? 'lead' : 'leads'}</span> na etapa de <span className="italic text-indigo-300">Aguardando Decisão</span>.
+            {waitingDecisionLeads > 0 ? (
+              <>
+                {' '}Considerando o fechamento {waitingDecisionLeads === 1 ? 'deste lead' : `de ${projectedExtraLeads} deles (~${conversionSimulatedPercent}%)`},
+                você terá um incremento imediato de <span className="text-emerald-400 font-bold text-lg">R$ {projectedExtraRevenue.toLocaleString('pt-BR')}</span> no faturamento.
+                Além disso, pensando no longo prazo com seu LTV de <span className="text-white font-bold">R$ {ltv.toLocaleString('pt-BR')}</span>, esse movimento representa um valor de marca de <span className="text-indigo-400 font-bold">R$ {projectedExtraLTV.toLocaleString('pt-BR')}</span>.
+              </>
+            ) : (
+              ' Traga mais leads para esta etapa para projetar seu crescimento.'
+            )}
           </p>
           <div className="mt-6 flex gap-4">
             <button className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20">
