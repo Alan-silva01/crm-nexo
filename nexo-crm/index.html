@@ -28,7 +28,7 @@
       --shadow-base: 8px 8px 16px #060607, -8px -8px 16px #121215;
     }
 
-    /* Light Theme Overrides */
+    /* Light Theme Base Variables */
     .light {
       --bg-main: #f8f9fa;
       --bg-card: #ffffff;
@@ -51,61 +51,117 @@
       color: #18181b;
     }
 
-    /* Fix ALL Dark Backgrounds in Light Mode */
+    /* CORE OVERRIDES FOR LIGHT MODE - Aggressive & Escaped */
+
+    /* Backgrounds */
     .light .bg-black,
+    .light .bg-zinc-950,
+    .light .bg-zinc-900,
     .light .bg-\[\#121214\],
     .light .bg-\[\#1e1e1e\],
+    .light .bg-\[\#0c0c0e\],
+    .light .bg-\[\#09090b\],
+    .light .bg-\[\#0b141a\],
     .light .bg-\[\#1a242a\],
     .light .bg-\[\#1e2a30\],
-    .light .bg-\[\#2a3942\],
-    .light .bg-\[\#0b141a\],
-    .light .bg-zinc-950,
-    .light .bg-zinc-900 {
-      background-color: #f1f1f4 !important;
-    }
-
-    .light .bg-\[\#09090b\],
-    .light .bg-\[\#0c0c0e\],
-    .light aside {
+    .light .bg-\[\#2a3942\] {
       background-color: #ffffff !important;
     }
 
-    /* Fix Sidebar & Chat Items Active State */
-    .light .bg-zinc-800,
-    .light .bg-zinc-800\/80,
-    .light .bg-zinc-800\/50,
+    .light main,
+    .light .bg-zinc-900\/10,
+    .light .bg-zinc-900\/5 {
+      background-color: #f8f9fa !important;
+    }
+
+    .light aside,
+    .light .bg-zinc-900\/50,
+    .light .bg-zinc-900\/80,
     .light .bg-\[\#18181b\] {
+      background-color: #ffffff !important;
+    }
+
+    /* Kanban & Dashboard Specific Gray Fixes */
+    .light .bg-zinc-900\/30,
+    .light .bg-zinc-900\/20 {
+      background-color: #f1f1f4 !important;
+    }
+
+    .light .bg-zinc-800,
+    .light .bg-zinc-800\/20,
+    .light .bg-zinc-800\/80 {
+      background-color: #f1f1f4 !important;
+    }
+
+    /* Kanban Lead Counter Bubbles */
+    .light .bg-zinc-900\/80.text-zinc-500 {
       background-color: #f1f1f4 !important;
       color: #18181b !important;
     }
 
-    /* Fix Chat Bubbles - Clients (Left) should be lighter gray, Agent (Right) keep emerald/teal but refined */
-    .light .bg-\[\#1e2a30\] {
-      background-color: #ffffff !important;
-      border: 1px solid #f1f1f4;
+    /* Fix Avatar Box in Sidebar */
+    .light .bg-zinc-900\/50.border-zinc-800\/50 {
+      background-color: #f1f1f4 !important;
+      border-color: #f1f1f4 !important;
     }
 
-    .light .text-emerald-200 {
+    /* GREEN CONVERSATIONS READABILITY (Agent/IA) */
+    /* AI Bubble (Right) */
+    .light .bg-\[\#056162\] {
+      background-color: #dcfce7 !important;
+      /* Very light green */
+      border: 1px solid #bbf7d0 !important;
+    }
+
+    /* Agent Bubble (Right) */
+    .light .bg-\[\#005c4b\] {
+      background-color: #f0fdf4 !important;
+      /* Even lighter */
+      border: 1px solid #dcfce7 !important;
+    }
+
+    /* Badges AI/Agent */
+    .light .bg-\[\#04514f\],
+    .light .bg-\[\#004d40\] {
+      background-color: #bbf7d0 !important;
+      border-bottom: 1px solid #86efac !important;
+    }
+
+    .light .text-emerald-200,
+    .light .text-teal-200 {
       color: #065f46 !important;
     }
 
-    .light .text-teal-200 {
-      color: #0f766e !important;
+    /* Dark Green Text */
+
+    /* Message Text inside bubbles */
+    .light .bg-\[\#056162\] p,
+    .light .bg-\[\#005c4b\] p {
+      color: #064e3b !important;
     }
 
-    .light .text-emerald-100\/70 {
-      color: #064e3b !important;
+    .light .bg-\[\#1e2a30\] p {
+      color: #18181b !important;
+    }
+
+    /* Client Bubble (Left) - Fix Text and BG */
+    .light .bg-\[\#1e2a30\] {
+      background-color: #ffffff !important;
+      border: 1px solid #f1f1f4 !important;
+    }
+
+    .light .bg-\[\#1a242a\] {
+      background-color: #f8f9fa !important;
+      border-bottom: 1px solid #e4e4e7 !important;
     }
 
     /* Borders */
     .light .border-zinc-800,
     .light .border-zinc-800\/50,
     .light .border-zinc-800\/40,
-    .light .border-zinc-800\/10,
+    .light .border-zinc-800\/20,
     .light .border-zinc-700,
-    .light .border-\[\#09090b\],
-    .light .border-\[\#1e2a30\],
-    .light .border-\[\#151d22\] {
+    .light .border-zinc-800\/10 {
       border-color: #f1f1f4 !important;
     }
 
@@ -126,31 +182,20 @@
       color: #4f46e5 !important;
     }
 
-    /* Shadow depth for Light Mode - Slightly more visible for a "premium card" feel */
+    /* Advanced Shadows for Premium Depth */
     .light [class*="shadow-"] {
       box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.08), 0 2px 6px -2px rgba(0, 0, 0, 0.05) !important;
     }
 
-    .light .shadow-\[8px_8px_16px_\#060607\,-8px_-8px_16px_\#121215\],
-    .light .shadow-\[10px_10px_20px_\#050506\,-10px_-10px_20px_\#131316\],
-    .light .shadow-\[15px_15px_30px_\#050506\,-15px_-15px_30px_\#131316\],
-    .light .shadow-\[var\(--shadow-base\)\] {
-      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 5px 15px -5px rgba(0, 0, 0, 0.05) !important;
+    .light .shadow-\[weighted_all_variations\],
+    .light [class*="shadow-\["] {
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 5px 15px -5px rgba(0, 0, 0, 0.06) !important;
     }
 
     .light .shadow-inner,
     .light .shadow-inset,
-    .light .shadow-\[inset_4px_4px_8px_\#060607\,inset_-4px_-4px_8px_\#121215\] {
+    .light [class*="shadow-\[inset"] {
       box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.03) !important;
-    }
-
-    /* WhatsApp Specific Adjustments */
-    .light .bg-\[\#005c4b\] {
-      background-color: #008069 !important;
-    }
-
-    .light .bg-\[\#056162\] {
-      background-color: #005c4b !important;
     }
 
     /* Scrollbars */
