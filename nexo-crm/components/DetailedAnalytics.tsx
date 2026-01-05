@@ -259,10 +259,6 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
                     />
                   ))}
                 </Pie>
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '20px', padding: '15px' }}
-                  itemStyle={{ color: '#fff', fontSize: '12px' }}
-                />
                 <Legend
                   iconType="circle"
                   layout="vertical"
