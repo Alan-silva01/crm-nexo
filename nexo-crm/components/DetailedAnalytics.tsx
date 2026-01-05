@@ -35,9 +35,8 @@ const VerticalLabel = (props: any) => {
   // Baseline fixo para todas as etiquetas, começando do fundo de cada barra
   const labelY = y + height - 20;
 
-  // Se a barra for muito curta (por exemplo, altura < 120), usamos branco para o texto ser legível sobre o fundo escuro
-  const isTooShort = height < 120;
-  const labelColor = isTooShort ? '#ffffff' : '#0c0c0e';
+  // Cor sempre escura no tema dark para contraste com as barras coloridas
+  const labelColor = '#0c0c0e';
 
   return (
     <text
@@ -48,7 +47,7 @@ const VerticalLabel = (props: any) => {
       fontSize={9}
       fontWeight="900"
       transform={`rotate(-90, ${x + width / 2}, ${labelY})`}
-      style={{ textTransform: 'uppercase', pointerEvents: 'none' }}
+      style={{ textTransform: 'uppercase', pointerEvents: 'none', userSelect: 'none' }}
     >
       {value.length > 15 ? `${value.substring(0, 12)}...` : value}
     </text>

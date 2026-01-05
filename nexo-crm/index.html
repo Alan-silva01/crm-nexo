@@ -173,6 +173,20 @@
       fill: #8e8e93 !important;
     }
 
+    /* Prevent chart selection on click */
+    .recharts-wrapper,
+    .recharts-surface,
+    .recharts-layer {
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      outline: none !important;
+    }
+
+    .recharts-wrapper:focus,
+    .recharts-surface:focus {
+      outline: none !important;
+    }
+
     .light .bg-zinc-900\/80.text-zinc-500 {
       background-color: #f1f1f4 !important;
       color: #18181b !important;
