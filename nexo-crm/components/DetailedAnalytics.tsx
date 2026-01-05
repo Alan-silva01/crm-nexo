@@ -2,7 +2,7 @@ import React from 'react';
 import { Lead } from '../types';
 import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, Sector, BarChart, Bar, LabelList
+  BarChart, Bar, Cell, LabelList
 } from 'recharts';
 import { Download, Calendar, ArrowUpRight, TrendingUp, Users, Target, DollarSign, Briefcase } from 'lucide-react';
 
@@ -11,13 +11,7 @@ interface DetailedAnalyticsProps {
   onAction?: (action: 'view-decision-kanban' | 'focus-decision') => void;
 }
 
-const BORDER_COLORS = [
-  '#fbbf24', // yellow
-  '#ef4444', // red
-  '#3b82f6', // blue
-  '#22c55e', // green
-  '#a855f7'  // purple
-];
+const BORDER_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e', '#0ea5e9', '#f97316', '#22c55e', '#d946ef'];
 
 const VerticalLabel = (props: any) => {
   const { x, y, width, height, value } = props;
@@ -206,7 +200,7 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
               <BarChart data={barChartData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" opacity={0.1} />
                 <XAxis dataKey="name" hide />
-                <YAxis hide />
+                <YAxis hide tick={{ fill: '#71717a', fontSize: 10 }} />
                 <Tooltip
                   cursor={{ fill: 'rgba(255,255,255,0.02)' }}
                   contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '12px' }}

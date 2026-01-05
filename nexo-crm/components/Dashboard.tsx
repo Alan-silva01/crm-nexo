@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { Lead } from '../types';
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e'];
+const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e', '#0ea5e9', '#f97316', '#22c55e', '#d946ef'];
 
 const DashboardClock = () => {
   const [time, setTime] = React.useState(new Date());
@@ -141,13 +141,13 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <text x={cx} y={cy} dy={-20} textAnchor="middle" fill="#71717a" fontSize={10} fontWeight="bold" className="uppercase tracking-widest">
-          {payload.name}
+        <text x={cx} y={cy} dy={-25} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest">
+          {payload.name.length > 15 ? `${payload.name.substring(0, 12)}...` : payload.name}
         </text>
-        <text x={cx} y={cy} dy={10} textAnchor="middle" fill="#fff" fontSize={22} fontWeight="bold">
+        <text x={cx} y={cy} dy={10} textAnchor="middle" fill="#fff" fontSize={24} fontWeight="bold">
           {value}
         </text>
-        <text x={cx} y={cy} dy={25} textAnchor="middle" fill="#10b981" fontSize={10} fontWeight="bold">
+        <text x={cx} y={cy} dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold">
           {`${(percent * 100).toFixed(1)}%`}
         </text>
         <Sector
@@ -277,9 +277,9 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
                 <Pie
                   data={pieData}
                   cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
+                  cy="45%"
+                  innerRadius={75}
+                  outerRadius={105}
                   paddingAngle={8}
                   dataKey="value"
                   stroke="none"
@@ -301,7 +301,16 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
                   layout="horizontal"
                   align="center"
                   verticalAlign="bottom"
-                  wrapperStyle={{ fontSize: '9px', paddingTop: '10px', color: '#71717a' }}
+                  wrapperStyle={{
+                    fontSize: '8px',
+                    paddingTop: '20px',
+                    color: '#71717a',
+                    width: '100%',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
