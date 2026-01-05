@@ -139,16 +139,30 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
         }
 
         setIsSaving(true);
-        // Use the eventDate string directly to preserve local time intent if possible,
-        // or ensure it's converted to ISO but accounting for the 3h offset issue reported by user.
-        // Actually, if we send the local string as ISO, it might be interpreted as UTC by the DB.
-        // To fix "+3:00 hours in DB", we should ensure we're sending the exact local time.
-        const date = new Date(eventDate);
-        const isoString = date.toISOString();
+        // eventDate represents local time (YYYY-MM-DDTHH:mm from input)
+        // We append the local offset (-03:00) to be explicit and avoid UTC conversion issues 
+        // that cause the +3h/-3h discrepancies reported by the user.
+        const isoString = `${eventDate}:00-03:00`;
 
         await onUpdateLead(selectedLeadId, {
             dataHora_Agendamento: isoString,
             servico_interesse: eventService
+        });
+
+        setIsSaving(false);
+        setIsEventModalOpen(false);
+        resetForm();
+    };
+
+    const handleCancelEvent = async () => {
+        if (!selectedLeadId) return;
+
+        if (!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
+
+        setIsSaving(true);
+        await onUpdateLead(selectedLeadId, {
+            dataHora_Agendamento: null,
+            servico_interesse: null
         });
 
         setIsSaving(false);
@@ -314,20 +328,23 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
             {isEventModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
                     <div
-                        className="bg-[#0c0c0e] w-full max-w-md rounded-[3rem] p-10 pb-16 shadow-[20px_20px_40px_#050506,-20px_-20px_40px_#131316] border border-zinc-800/30 animate-in zoom-in-95 duration-300 relative z-50 overflow-y-auto max-h-[90vh] custom-scrollbar"
+                        className="bg-[#0c0c0e] w-full max-w-md rounded-[3rem] p-8 shadow-[20px_20px_40px_#050506,-20px_-20px_40px_#131316] border border-zinc-800/30 animate-in zoom-in-95 duration-300 relative z-50 flex flex-col max-h-[90vh]"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">Novo Agendamento</h2>
+                        <div className="flex justify-between items-center mb-6 shrink-0">
+                            <h2 className="text-xl font-bold bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">Agendamento</h2>
                             <button
-                                onClick={() => setIsEventModalOpen(false)}
+                                onClick={() => {
+                                    setIsEventModalOpen(false);
+                                    resetForm();
+                                }}
                                 className="p-3 rounded-full bg-[#0c0c0e] shadow-[4px_4px_8px_#060607,-4px_-4px_8px_#121215] text-zinc-500 hover:text-white transition-all active:scale-90"
                             >
                                 <X size={18} />
                             </button>
                         </div>
 
-                        <div className="space-y-8">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6 min-h-0 pb-6">
                             {/* Lead Selection */}
                             <div className="space-y-4">
                                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Selecionar Lead</label>
@@ -390,29 +407,40 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                 />
                             </div>
 
-                            <div className="pt-8 flex gap-4 sticky bottom-0 bg-[#0c0c0e] mt-4 border-t border-zinc-800/30">
-                                <button
-                                    onClick={() => {
-                                        setIsEventModalOpen(false);
-                                        resetForm();
-                                    }}
-                                    className="flex-1 py-4 rounded-[1.5rem] bg-[#0c0c0e] shadow-[6px_6px_12px_#050506,-6px_-6px_12px_#131316] text-xs font-bold text-zinc-500 hover:text-white transition-all active:scale-95"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={handleCreateEvent}
-                                    disabled={isSaving}
-                                    className="flex-1 py-4 rounded-[1.5rem] bg-indigo-600 shadow-lg shadow-indigo-600/20 text-xs font-bold text-white hover:bg-indigo-500 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
-                                >
-                                    {isSaving ? (
-                                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                                    ) : (
-                                        <>
-                                            <Check size={16} /> Salvar Evento
-                                        </>
-                                    )}
-                                </button>
+                            <div className="pt-6 flex flex-col gap-3 shrink-0 border-t border-zinc-800/30 bg-[#0c0c0e]">
+                                <div className="flex gap-4">
+                                    <button
+                                        onClick={() => {
+                                            setIsEventModalOpen(false);
+                                            resetForm();
+                                        }}
+                                        className="flex-1 py-4 rounded-[1.5rem] bg-[#0c0c0e] shadow-[6px_6px_12px_#050506,-6px_-6px_12px_#131316] text-xs font-bold text-zinc-500 hover:text-white transition-all active:scale-95"
+                                    >
+                                        Fechar
+                                    </button>
+                                    <button
+                                        onClick={handleCreateEvent}
+                                        disabled={isSaving}
+                                        className="flex-1 py-4 rounded-[1.5rem] bg-indigo-600 shadow-lg shadow-indigo-600/20 text-xs font-bold text-white hover:bg-indigo-500 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                    >
+                                        {isSaving ? (
+                                            <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                        ) : (
+                                            <>
+                                                <Check size={16} /> Salvar Evento
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                                {selectedLeadId && (
+                                    <button
+                                        onClick={handleCancelEvent}
+                                        disabled={isSaving}
+                                        className="w-full py-3 rounded-xl text-[10px] font-bold text-red-500/50 hover:text-red-500 hover:bg-red-500/5 transition-all text-center uppercase tracking-widest"
+                                    >
+                                        Cancelar Agendamento
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -463,6 +491,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                                     setSearchTerm(event.name);
                                                     // Set local time for datetime-local input
                                                     const date = new Date(event.dataHora_Agendamento!);
+                                                    // This ensures the input shows the correct local time regardless of timezone
                                                     const localISODate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
                                                     setEventDate(localISODate);
                                                     setEventService(event.servico_interesse || '');
