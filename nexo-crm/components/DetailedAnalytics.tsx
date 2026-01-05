@@ -17,18 +17,23 @@ const VerticalLabel = (props: any) => {
   const { x, y, width, height, value } = props;
   if (!value) return null;
 
+  // Se a barra for muito curta para o texto, começamos do topo da barra para baixo
+  const isTooShort = height < 100;
+  const labelY = isTooShort ? y - 10 : y + height - 20;
+  const labelColor = isTooShort ? '#71717a' : '#0c0c0e';
+
   return (
     <text
       x={x + width / 2}
-      y={y + height - 20}
-      fill="#0c0c0e"
-      textAnchor="start"
-      fontSize={10}
+      y={labelY}
+      fill={labelColor}
+      textAnchor={isTooShort ? "end" : "start"}
+      fontSize={9}
       fontWeight="900"
-      transform={`rotate(-90, ${x + width / 2}, ${y + height - 20})`}
+      transform={`rotate(-90, ${x + width / 2}, ${labelY})`}
       style={{ textTransform: 'uppercase', pointerEvents: 'none' }}
     >
-      {value}
+      {value.length > 15 ? `${value.substring(0, 12)}...` : value}
     </text>
   );
 };
@@ -190,17 +195,17 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] h-[450px] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] min-h-[550px] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316]">
           <h3 className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest pl-2 border-l-4 border-indigo-500">
             Funil por Etapa
           </h3>
-          <div className="h-[300px]">
+          <div className="h-[420px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barChartData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+              <BarChart data={barChartData} margin={{ top: 20, right: 30, left: 0, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" opacity={0.1} />
                 <XAxis dataKey="name" hide />
-                <YAxis hide tick={{ fill: '#71717a', fontSize: 10 }} />
+                <YAxis hide />
                 <Tooltip
                   cursor={{ fill: 'rgba(255,255,255,0.02)' }}
                   contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '12px' }}
@@ -208,7 +213,7 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
                   itemStyle={{ color: '#fff', fontSize: '10px' }}
                   formatter={(value: any) => [`${value} leads`, 'Quantidade']}
                 />
-                <Bar dataKey="value" radius={[10, 10, 0, 0]} isAnimationActive={true} barSize={60}>
+                <Bar dataKey="value" radius={[10, 10, 0, 0]} isAnimationActive={true} barSize={60} minPointSize={10}>
                   {barChartData.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
@@ -220,7 +225,7 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
           </div>
         </div>
 
-        <div className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] h-[450px] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col justify-center items-center text-center">
+        <div className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] min-h-[550px] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col justify-center items-center text-center">
           <div className="p-6 bg-indigo-500/10 rounded-full mb-6">
             <Target size={48} className="text-indigo-400" />
           </div>
