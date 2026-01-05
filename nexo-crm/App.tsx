@@ -141,6 +141,13 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleUpdateLeadGeneric = async (id: string, updates: Partial<Lead>) => {
+    const success = await leadsService.updateLead(id, updates);
+    if (success) {
+      setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -161,7 +168,7 @@ const AppContent: React.FC = () => {
         );
         return <LeadsList searchQuery={searchQuery} filteredLeads={filteredLeads} />;
       case 'calendar':
-        return <CalendarPage leads={leads} />;
+        return <CalendarPage leads={leads} onUpdateLead={handleUpdateLeadGeneric} />;
       case 'chats':
         return (
           <WhatsAppChat
