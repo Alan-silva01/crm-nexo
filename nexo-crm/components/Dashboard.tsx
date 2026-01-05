@@ -314,9 +314,9 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
           </div>
 
           {/* Custom Grid Legend - Two equal columns */}
-          <div className="flex justify-between mt-2 shrink-0">
+          <div className="flex justify-between mt-2 shrink-0 px-4">
             {/* Left column */}
-            <div className="flex-1 flex flex-col items-center gap-0.5">
+            <div className="flex-1 flex flex-col items-start gap-0.5">
               {pieData.slice(0, Math.ceil(pieData.length / 2)).map((entry, index) => (
                 <div key={`legend-l-${index}`} className="flex items-center gap-1.5">
                   <div
@@ -330,7 +330,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
               ))}
             </div>
             {/* Right column */}
-            <div className="flex-1 flex flex-col items-center gap-0.5">
+            <div className="flex-1 flex flex-col items-start gap-0.5 pl-4">
               {pieData.slice(Math.ceil(pieData.length / 2)).map((entry, index) => {
                 const realIndex = Math.ceil(pieData.length / 2) + index;
                 return (
