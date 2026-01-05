@@ -14,14 +14,17 @@ import {
     Search,
     Calendar
 } from 'lucide-react';
-import { Lead } from '../types';
+import { Lead, LeadColumnHistory } from '../types';
+import LeadDetailsModal from './LeadDetailsModal';
 
 interface CalendarProps {
     leads: Lead[];
     onUpdateLead: (id: string, updates: Partial<Lead>) => Promise<void>;
+    leadsHistory: Record<string, LeadColumnHistory[]>;
+    onSelectChat: (id: string) => void;
 }
 
-const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
+const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHistory, onSelectChat }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [time, setTime] = useState(new Date());
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -33,6 +36,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
     const [duration, setDuration] = useState<number>(30); // Default 30 min
     const [selectedDayEvents, setSelectedDayEvents] = useState<Lead[] | null>(null);
     const [selectedDateLabel, setSelectedDateLabel] = useState<string>('');
+    const [detailsModal, setDetailsModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
@@ -373,7 +377,13 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
 
                             <div className="pt-4 flex gap-4">
                                 <button
-                                    onClick={() => setIsEventModalOpen(false)}
+                                    onClick={() => {
+                                        setIsEventModalOpen(false);
+                                        setSelectedLeadId('');
+                                        setSearchTerm('');
+                                        setEventDate('');
+                                        setEventService('');
+                                    }}
                                     className="flex-1 py-4 rounded-[1.5rem] bg-[#0c0c0e] shadow-[6px_6px_12px_#050506,-6px_-6px_12px_#131316] text-xs font-bold text-zinc-500 hover:text-white transition-all active:scale-95"
                                 >
                                     Cancelar
@@ -435,10 +445,29 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
                                             {event.servico_interesse || 'Serviço não especificado'}
                                         </p>
                                         <div className="flex gap-2">
-                                            <button className="px-4 py-2 rounded-xl bg-[#0c0c0e] shadow-[4px_4px_8px_#050506,-4px_-4px_8px_#131316] text-[10px] font-bold text-zinc-400 hover:text-white transition-all active:scale-95">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedLeadId(event.id);
+                                                    setSearchTerm(event.name);
+                                                    // Set local time for datetime-local input
+                                                    const date = new Date(event.dataHora_Agendamento!);
+                                                    const localISODate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                                                    setEventDate(localISODate);
+                                                    setEventService(event.servico_interesse || '');
+                                                    setSelectedDayEvents(null);
+                                                    setIsEventModalOpen(true);
+                                                }}
+                                                className="px-4 py-2 rounded-xl bg-[#0c0c0e] shadow-[4px_4px_8px_#050506,-4px_-4px_8px_#131316] text-[10px] font-bold text-zinc-400 hover:text-white transition-all active:scale-95"
+                                            >
                                                 Reagendar
                                             </button>
-                                            <button className="px-4 py-2 rounded-xl bg-indigo-600 shadow-lg shadow-indigo-600/20 text-[10px] font-bold text-white hover:bg-indigo-500 transition-all active:scale-95">
+                                            <button
+                                                onClick={() => {
+                                                    setDetailsModal({ isOpen: true, lead: event });
+                                                    setSelectedDayEvents(null);
+                                                }}
+                                                className="px-4 py-2 rounded-xl bg-indigo-600 shadow-lg shadow-indigo-600/20 text-[10px] font-bold text-white hover:bg-indigo-500 transition-all active:scale-95"
+                                            >
                                                 Ver Detalhes
                                             </button>
                                         </div>
@@ -459,9 +488,22 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
                     </div>
                 </div>
             )}
+
+            {/* Lead Details Modal */}
+            <LeadDetailsModal
+                isOpen={detailsModal.isOpen}
+                onClose={() => setDetailsModal({ isOpen: false, lead: null })}
+                lead={detailsModal.lead}
+                historyCache={detailsModal.lead ? leadsHistory[detailsModal.lead.id] : []}
+                onViewConversation={() => {
+                    if (detailsModal.lead) {
+                        onSelectChat(detailsModal.lead.id);
+                        setDetailsModal({ isOpen: false, lead: null });
+                    }
+                }}
+            />
         </div>
     );
 };
-
 
 export default CalendarPage;

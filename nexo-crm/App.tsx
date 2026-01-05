@@ -203,7 +203,17 @@ const AppContent: React.FC = () => {
         );
         return <LeadsList searchQuery={searchQuery} filteredLeads={filteredLeads} />;
       case 'calendar':
-        return <CalendarPage leads={leads} onUpdateLead={handleUpdateLeadGeneric} />;
+        return (
+          <CalendarPage
+            leads={leads}
+            onUpdateLead={handleUpdateLeadGeneric}
+            leadsHistory={leadsHistory}
+            onSelectChat={(id) => {
+              setSelectedChatId(id);
+              setActiveTab('chats');
+            }}
+          />
+        );
       case 'chats':
         return (
           <WhatsAppChat
