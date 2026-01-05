@@ -224,7 +224,7 @@ const AppContent: React.FC = () => {
           />
         );
       case 'analytics':
-        return <DetailedAnalytics />;
+        return <DetailedAnalytics leads={leads} />;
       default:
         return <Dashboard leads={leads} />;
     }
