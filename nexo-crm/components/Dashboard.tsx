@@ -31,6 +31,29 @@ interface DashboardProps {
   leads: Lead[];
 }
 
+const DashboardClock = () => {
+  const [time, setTime] = React.useState(new Date());
+
+  React.useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-zinc-800/10">
+      <div className="flex items-center gap-2 text-indigo-400">
+        <Clock size={14} />
+        <span className="text-xs font-bold tracking-tight">{time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+      </div>
+      <div className="w-[1px] h-3 bg-zinc-800"></div>
+      <div className="flex items-center gap-2 text-zinc-500">
+        <Calendar size={12} />
+        <span className="text-[10px] font-bold uppercase tracking-widest">{time.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}</span>
+      </div>
+    </div>
+  );
+};
+
 const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) => (
   <div className="bg-[#0c0c0e] border border-zinc-800/50 p-4 rounded-[1.5rem] shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316] hover:border-zinc-700/50 transition-all group">
     <div className="flex justify-between items-start mb-4">
@@ -55,41 +78,26 @@ const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) 
 );
 
 const VerticalLabel = (props: any) => {
-  const { x, y, width, value } = props;
-  const letters = value.toString().split('');
-  const fontSize = 9;
-  const lineHeight = 11;
-  const totalHeight = letters.length * lineHeight;
+  const { x, y, width, height, value } = props;
+  if (!value) return null;
 
   return (
-    <g>
-      {letters.map((letter: string, i: number) => (
-        <text
-          key={i}
-          x={x + width / 2}
-          y={y + 25 + i * lineHeight}
-          fill="#a1a1aa"
-          textAnchor="middle"
-          fontSize={fontSize}
-          fontWeight="bold"
-          style={{ textTransform: 'uppercase' }}
-        >
-          {letter}
-        </text>
-      ))}
-    </g>
+    <text
+      x={x + width / 2}
+      y={y + height - 20}
+      fill="#a1a1aa"
+      textAnchor="start"
+      fontSize={9}
+      fontWeight="bold"
+      transform={`rotate(-90, ${x + width / 2}, ${y + height - 20})`}
+      style={{ textTransform: 'uppercase', pointerEvents: 'none' }}
+    >
+      {value}
+    </text>
   );
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
-  // ... (previous logic remains the same until return)
-  const [time, setTime] = React.useState(new Date());
-
-  React.useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const totalLeads = leads.length;
   const oneDayAgo = new Date();
   oneDayAgo.setDate(oneDayAgo.getDate() - 1);
@@ -98,32 +106,36 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
   const leadsWithAppointment = leads.filter(l => l.dataHora_Agendamento !== null).length;
   const conversionRate = totalLeads > 0 ? ((leadsWithAppointment / totalLeads) * 100).toFixed(1) : '0';
 
-  const leadsPerStatus = leads.reduce((acc: any, lead) => {
-    const status = lead.status || 'Sem Status';
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {});
+  const areaChartData = React.useMemo(() => {
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return d.toISOString().split('T')[0];
+    });
 
-  const barChartData = Object.entries(leadsPerStatus).map(([name, value]) => ({
-    name,
-    value
-  })).sort((a, b) => (b.value as number) - (a.value as number));
+    return last7Days.map(dateStr => {
+      const dayLeads = leads.filter(l => l.created_at?.split('T')[0] === dateStr);
+      const dateObj = new Date(dateStr + 'T12:00:00');
+      return {
+        name: dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', ''),
+        leads: dayLeads.length,
+        appointments: dayLeads.filter(l => l.dataHora_Agendamento !== null).length
+      };
+    });
+  }, [leads]);
 
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().split('T')[0];
-  });
+  const barChartData = React.useMemo(() => {
+    const leadsPerStatus = leads.reduce((acc: any, lead) => {
+      const status = lead.status || 'Sem Status';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
 
-  const areaChartData = last7Days.map(dateStr => {
-    const dayLeads = leads.filter(l => l.created_at?.split('T')[0] === dateStr);
-    const dateObj = new Date(dateStr + 'T12:00:00');
-    return {
-      name: dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', ''),
-      leads: dayLeads.length,
-      appointments: dayLeads.filter(l => l.dataHora_Agendamento !== null).length
-    };
-  });
+    return Object.entries(leadsPerStatus).map(([name, value]) => ({
+      name,
+      value
+    })).sort((a, b) => (b.value as number) - (a.value as number));
+  }, [leads]);
 
   const rejectedLeads = leads.filter(l =>
     l.status === 'SEM INTERESSE' ||
@@ -154,17 +166,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
           <p className="text-zinc-500 text-xs">Visão geral em tempo real dos seus leads e conversões.</p>
         </div>
         <div className="flex gap-4">
-          <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-zinc-800/10">
-            <div className="flex items-center gap-2 text-indigo-400">
-              <Clock size={14} className="animate-pulse" />
-              <span className="text-xs font-bold tracking-tight">{time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-            <div className="w-[1px] h-3 bg-zinc-800"></div>
-            <div className="flex items-center gap-2 text-zinc-500">
-              <Calendar size={12} />
-              <span className="text-[10px] font-bold uppercase tracking-widest">{time.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}</span>
-            </div>
-          </div>
+          <DashboardClock />
           <button
             onClick={handleExportCSV}
             className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
@@ -233,15 +235,15 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
           </h3>
           <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barChartData} margin={{ top: 10, right: 5, left: 5, bottom: 5 }}>
+              <BarChart data={barChartData} margin={{ top: 10, right: 5, left: 5, bottom: 10 }}>
                 <XAxis dataKey="name" hide />
                 <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '12px', fontSize: '10px' }} />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={45}>
+                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40} isAnimationActive={false}>
                   {barChartData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={index === 0 ? '#6366f1' : '#312e81'} />
+                    <Cell key={`cell-${index}`} fill={index === 0 ? '#4f46e5' : '#2d2b55'} />
                   ))}
                   <LabelList dataKey="name" content={<VerticalLabel />} />
-                  <LabelList dataKey="value" position="top" fill="#a1a1aa" fontSize={10} offset={10} fontStyle="bold" />
+                  <LabelList dataKey="value" position="top" fill="#6366f1" fontSize={10} offset={10} fontStyle="bold" />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
