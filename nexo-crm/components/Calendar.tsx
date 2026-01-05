@@ -28,6 +28,11 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
     const [selectedDateLabel, setSelectedDateLabel] = useState<string>('');
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [detailsModal, setDetailsModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
+    const [alertModal, setAlertModal] = useState<{ isOpen: boolean, title: string, message: string }>({
+        isOpen: false,
+        title: '',
+        message: ''
+    });
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
@@ -125,7 +130,11 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
 
     const handleCreateEvent = async () => {
         if (!selectedLeadId || !eventDate || !eventService) {
-            alert('Por favor, preencha todos os campos.');
+            setAlertModal({
+                isOpen: true,
+                title: 'Campos Incompletos',
+                message: 'Por favor, selecione um lead, uma data/hora e um serviço para confirmar o agendamento.'
+            });
             return;
         }
 
@@ -473,6 +482,16 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                 confirmText="Sim, Cancelar"
                 cancelText="Manter Agendamento"
                 type="danger"
+            />
+            <ConfirmModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+                onConfirm={() => { }}
+                title={alertModal.title}
+                message={alertModal.message}
+                confirmText="Entendido"
+                type="warning"
+                hideCancel={true}
             />
 
             {/* Day Detail Modal */}

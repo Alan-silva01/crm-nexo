@@ -57,6 +57,11 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
   const [deleteColumnModal, setDeleteColumnModal] = useState<{ isOpen: boolean; column: KanbanColumn | null }>({ isOpen: false, column: null });
   const [detailsModal, setDetailsModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
+  const [alertModal, setAlertModal] = useState<{ isOpen: boolean, title: string, message: string }>({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
 
   // Fetch columns from database
   useEffect(() => {
@@ -198,7 +203,11 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
 
     if (error) {
       console.error('Error adding column:', error);
-      alert('Erro ao criar coluna');
+      setAlertModal({
+        isOpen: true,
+        title: 'Erro ao Criar Coluna',
+        message: 'Não foi possível salvar a nova coluna no banco de dados. Por favor, tente novamente.'
+      });
       return;
     }
 
@@ -212,7 +221,11 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
   const removeColumn = async (column: KanbanColumn) => {
     const leadsInColumn = filteredLeads.filter(l => l.status === column.name).length;
     if (leadsInColumn > 0) {
-      alert(`Esta coluna tem ${leadsInColumn} leads. Mova-os para outra coluna antes de deletar.`);
+      setAlertModal({
+        isOpen: true,
+        title: 'Coluna não Vazia',
+        message: `Esta coluna contém ${leadsInColumn} leads. É necessário mover todos os leads para outra coluna antes de removê-la.`
+      });
       return;
     }
     setDeleteColumnModal({ isOpen: true, column });
@@ -228,7 +241,11 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
 
     if (error) {
       console.error('Error deleting column:', error);
-      alert('Erro ao deletar coluna');
+      setAlertModal({
+        isOpen: true,
+        title: 'Erro ao Deletar',
+        message: 'Houve um problema ao excluir a coluna. Verifique sua conexão e tente novamente.'
+      });
       return;
     }
 
@@ -238,7 +255,11 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
 
   const createLead = async () => {
     if (!newLead.name.trim()) {
-      alert('Por favor, preencha o nome do lead.');
+      setAlertModal({
+        isOpen: true,
+        title: 'Nome Obrigatório',
+        message: 'Por favor, informe o nome do lead para continuar com o cadastro.'
+      });
       return;
     }
 
@@ -259,7 +280,11 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
       setNewLead({ name: '', phone: '', email: '', status: columns[0]?.name || '', company_name: '', monthly_revenue: '' });
       setIsAddingLead(false);
     } else {
-      alert('Erro ao criar lead. Tente novamente.');
+      setAlertModal({
+        isOpen: true,
+        title: 'Falha no Cadastro',
+        message: 'Ocorreu um erro ao tentar criar o lead. Por favor, verifique os dados e tente novamente.'
+      });
     }
     setIsCreating(false);
   };
@@ -460,32 +485,39 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
 
       {/* Add Column Modal */}
       {isAddingColumn && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 w-full max-w-sm shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold">Nova Coluna</h2>
-              <button onClick={() => setIsAddingColumn(false)} className="text-zinc-500 hover:text-white"><X size={20} /></button>
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-[#0c0c0e] border border-zinc-800/30 rounded-[3rem] p-10 w-full max-w-sm shadow-[20px_20px_40px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-300 relative">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-xl font-bold tracking-tight">Nova Coluna</h2>
+              <button onClick={() => setIsAddingColumn(false)} className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-500 hover:text-white">
+                <X size={20} />
+              </button>
             </div>
-            <input
-              autoFocus
-              type="text"
-              value={newColumnName}
-              onChange={(e) => setNewColumnName(e.target.value)}
-              placeholder="Ex: Pós-Venda"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 mb-6"
-            />
-            <div className="flex gap-3">
+
+            <div className="space-y-2 mb-8">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Nome da Coluna</label>
+              <input
+                autoFocus
+                type="text"
+                value={newColumnName}
+                onChange={(e) => setNewColumnName(e.target.value)}
+                placeholder="Ex: Pós-Venda"
+                className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium"
+              />
+            </div>
+
+            <div className="flex gap-4">
               <button
                 onClick={() => setIsAddingColumn(false)}
-                className="flex-1 py-3 bg-zinc-800 rounded-xl text-xs font-semibold hover:bg-zinc-700 transition-colors"
+                className="flex-1 py-4 bg-[#0c0c0e] shadow-[6px_6px_12px_#050506,-6px_-6px_12px_#131316] rounded-2xl text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-all active:scale-95"
               >
                 Cancelar
               </button>
               <button
                 onClick={addColumn}
-                className="flex-1 py-3 bg-indigo-600 rounded-xl text-xs font-semibold text-white hover:bg-indigo-500 transition-all flex items-center justify-center gap-2"
+                className="flex-1 py-4 bg-indigo-600 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-2"
               >
-                <Check size={14} /> Adicionar
+                <Check size={14} /> Salvar
               </button>
             </div>
           </div>
@@ -494,105 +526,107 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
 
       {/* Add Lead Modal */}
       {isAddingLead && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 w-full max-w-md shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold">Novo Lead</h2>
-              <button onClick={() => setIsAddingLead(false)} className="text-zinc-500 hover:text-white"><X size={20} /></button>
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-[#0c0c0e] border border-zinc-800/30 rounded-[3rem] p-10 w-full max-w-md shadow-[20px_20px_40px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center mb-8 shrink-0">
+              <h2 className="text-xl font-bold tracking-tight">Novo Lead</h2>
+              <button onClick={() => setIsAddingLead(false)} className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-500 hover:text-white">
+                <X size={20} />
+              </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs text-zinc-500 font-semibold uppercase mb-2 block">Nome *</label>
+            <div className="space-y-6 overflow-y-auto custom-scrollbar pr-2 mb-8 min-h-0">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Nome Completo *</label>
                 <input
                   autoFocus
                   type="text"
                   value={newLead.name}
                   onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
                   placeholder="Ex: João Silva"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium"
                 />
               </div>
 
-              <div>
-                <label className="text-xs text-zinc-500 font-semibold uppercase mb-2 block">Telefone</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Telefone / WhatsApp</label>
                 <input
                   type="tel"
                   value={newLead.phone}
                   onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
                   placeholder="+55 11 99999-9999"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium"
                 />
               </div>
 
-              <div>
-                <label className="text-xs text-zinc-500 font-semibold uppercase mb-2 block">E-mail</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">E-mail</label>
                 <input
                   type="email"
                   value={newLead.email}
                   onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
                   placeholder="exemplo@email.com"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium"
                 />
               </div>
 
-              <div>
-                <label className="text-xs text-zinc-500 font-semibold uppercase mb-2 block">Nome da Empresa</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Nome da Empresa</label>
                 <input
                   type="text"
                   value={newLead.company_name}
                   onChange={(e) => setNewLead({ ...newLead, company_name: e.target.value })}
                   placeholder="Ex: Tech Solutions Ltda"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium"
                 />
               </div>
 
-              <div>
-                <label className="text-xs text-zinc-500 font-semibold uppercase mb-2 block">Faturamento Mensal (R$)</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Faturamento Mensal (R$)</label>
                 <input
                   type="number"
                   value={newLead.monthly_revenue}
                   onChange={(e) => setNewLead({ ...newLead, monthly_revenue: e.target.value })}
                   placeholder="Ex: 50000"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium"
                 />
               </div>
 
-              <div>
-                <label className="text-xs text-zinc-500 font-semibold uppercase mb-2 block">Coluna</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Coluna Inicial</label>
                 <select
                   value={newLead.status}
                   onChange={(e) => setNewLead({ ...newLead, status: e.target.value })}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium appearance-none"
                 >
                   {columns.map(col => (
-                    <option key={col.id} value={col.name}>{col.name}</option>
+                    <option key={col.id} value={col.name} className="bg-[#0c0c0e]">{col.name}</option>
                   ))}
                 </select>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-4 shrink-0">
               <button
                 onClick={() => setIsAddingLead(false)}
                 disabled={isCreating}
-                className="flex-1 py-3 bg-zinc-800 rounded-xl text-xs font-semibold hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                className="flex-1 py-4 bg-[#0c0c0e] shadow-[6px_6px_12px_#050506,-6px_-6px_12px_#131316] rounded-2xl text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-all active:scale-95 disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={createLead}
                 disabled={isCreating}
-                className="flex-1 py-3 bg-indigo-600 rounded-xl text-xs font-semibold text-white hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 py-4 bg-indigo-600 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isCreating ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                    Criando...
+                    <span>Criando...</span>
                   </>
                 ) : (
                   <>
-                    <Check size={14} /> Criar Lead
+                    <Check size={14} /> <span>Criar Lead</span>
                   </>
                 )}
               </button>
@@ -644,6 +678,17 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
             setDetailsModal({ isOpen: false, lead: null });
           }
         }}
+      />
+
+      <ConfirmModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        onConfirm={() => { }}
+        title={alertModal.title}
+        message={alertModal.message}
+        confirmText="Entendido"
+        type="warning"
+        hideCancel={true}
       />
     </div>
   );

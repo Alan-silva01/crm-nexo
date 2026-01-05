@@ -40,123 +40,123 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, le
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300"
             onClick={onClose}
         >
             <div
-                className="bg-[#121214] w-full max-w-lg rounded-3xl border border-zinc-800/50 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]"
+                className="bg-[#0c0c0e] w-full max-w-lg rounded-[3rem] border border-zinc-800/30 shadow-[20px_20px_40px_rgba(0,0,0,0.5)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh] relative"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="relative h-32 bg-indigo-600/20 border-b border-indigo-500/10">
+                <div className="relative h-28 bg-gradient-to-b from-indigo-500/10 to-transparent border-b border-zinc-800/30 shrink-0">
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-zinc-800/80 text-white rounded-full transition-all z-10 hover:scale-110 active:scale-90"
+                        className="absolute top-6 right-6 p-3 bg-[#0c0c0e] hover:bg-zinc-800 text-zinc-500 hover:text-white rounded-full transition-all z-10 shadow-[4px_4px_8px_#050506,-4px_-4px_8px_#131316] active:scale-90"
                         title="Fechar (Esc)"
                     >
                         <X size={20} />
                     </button>
 
-                    <div className="absolute -bottom-10 left-8">
-                        <div className="w-24 h-24 rounded-3xl bg-[#121214] border-4 border-[#121214] shadow-xl overflow-hidden flex items-center justify-center">
+                    <div className="absolute -bottom-8 left-8">
+                        <div className="w-20 h-20 rounded-[1.5rem] bg-[#0c0c0e] p-1 shadow-xl overflow-hidden flex items-center justify-center border border-zinc-800/50">
                             <LetterAvatar name={lead.name} size="xl" className="rounded-2xl" />
                         </div>
                     </div>
                 </div>
 
                 {/* Content area with internal scroll */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar pt-16 pb-8 px-8">
-                    <div className="flex justify-between items-start mb-6">
+                <div className="flex-1 overflow-y-auto custom-scrollbar pt-12 pb-8 px-8 min-h-0">
+                    <div className="flex justify-between items-start mb-8">
                         <div>
-                            <h2 className="text-2xl font-bold text-white tracking-tight leading-tight mb-1">{lead.name}</h2>
-                            <span className="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold uppercase tracking-wider rounded-md border border-indigo-500/20">
+                            <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent tracking-tight mb-2">{lead.name}</h2>
+                            <span className="px-3 py-1 bg-indigo-500/5 text-indigo-400 text-[10px] font-bold uppercase tracking-[0.2em] rounded-lg border border-indigo-500/10">
                                 {lead.status}
                             </span>
                         </div>
 
                         <button
                             onClick={onViewConversation}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
                         >
-                            <MessageSquare size={18} />
+                            <MessageSquare size={16} />
                             <span>Ver conversa</span>
                         </button>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/50 group hover:border-zinc-700/50 transition-colors">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-400">
-                                        <Phone size={16} />
+                            <div className="p-5 rounded-[2rem] bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-transparent hover:border-zinc-800/30 transition-all">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="p-1.5 bg-emerald-500/5 rounded-lg text-emerald-400 border border-emerald-500/10">
+                                        <Phone size={14} />
                                     </div>
-                                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Telefone</span>
+                                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-[0.15em]">Telefone</span>
                                 </div>
-                                <p className="text-sm font-medium text-zinc-200">{lead.phone ? formatPhoneNumber(lead.phone) : 'Não informado'}</p>
+                                <p className="text-sm font-bold text-zinc-300">{lead.phone ? formatPhoneNumber(lead.phone) : 'Não informado'}</p>
                             </div>
 
-                            <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/50 group hover:border-zinc-700/50 transition-colors">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-400">
-                                        <Mail size={16} />
+                            <div className="p-5 rounded-[2rem] bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-transparent hover:border-zinc-800/30 transition-all">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="p-1.5 bg-blue-500/5 rounded-lg text-blue-400 border border-blue-500/10">
+                                        <Mail size={14} />
                                     </div>
-                                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">E-mail</span>
+                                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-[0.15em]">E-mail</span>
                                 </div>
-                                <p className="text-sm font-medium text-zinc-200 truncate">{lead.email || 'Não informado'}</p>
+                                <p className="text-sm font-bold text-zinc-300 truncate">{lead.email || 'Não informado'}</p>
                             </div>
                         </div>
 
-                        <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/50 group hover:border-zinc-700/50 transition-colors">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-400">
-                                    <Clock size={16} />
+                        <div className="p-5 rounded-[2rem] bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-transparent hover:border-zinc-800/30 transition-all">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="p-1.5 bg-amber-500/5 rounded-lg text-amber-400 border border-amber-500/10">
+                                    <Clock size={14} />
                                 </div>
-                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Última Atividade</span>
+                                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-[0.15em]">Última Atividade</span>
                             </div>
-                            <p className="text-sm font-medium text-zinc-200">{lead.lastActive || 'Nenhuma atividade registrada'}</p>
+                            <p className="text-sm font-bold text-zinc-300">{lead.lastActive || 'Nenhuma atividade registrada'}</p>
                         </div>
 
                         {lead.last_message && (
-                            <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/50 group hover:border-zinc-700/50 transition-colors">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400">
-                                        <User size={16} />
+                            <div className="p-5 rounded-[2rem] bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-transparent hover:border-zinc-800/30 transition-all">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="p-1.5 bg-indigo-500/5 rounded-lg text-indigo-400 border border-indigo-500/10">
+                                        <User size={14} />
                                     </div>
-                                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Descrição do Lead</span>
+                                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-[0.15em]">Descrição do Lead</span>
                                 </div>
-                                <p className="text-sm font-medium text-zinc-300 leading-relaxed whitespace-pre-wrap">{lead.last_message}</p>
+                                <p className="text-sm font-medium text-zinc-400 leading-relaxed italic">"{lead.last_message}"</p>
                             </div>
                         )}
 
                         {/* Pipeline Timeline */}
-                        <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/50 group hover:border-zinc-700/50 transition-colors">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-400">
-                                    <GitCommit size={16} />
+                        <div className="p-6 rounded-[2rem] bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-transparent hover:border-zinc-800/30 transition-all">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/10">
+                                    <GitCommit size={14} />
                                 </div>
-                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Pipeline / Linha do Tempo</span>
+                                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-[0.15em]">Pipeline / Histórico</span>
                             </div>
 
                             {loading ? (
-                                <div className="flex items-center justify-center py-4">
-                                    <div className="w-4 h-4 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                                <div className="flex items-center justify-center py-6">
+                                    <div className="w-5 h-5 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
                                 </div>
                             ) : history.length > 0 ? (
-                                <div className="max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
-                                    <div className="space-y-4 ml-2 border-l-2 border-zinc-800 pl-4 py-2 relative">
+                                <div className="max-h-[220px] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
+                                    <div className="space-y-6 ml-2 border-l border-zinc-800/50 pl-6 py-2 relative">
                                         {history.map((item) => (
-                                            <div key={item.id} className="relative">
-                                                <div className="absolute -left-[25px] top-1 w-3 h-3 rounded-full bg-zinc-800 border-2 border-zinc-900 outline outline-2 outline-indigo-500/20"></div>
+                                            <div key={item.id} className="relative group/item">
+                                                <div className="absolute -left-[29px] top-1.5 w-2 h-2 rounded-full bg-zinc-900 border border-zinc-800 outline outline-2 outline-indigo-500/0 group-hover/item:outline-indigo-500/20 group-hover/item:bg-indigo-500 transition-all"></div>
                                                 <div>
-                                                    <p className="text-[11px] text-zinc-400 font-medium">
+                                                    <p className="text-[11px] text-zinc-400 font-bold tracking-tight">
                                                         {item.from_column ? (
-                                                            <>De <span className="text-zinc-300">{item.from_column.name}</span> para <span className="text-indigo-400">{item.to_column?.name}</span></>
+                                                            <>De <span className="text-zinc-500 line-through decoration-zinc-800">{item.from_column.name}</span> para <span className="text-indigo-400">{item.to_column?.name}</span></>
                                                         ) : (
                                                             <>Entrou em <span className="text-indigo-400">{item.to_column?.name}</span></>
                                                         )}
                                                     </p>
-                                                    <p className="text-[10px] text-zinc-500 mt-1 flex items-center gap-1">
-                                                        <Clock size={10} />
+                                                    <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter mt-1.5 flex items-center gap-1.5">
+                                                        <Clock size={10} strokeWidth={3} />
                                                         {formatRelativeTime(item.moved_at)}
                                                     </p>
                                                 </div>
@@ -165,21 +165,21 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, le
                                     </div>
                                 </div>
                             ) : (
-                                <p className="text-xs text-zinc-500 italic py-2 text-center">Nenhum movimento registrado ainda.</p>
+                                <p className="text-[10px] text-zinc-600 italic py-4 text-center font-bold uppercase tracking-widest">Sem movimentações</p>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Footer - Fixed at bottom of modal */}
-                <div className="px-8 py-5 bg-zinc-900/30 border-t border-zinc-800/50 flex justify-between items-center group/footer shrink-0">
-                    <div className="flex items-center gap-2 text-zinc-500">
-                        <Calendar size={14} className="group-hover/footer:text-indigo-400 transition-colors" />
-                        <span className="text-[11px]">Lead desde {lead.created_at ? new Date(lead.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR')}</span>
+                {/* Footer */}
+                <div className="px-8 py-6 bg-[#0c0c0e] border-t border-zinc-800/30 flex justify-between items-center shrink-0">
+                    <div className="flex items-center gap-2 text-zinc-600">
+                        <Calendar size={12} strokeWidth={3} />
+                        <span className="text-[10px] font-bold uppercase tracking-tighter font-mono">Lead desde {lead.created_at ? new Date(lead.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR')}</span>
                     </div>
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-xl text-xs font-semibold transition-all active:scale-95 border border-zinc-700/50 shadow-sm"
+                        className="px-6 py-2.5 bg-[#0c0c0e] shadow-[4px_4px_8px_#050506,-4px_-4px_8px_#131316] hover:shadow-none text-zinc-500 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 border border-zinc-800/50"
                     >
                         Fechar Card
                     </button>
