@@ -42,10 +42,20 @@ interface KanbanProps {
   onLeadsUpdate: (leads: Lead[]) => void;
   onUpdateLeadStatus: (id: string, newStatus: string, fromColumnId?: string | null, toColumnId?: string) => void;
   onSelectChat: (id: string) => void;
+  columns: KanbanColumn[];
+  onColumnsUpdate: (columns: KanbanColumn[]) => void;
 }
 
-const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistory, onLeadsUpdate, onUpdateLeadStatus, onSelectChat }) => {
-  const [columns, setColumns] = useState<KanbanColumn[]>([]);
+const Kanban: React.FC<KanbanProps> = ({
+  searchQuery,
+  filteredLeads,
+  leadsHistory,
+  onLeadsUpdate,
+  onUpdateLeadStatus,
+  onSelectChat,
+  columns,
+  onColumnsUpdate
+}) => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draggingColumnId, setDraggingColumnId] = useState<string | null>(null);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
@@ -53,7 +63,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [newLead, setNewLead] = useState({ name: '', phone: '', email: '', status: '', company_name: '', monthly_revenue: '' });
   const [isCreating, setIsCreating] = useState(false);
-  const [loadingColumns, setLoadingColumns] = useState(true);
+  const [loadingColumns, setLoadingColumns] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
   const [deleteColumnModal, setDeleteColumnModal] = useState<{ isOpen: boolean; column: KanbanColumn | null }>({ isOpen: false, column: null });
   const [detailsModal, setDetailsModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
@@ -63,44 +73,12 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
     message: ''
   });
 
-  // Fetch columns from database
+  // No longer fetching columns here as they are passed as props
   useEffect(() => {
-    const fetchColumns = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      console.log('Fetching columns for user:', user.id);
-
-      const { data, error } = await supabase
-        .from('kanban_columns')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('position');
-
-      if (error) {
-        console.error('Error fetching columns:', error);
-      }
-
-      if (data && data.length > 0) {
-        console.log('Columns fetched successfully:', data);
-        setColumns(data);
-        setNewLead(prev => ({ ...prev, status: data[0].name, company_name: '', monthly_revenue: '' }));
-      } else {
-        console.log('No columns found in DB, using defaults.');
-        const defaults = [
-          { id: '1', name: 'Novos Leads', position: 0 },
-          { id: '2', name: 'Em Atendimento', position: 1 },
-          { id: '3', name: 'Negociação', position: 2 },
-          { id: '4', name: 'Venda Concluída', position: 3 }
-        ];
-        setColumns(defaults);
-        setNewLead(prev => ({ ...prev, status: defaults[0].name, company_name: '', monthly_revenue: '' }));
-      }
-      setLoadingColumns(false);
-    };
-
-    fetchColumns();
-  }, []);
+    if (columns.length > 0 && !newLead.status) {
+      setNewLead(prev => ({ ...prev, status: columns[0].name }));
+    }
+  }, [columns]);
 
 
 
@@ -160,7 +138,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
       position: index
     }));
 
-    setColumns(updatedColumns);
+    onColumnsUpdate(updatedColumns);
     setDraggingColumnId(null);
 
     // Persist to Supabase using individual UPDATE calls
@@ -212,7 +190,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
     }
 
     if (data) {
-      setColumns([...columns, data]);
+      onColumnsUpdate([...columns, data]);
     }
     setNewColumnName('');
     setIsAddingColumn(false);
@@ -249,7 +227,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
       return;
     }
 
-    setColumns(columns.filter(c => c.id !== deleteColumnModal.column!.id));
+    onColumnsUpdate(columns.filter(c => c.id !== deleteColumnModal.column!.id));
     setDeleteColumnModal({ isOpen: false, column: null });
   };
 

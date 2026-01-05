@@ -27,8 +27,17 @@ import {
 import { METRICS_DATA } from '../constants';
 import { Lead } from '../types';
 
+const BORDER_COLORS = [
+  '#fbbf24', // yellow
+  '#ef4444', // red
+  '#3b82f6', // blue
+  '#22c55e', // green
+  '#a855f7'  // purple
+];
+
 interface DashboardProps {
   leads: Lead[];
+  columns: any[];
 }
 
 const DashboardClock = () => {
@@ -97,7 +106,7 @@ const VerticalLabel = (props: any) => {
   );
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
+const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
   const totalLeads = leads.length;
   const oneDayAgo = new Date();
   oneDayAgo.setDate(oneDayAgo.getDate() - 1);
@@ -131,11 +140,16 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
       return acc;
     }, {});
 
-    return Object.entries(leadsPerStatus).map(([name, value]) => ({
-      name,
-      value
-    })).sort((a, b) => (b.value as number) - (a.value as number));
-  }, [leads]);
+    return Object.entries(leadsPerStatus).map(([name, value]) => {
+      const colIndex = columns.findIndex(c => c.name === name);
+      const color = colIndex !== -1 ? BORDER_COLORS[colIndex % BORDER_COLORS.length] : '#3f3f46';
+      return {
+        name,
+        value,
+        color
+      };
+    }).sort((a, b) => (b.value as number) - (a.value as number));
+  }, [leads, columns]);
 
   const rejectedLeads = leads.filter(l =>
     l.status === 'SEM INTERESSE' ||
@@ -239,11 +253,11 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
                 <XAxis dataKey="name" hide />
                 <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '12px', fontSize: '10px' }} />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40} isAnimationActive={false}>
-                  {barChartData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={index === 0 ? '#4f46e5' : '#2d2b55'} />
+                  {barChartData.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                   <LabelList dataKey="name" content={<VerticalLabel />} />
-                  <LabelList dataKey="value" position="top" fill="#6366f1" fontSize={10} offset={10} fontStyle="bold" />
+                  <LabelList dataKey="value" position="top" fill="#a1a1aa" fontSize={10} offset={10} fontStyle="bold" />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

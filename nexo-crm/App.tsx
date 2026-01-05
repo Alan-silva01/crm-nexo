@@ -23,10 +23,31 @@ const AppContent: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [columns, setColumns] = useState<any[]>([]);
 
-  // Fetch leads on session change
+  // Fetch columns and leads on session change
   useEffect(() => {
     if (session) {
+      // Fetch columns first to ensure we have status names
+      supabase
+        .from('kanban_columns')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('position')
+        .then(({ data, error }) => {
+          if (!error && data && data.length > 0) {
+            setColumns(data);
+          } else {
+            // Default columns if none exist
+            setColumns([
+              { id: '1', name: 'Novos Leads', position: 0 },
+              { id: '2', name: 'Em Atendimento', position: 1 },
+              { id: '3', name: 'Negociação', position: 2 },
+              { id: '4', name: 'Venda Concluída', position: 3 }
+            ]);
+          }
+        });
+
       leadsService.fetchLeads().then(data => {
         setLeads(data);
       });
@@ -195,7 +216,7 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard leads={leads} />;
+        return <Dashboard leads={leads} columns={columns} />;
       case 'kanban':
         return (
           <Kanban
@@ -204,6 +225,8 @@ const AppContent: React.FC = () => {
             leadsHistory={leadsHistory}
             onLeadsUpdate={handleLeadsUpdate}
             onUpdateLeadStatus={handleUpdateLeadStatus}
+            columns={columns}
+            onColumnsUpdate={setColumns}
             onSelectChat={(id) => {
               setSelectedChatId(id);
               setActiveTab('chats');
@@ -238,7 +261,7 @@ const AppContent: React.FC = () => {
       case 'ajustes':
         return <Settings user={user} onUpdate={() => {/* User metadata updates are handled by Supabase session listener, but we could add manual refresh here if needed */ }} />;
       default:
-        return <Dashboard leads={leads} />;
+        return <Dashboard leads={leads} columns={columns} />;
     }
   };
 
