@@ -21,7 +21,7 @@ export interface Lead {
   updated_at?: string;
   company_name?: string | null;
   monthly_revenue?: number | null;
-  data_agendamento?: string | null;
+  dataHora_Agendamento?: string | null;
   servico_interesse?: string | null;
   // UI-only fields (not in database)
   lastMessage?: string;

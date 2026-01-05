@@ -29,6 +29,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
     const [eventService, setEventService] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [isSaving, setIsSaving] = useState(false);
+    const [duration, setDuration] = useState<number>(30); // Default 30 min
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
@@ -64,22 +65,27 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
         const isToday = d === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
 
         // Check if there are events on this day
-        const hasEvent = leads.some(lead => {
-            if (!lead.data_agendamento) return false;
-            const scheduled = new Date(lead.data_agendamento);
+        const dayEvents = leads.filter(lead => {
+            if (!lead.dataHora_Agendamento) return false;
+            const scheduled = new Date(lead.dataHora_Agendamento);
             return scheduled.getDate() === d && scheduled.getMonth() === month && scheduled.getFullYear() === year;
         });
 
+        const hasEvent = dayEvents.length > 0;
+
         days.push(
-            <div key={d} className="relative flex flex-col items-center justify-center">
-                <div className={`h-10 w-10 flex items-center justify-center rounded-xl transition-all duration-300
+            <div key={d} className="relative flex flex-col items-center justify-center group cursor-pointer">
+                <div className={`h-12 w-12 flex flex-col items-center justify-center rounded-xl transition-all duration-300
           ${isToday
                         ? 'bg-[#1a1a1c] shadow-[inset_4px_4px_8px_#0d0d0e,inset_-4px_-4px_8px_#27272a] text-indigo-400 font-bold border border-indigo-500/20'
-                        : 'text-zinc-400 hover:text-white'}`}>
-                    {d}
+                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800/10'}`}>
+                    <span className="text-sm">{d}</span>
+                    {hasEvent && (
+                        <span className="text-[8px] font-medium opacity-60 mt-0.5">{dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventos'}</span>
+                    )}
                 </div>
                 {hasEvent && (
-                    <div className="absolute bottom-1 w-1 h-1 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.6)]"></div>
+                    <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.6)]"></div>
                 )}
             </div>
         );
@@ -93,7 +99,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
 
         setIsSaving(true);
         await onUpdateLead(selectedLeadId, {
-            data_agendamento: new Date(eventDate).toISOString(),
+            dataHora_Agendamento: new Date(eventDate).toISOString(),
             servico_interesse: eventService
         });
 
@@ -109,11 +115,11 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
         (l.phone && l.phone.includes(searchTerm))
     ).slice(0, 5);
 
-    // Mock Upcoming Events based on leads with data_agendamento
+    // Upcoming Events based on leads with dataHora_Agendamento
     const upcomingEvents = leads
-        .filter(l => l.data_agendamento)
-        .sort((a, b) => new Date(a.data_agendamento!).getTime() - new Date(b.data_agendamento!).getTime())
-        .slice(0, 3);
+        .filter(l => l.dataHora_Agendamento)
+        .sort((a, b) => new Date(a.dataHora_Agendamento!).getTime() - new Date(b.dataHora_Agendamento!).getTime())
+        .slice(0, 5);
 
     return (
         <div className="h-full bg-[#0c0c0e] p-8 overflow-y-auto custom-scrollbar flex flex-col gap-8 text-zinc-300 select-none">
@@ -144,6 +150,22 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
                         <span className="capitalize">{monthName}</span>
                         <span className="text-zinc-500">{year}</span>
                     </div>
+
+                    {/* Interval Selector */}
+                    <div className="flex bg-[#0c0c0e] p-1 rounded-2xl shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215]">
+                        {[15, 30, 60].map((interval) => (
+                            <button
+                                key={interval}
+                                onClick={() => setDuration(interval)}
+                                className={`px-4 py-2 rounded-xl text-[10px] font-bold transition-all duration-300 ${duration === interval
+                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                                    : 'text-zinc-500 hover:text-zinc-300'
+                                    }`}
+                            >
+                                {interval === 60 ? '1h' : `${interval}min`}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -160,13 +182,21 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
 
                         <div className="space-y-4">
                             {upcomingEvents.length > 0 ? upcomingEvents.map((event, i) => (
-                                <div key={event.id} className="p-4 rounded-[1.5rem] bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] flex items-center gap-4 group">
-                                    <div className={`w-2 h-2 rounded-full ${['bg-indigo-500', 'bg-emerald-500', 'bg-rose-500'][i % 3]} shadow-lg shadow-indigo-500/20`}></div>
-                                    <div className="flex-1 overflow-hidden">
-                                        <p className="text-xs font-bold truncate group-hover:text-white transition-colors">{event.name}</p>
-                                        <p className="text-[10px] text-zinc-500 mt-0.5">
-                                            {new Date(event.data_agendamento!).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} •
-                                            {new Date(event.data_agendamento!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                <div key={event.id} className="p-4 rounded-[1.5rem] bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] flex flex-col gap-2 group">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]' : 'bg-zinc-700'} `}></div>
+                                        <p className="text-xs font-bold truncate group-hover:text-white transition-colors flex-1">{event.name}</p>
+                                        <p className="text-[10px] font-bold text-indigo-400">
+                                            {new Date(event.dataHora_Agendamento!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col gap-1 ml-5">
+                                        <p className="text-[10px] text-zinc-500 flex items-center gap-1">
+                                            <span className="w-1 h-1 rounded-full bg-zinc-600"></span>
+                                            {event.servico_interesse || 'Não especificado'}
+                                        </p>
+                                        <p className="text-[9px] text-zinc-600 uppercase tracking-tighter">
+                                            {new Date(event.dataHora_Agendamento!).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} • Duração: {duration}min
                                         </p>
                                     </div>
                                 </div>
