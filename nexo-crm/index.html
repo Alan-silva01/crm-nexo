@@ -115,10 +115,24 @@
     }
 
     .light .bg-zinc-900\/30,
+    .light .bg-zinc-900\/80,
     .light .bg-zinc-800,
     .light .bg-zinc-800\/20,
+    .light .bg-zinc-800\/50,
     .light .bg-zinc-800\/80 {
       background-color: #f1f1f4 !important;
+      color: #18181b !important;
+    }
+
+    /* Recharts Chart Labels - Force white inside bars for visibility */
+    .light .recharts-text,
+    .light text[fill="#0c0c0e"] {
+      fill: #ffffff !important;
+    }
+
+    /* ... but keep the outside labels readable if they are not inside bars ... */
+    .light .recharts-label-list text[position="top"] {
+      fill: #8e8e93 !important;
     }
 
     .light .bg-zinc-900\/80.text-zinc-500 {
