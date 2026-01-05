@@ -403,7 +403,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistor
                               <div className="w-4 h-[1px] bg-zinc-800/50 mt-[-10px]"></div>
                             </div>
 
-                            {(leadsHistory[lead.id] || []).map((step, idx, arr) => {
+                            {(leadsHistory[lead.id] || []).slice().reverse().map((step, idx, arr) => {
                               // Find column index to get color
                               const colIndex = columns.findIndex(c => c.id === step.to_column_id);
                               const dotColor = colIndex !== -1 ? BORDER_COLORS[colIndex % BORDER_COLORS.length] : '#52525b';

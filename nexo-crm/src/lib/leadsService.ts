@@ -123,7 +123,7 @@ export const leadsService = {
                 to_column:kanban_columns!to_column_id(name)
             `)
             .eq('user_id', user.id)
-            .order('moved_at', { ascending: true });
+            .order('moved_at', { ascending: false });
 
         if (error) {
             console.error('Error fetching all lead history:', error);
