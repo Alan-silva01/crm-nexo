@@ -96,8 +96,8 @@ const VerticalLabel = (props: any) => {
       y={y + height - 20}
       fill="#0c0c0e"
       textAnchor="start"
-      fontSize={9}
-      fontWeight="bold"
+      fontSize={10}
+      fontWeight="900"
       transform={`rotate(-90, ${x + width / 2}, ${y + height - 20})`}
       style={{ textTransform: 'uppercase', pointerEvents: 'none' }}
     >
@@ -251,7 +251,13 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={barChartData} margin={{ top: 10, right: 5, left: 5, bottom: 10 }}>
                 <XAxis dataKey="name" hide />
-                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '12px', fontSize: '10px' }} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.02)' }}
+                  contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '12px' }}
+                  labelStyle={{ color: '#fff', fontWeight: 'bold', fontSize: '11px', marginBottom: '4px' }}
+                  itemStyle={{ color: '#fff', fontSize: '10px' }}
+                  formatter={(value: any) => [`${value} leads`, 'Quantidade']}
+                />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40} isAnimationActive={false}>
                   {barChartData.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
