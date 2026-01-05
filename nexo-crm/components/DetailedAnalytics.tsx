@@ -214,6 +214,7 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
+                {/* @ts-ignore */}
                 <Pie
                   data={pieData}
                   cx="50%"
@@ -223,9 +224,7 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
                   paddingAngle={8}
                   dataKey="value"
                   stroke="none"
-                  {/* @ts-ignore */}
                   activeIndex={activeIndex !== null ? activeIndex : undefined}
-                  {/* @ts-ignore */}
                   activeShape={renderActiveShape}
                   onMouseEnter={onPieEnter}
                   onMouseLeave={onPieLeave}
