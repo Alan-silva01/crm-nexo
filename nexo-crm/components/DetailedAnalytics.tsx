@@ -11,23 +11,38 @@ interface DetailedAnalyticsProps {
   onAction?: (action: 'view-decision-kanban' | 'focus-decision') => void;
 }
 
+const STATUS_COLORS: Record<string, string> = {
+  'CONCLUIDO': '#10b981',
+  'VENDIDO': '#10b981',
+  'AGUARDANDO DECISAO': '#6366f1',
+  'CALL AGENDADA': '#f59e0b',
+  'SEM INTERESSE': '#ef4444',
+  'ENCERRADO': '#71717a',
+  'NOVO': '#ec4899',
+  'QUALIFICADO': '#8b5cf6',
+  'EM ATENDIMENTO': '#0ea5e9',
+  'FOLLOW UP 1': '#f97316',
+  'FOLLOW UP 2': '#22c55e',
+  'FOLLOW UP 3': '#d946ef'
+};
+
 const BORDER_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e', '#0ea5e9', '#f97316', '#22c55e', '#d946ef'];
 
 const VerticalLabel = (props: any) => {
   const { x, y, width, height, value } = props;
   if (!value) return null;
 
-  // Se a barra for muito curta para o texto, começamos do topo da barra para baixo
-  const isTooShort = height < 100;
-  const labelY = isTooShort ? y - 10 : y + height - 20;
-  const labelColor = isTooShort ? '#71717a' : '#0c0c0e';
+  // Se a barra for curta para o texto interno, colocamos logo acima da barra
+  const isTooShort = height < 120;
+  const labelY = isTooShort ? y - 8 : y + height - 20;
+  const labelColor = isTooShort ? '#8e8e93' : '#0c0c0e';
 
   return (
     <text
       x={x + width / 2}
       y={labelY}
       fill={labelColor}
-      textAnchor={isTooShort ? "end" : "start"}
+      textAnchor={isTooShort ? "start" : "start"}
       fontSize={9}
       fontWeight="900"
       transform={`rotate(-90, ${x + width / 2}, ${labelY})`}
@@ -90,7 +105,7 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
     }, {});
 
     return Object.entries(leadsPerStatus).map(([name, value], index) => {
-      const color = BORDER_COLORS[index % BORDER_COLORS.length] || '#3f3f46';
+      const color = STATUS_COLORS[name] || BORDER_COLORS[index % BORDER_COLORS.length] || '#3f3f46';
       return {
         name,
         value,
