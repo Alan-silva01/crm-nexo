@@ -166,39 +166,6 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
         </div>
       </div>
 
-      {/* Analysis Text */}
-      <div className="bg-indigo-600/10 border border-indigo-500/20 p-8 rounded-[2.5rem] relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
-          <TrendingUp size={120} className="text-indigo-500" />
-        </div>
-        <div className="relative z-10 max-w-2xl">
-          <h3 className="text-lg font-bold text-indigo-100 mb-4 flex items-center gap-2">
-            <ArrowUpRight size={20} />
-            Análise de Oportunidade Nexo
-          </h3>
-          <p className="text-zinc-300 leading-relaxed text-sm">
-            Atualmente, você possui <span className="text-white font-bold">{waitingDecisionLeads} {waitingDecisionLeads === 1 ? 'lead' : 'leads'}</span> na etapa de <span className="italic text-indigo-300">Aguardando Decisão</span>.
-            {waitingDecisionLeads > 0 ? (
-              <>
-                {' '}Considerando o fechamento {waitingDecisionLeads === 1 ? 'deste lead' : `de ${projectedExtraLeads} deles (~${conversionSimulatedPercent}%)`},
-                você terá um incremento imediato de <span className="text-emerald-400 font-bold text-lg">R$ {projectedExtraRevenue.toLocaleString('pt-BR')}</span> no faturamento.
-                Além disso, pensando no longo prazo com seu LTV de <span className="text-white font-bold">R$ {ltv.toLocaleString('pt-BR')}</span>, esse movimento representa um valor de marca de <span className="text-indigo-400 font-bold">R$ {projectedExtraLTV.toLocaleString('pt-BR')}</span>.
-              </>
-            ) : (
-              ' Traga mais leads para esta etapa para projetar seu crescimento.'
-            )}
-          </p>
-          <div className="mt-6 flex gap-4">
-            <button className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20">
-              Focar em Decisão
-            </button>
-            <button className="px-6 py-2.5 bg-zinc-900 text-zinc-300 rounded-2xl text-xs font-bold hover:bg-zinc-800 transition-colors border border-zinc-800">
-              Ver Leads
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] h-[450px] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316]">
           <h3 className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest pl-2 border-l-4 border-indigo-500">
@@ -253,6 +220,39 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads }) => {
             ></div>
           </div>
           <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Progresso da Meta</span>
+        </div>
+      </div>
+
+      {/* Analysis Text */}
+      <div className="bg-indigo-600/10 border border-indigo-500/20 p-8 rounded-[2.5rem] relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
+          <TrendingUp size={120} className="text-indigo-500" />
+        </div>
+        <div className="relative z-10 max-w-2xl">
+          <h3 className="text-lg font-bold text-indigo-100 mb-4 flex items-center gap-2">
+            <ArrowUpRight size={20} />
+            Análise de Oportunidade Nexo
+          </h3>
+          <p className="text-zinc-300 leading-relaxed text-sm">
+            Atualmente, você possui <span className="text-white font-bold">{waitingDecisionLeads} {waitingDecisionLeads === 1 ? 'lead' : 'leads'}</span> na etapa de <span className="italic text-indigo-300">Aguardando Decisão</span>.
+            {waitingDecisionLeads > 0 ? (
+              <>
+                {' '}Considerando o fechamento {waitingDecisionLeads === 1 ? 'deste lead' : `de ${projectedExtraLeads} deles (~${conversionSimulatedPercent}%)`},
+                você terá um incremento imediato de <span className="text-emerald-400 font-bold text-lg">R$ {projectedExtraRevenue.toLocaleString('pt-BR')}</span> no faturamento.
+                Além disso, pensando no longo prazo com seu LTV de <span className="text-white font-bold">R$ {ltv.toLocaleString('pt-BR')}</span>, esse movimento representa um valor de marca de <span className="text-indigo-400 font-bold">R$ {projectedExtraLTV.toLocaleString('pt-BR')}</span>.
+              </>
+            ) : (
+              ' Traga mais leads para esta etapa para projetar seu crescimento.'
+            )}
+          </p>
+          <div className="mt-6 flex gap-4">
+            <button className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20">
+              Focar em Decisão
+            </button>
+            <button className="px-6 py-2.5 bg-zinc-900 text-zinc-300 rounded-2xl text-xs font-bold hover:bg-zinc-800 transition-colors border border-zinc-800">
+              Ver Leads
+            </button>
+          </div>
         </div>
       </div>
     </div>
