@@ -309,19 +309,6 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
                     </text>
                   </g>
                 )}
-                <Legend
-                  iconType="circle"
-                  iconSize={8}
-                  layout="vertical"
-                  align="right"
-                  verticalAlign="middle"
-                  wrapperStyle={{
-                    fontSize: '10px',
-                    paddingLeft: '15px',
-                    color: '#71717a',
-                    lineHeight: '1.8'
-                  }}
-                />
               </PieChart>
             </ResponsiveContainer>
           </div>
