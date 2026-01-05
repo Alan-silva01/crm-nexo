@@ -56,19 +56,22 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
   // Stats calculations
   const totalLeads = leads.length;
 
-  // Assume first status is "New" or similar. In a real scenario we'd get the columns.
-  // For now, let's look at the distribution.
-  const newLeads = leads.filter(l => l.status === 'Aguardando' || l.status === 'new').length;
+  // Novos Leads: Criados nas últimas 24h
+  const oneDayAgo = new Date();
+  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+  const newLeads = leads.filter(l => l.created_at && new Date(l.created_at) > oneDayAgo).length;
 
+  // Pipeline Total: Soma do 'value' dos leads
   const totalPipeline = leads.reduce((acc, l) => acc + (l.value || 0), 0);
 
-  // Assume last status is "Vendido" or "closed"
-  const closedLeads = leads.filter(l => l.status === 'Vendido' || l.status === 'closed').length;
-  const conversionRate = totalLeads > 0 ? ((closedLeads / totalLeads) * 100).toFixed(1) : '0';
+  // Conversão: Leads com agendamento (Call Agendada)
+  const leadsWithAppointment = leads.filter(l => l.dataHora_Agendamento !== null).length;
+  const conversionRate = totalLeads > 0 ? ((leadsWithAppointment / totalLeads) * 100).toFixed(1) : '0';
 
   // Group leads by status for the Bar Chart
   const leadsPerStatus = leads.reduce((acc: any, lead) => {
-    acc[lead.status] = (acc[lead.status] || 0) + 1;
+    const status = lead.status || 'Sem Status';
+    acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {});
 
@@ -85,17 +88,25 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
   });
 
   const areaChartData = last7Days.map(dateStr => {
-    const count = leads.filter(l => l.created_at?.split('T')[0] === dateStr).length;
+    const dayLeads = leads.filter(l => l.created_at?.split('T')[0] === dateStr);
     const dateObj = new Date(dateStr + 'T12:00:00');
     return {
       name: dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', ''),
-      leads: count,
-      conversions: leads.filter(l =>
-        l.created_at?.split('T')[0] === dateStr &&
-        (l.status === 'Vendido' || l.status === 'closed')
-      ).length
+      leads: dayLeads.length,
+      appointments: dayLeads.filter(l => l.dataHora_Agendamento !== null).length
     };
   });
+
+  // Rejection calculation: Leads in negative statuses
+  const rejectedLeads = leads.filter(l =>
+    l.status === 'SEM INTERESSE' ||
+    l.status === 'SERVIÇO NÃO ATENDIDO' ||
+    l.status === 'ENCERRADO'
+  ).length;
+  const rejectionRate = totalLeads > 0 ? ((rejectedLeads / totalLeads) * 100).toFixed(0) : '0';
+
+  // Response Time: Simulated between 40s and 90s (as requested)
+  const [responseTime] = React.useState(() => (Math.random() * (90 - 40) + 40).toFixed(0));
 
   return (
     <div className="p-8 h-full overflow-y-auto space-y-8 min-h-0 flex flex-col">
@@ -117,16 +128,16 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
         <StatCard title="Total de Leads" value={totalLeads.toLocaleString()} change="+12.5%" isPositive={true} icon={Users} color="bg-blue-500" />
-        <StatCard title="Novos Leads" value={newLeads.toLocaleString()} change="+4.2%" isPositive={true} icon={PhoneCall} color="bg-amber-500" />
+        <StatCard title="Novos Leads (24h)" value={newLeads.toLocaleString()} icon={PhoneCall} color="bg-amber-500" change="+4.2%" isPositive={true} />
         <StatCard title="Pipeline Total" value={`R$ ${(totalPipeline / 1000).toFixed(1)}k`} change="+18.4%" isPositive={true} icon={DollarSign} color="bg-indigo-500" />
-        <StatCard title="Conversão Média" value={`${conversionRate}%`} change="-1.2%" isPositive={false} icon={TrendingUp} color="bg-emerald-500" />
+        <StatCard title="Taxa de Agendamento" value={`${conversionRate}%`} change="-1.2%" isPositive={false} icon={TrendingUp} color="bg-emerald-500" />
       </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[450px]">
         <div className="lg:col-span-2 bg-zinc-900/40 border border-zinc-800/50 p-6 rounded-3xl flex flex-col">
           <div className="flex justify-between items-center mb-6 shrink-0">
-            <h3 className="text-sm font-semibold text-zinc-300">Fluxo de Leads e Conversões</h3>
+            <h3 className="text-sm font-semibold text-zinc-300">Fluxo de Leads e Agendamentos</h3>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
@@ -134,7 +145,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                <span className="text-[10px] text-zinc-500">Vendas</span>
+                <span className="text-[10px] text-zinc-500">Call Agendada</span>
               </div>
             </div>
           </div>
@@ -146,7 +157,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="colorConversions" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="colorAppointments" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
@@ -158,8 +169,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
                   contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '12px', fontSize: '10px' }}
                   itemStyle={{ color: '#fff' }}
                 />
-                <Area type="monotone" dataKey="leads" stroke="#6366f1" fillOpacity={1} fill="url(#colorLeads)" strokeWidth={2} />
-                <Area type="monotone" dataKey="conversions" stroke="#10b981" fillOpacity={1} fill="url(#colorConversions)" strokeWidth={2} />
+                <Area type="monotone" dataKey="leads" name="Leads" stroke="#6366f1" fillOpacity={1} fill="url(#colorLeads)" strokeWidth={2} />
+                <Area type="monotone" dataKey="appointments" name="Call Agendada" stroke="#10b981" fillOpacity={1} fill="url(#colorAppointments)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -184,15 +195,15 @@ const Dashboard: React.FC<DashboardProps> = ({ leads }) => {
           <div className="mt-4 pt-4 border-t border-zinc-800 flex justify-between shrink-0">
             <div className="text-center">
               <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Conversão</p>
-              <p className="text-lg font-bold">78%</p>
+              <p className="text-lg font-bold">{conversionRate}%</p>
             </div>
             <div className="text-center">
               <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Rejeição</p>
-              <p className="text-lg font-bold">12%</p>
+              <p className="text-lg font-bold">{rejectionRate}%</p>
             </div>
             <div className="text-center">
               <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Tempo</p>
-              <p className="text-lg font-bold">4.2m</p>
+              <p className="text-lg font-bold">{responseTime}s</p>
             </div>
           </div>
         </div>
