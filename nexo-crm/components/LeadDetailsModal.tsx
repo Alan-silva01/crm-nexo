@@ -10,22 +10,31 @@ interface LeadDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
     lead: Lead | null;
+    historyCache?: LeadColumnHistory[];
     onViewConversation: () => void;
 }
 
-const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, lead, onViewConversation }) => {
-    const [history, setHistory] = useState<LeadColumnHistory[]>([]);
+const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, lead, historyCache = [], onViewConversation }) => {
+    const [history, setHistory] = useState<LeadColumnHistory[]>(historyCache);
     const [loading, setLoading] = useState(false);
 
+    // Sync with cache if it changes
     useEffect(() => {
-        if (isOpen && lead) {
+        setHistory(historyCache);
+    }, [historyCache]);
+
+    useEffect(() => {
+        // Only fetch if cache is empty to ensure we have something, 
+        // OR we can just rely on the parent providing it.
+        // For robustness, let's only fetch if history is empty and modal is open.
+        if (isOpen && lead && historyCache.length === 0) {
             setLoading(true);
             leadsService.fetchHistory(lead.id).then(data => {
                 setHistory(data as LeadColumnHistory[]);
                 setLoading(false);
             });
         }
-    }, [isOpen, lead]);
+    }, [isOpen, lead, historyCache.length]);
 
     if (!isOpen || !lead) return null;
 

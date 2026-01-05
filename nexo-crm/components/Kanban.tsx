@@ -38,12 +38,13 @@ interface KanbanColumn {
 interface KanbanProps {
   searchQuery: string;
   filteredLeads: Lead[];
+  leadsHistory: Record<string, LeadColumnHistory[]>;
   onLeadsUpdate: (leads: Lead[]) => void;
   onUpdateLeadStatus: (id: string, newStatus: string, fromColumnId?: string | null, toColumnId?: string) => void;
   onSelectChat: (id: string) => void;
 }
 
-const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpdate, onUpdateLeadStatus, onSelectChat }) => {
+const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, leadsHistory, onLeadsUpdate, onUpdateLeadStatus, onSelectChat }) => {
   const [columns, setColumns] = useState<KanbanColumn[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draggingColumnId, setDraggingColumnId] = useState<string | null>(null);
@@ -56,7 +57,6 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
   const [deleteColumnModal, setDeleteColumnModal] = useState<{ isOpen: boolean; column: KanbanColumn | null }>({ isOpen: false, column: null });
   const [detailsModal, setDetailsModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
-  const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
 
   // Fetch columns from database
   useEffect(() => {
@@ -97,23 +97,6 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
     fetchColumns();
   }, []);
 
-  // Fetch all leads history
-  useEffect(() => {
-    const fetchHistory = async () => {
-      const history = await leadsService.fetchAllHistory();
-      const grouped = history.reduce((acc: Record<string, LeadColumnHistory[]>, item) => {
-        if (!acc[item.lead_id]) acc[item.lead_id] = [];
-        acc[item.lead_id].push(item);
-        return acc;
-      }, {});
-      setLeadsHistory(grouped);
-    };
-
-    fetchHistory();
-
-    // Set up realtime sub for history if needed, but for now just fetch on mount or when onLeadsUpdate is called
-    // Actually, since we move leads here, we can update local history state too.
-  }, [filteredLeads.length]); // Re-fetch or update when leads length changes (new leads)
 
 
 
@@ -140,23 +123,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
       const fromColumn = columns.find(c => c.name === lead?.status);
       onUpdateLeadStatus(leadId, targetColumn.name, fromColumn?.id, targetColumn.id);
 
-      // Optimistically update history for the UI
-      if (leadId) {
-        const newHistoryItem: LeadColumnHistory = {
-          id: Math.random().toString(),
-          lead_id: leadId,
-          from_column_id: fromColumn?.id || null,
-          to_column_id: targetColumn.id,
-          moved_at: new Date().toISOString(),
-          user_id: null,
-          from_column: fromColumn ? { name: fromColumn.name } : undefined,
-          to_column: { name: targetColumn.name }
-        };
-        setLeadsHistory(prev => ({
-          ...prev,
-          [leadId]: [...(prev[leadId] || []), newHistoryItem]
-        }));
-      }
+      // Optimistic history update is now handled in App.tsx
     }
     setDraggingId(null);
   }, [onUpdateLeadStatus, columns, filteredLeads]);
@@ -670,6 +637,7 @@ const Kanban: React.FC<KanbanProps> = ({ searchQuery, filteredLeads, onLeadsUpda
         isOpen={detailsModal.isOpen}
         onClose={() => setDetailsModal({ isOpen: false, lead: null })}
         lead={detailsModal.lead}
+        historyCache={detailsModal.lead ? leadsHistory[detailsModal.lead.id] : []}
         onViewConversation={() => {
           if (detailsModal.lead) {
             onSelectChat(detailsModal.lead.id);

@@ -7,7 +7,7 @@ import WhatsAppChat from './components/WhatsAppChat';
 import DetailedAnalytics from './components/DetailedAnalytics';
 import Auth from './components/Auth';
 import { Bell, Search, Calendar, LogOut } from 'lucide-react';
-import { Lead } from './types';
+import { Lead, LeadColumnHistory } from './types';
 import { AuthProvider, useAuth } from './src/lib/AuthProvider';
 import { leadsService } from './src/lib/leadsService';
 import { supabase } from './src/lib/supabase';
@@ -18,6 +18,7 @@ const AppContent: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   // Fetch leads on session change
@@ -25,6 +26,15 @@ const AppContent: React.FC = () => {
     if (session) {
       leadsService.fetchLeads().then(data => {
         setLeads(data);
+      });
+      // Fetch initial history cache
+      leadsService.fetchAllHistory().then(history => {
+        const grouped = history.reduce((acc: Record<string, LeadColumnHistory[]>, item) => {
+          if (!acc[item.lead_id]) acc[item.lead_id] = [];
+          acc[item.lead_id].push(item);
+          return acc;
+        }, {});
+        setLeadsHistory(grouped);
       });
     }
   }, [session]);
@@ -116,6 +126,16 @@ const AppContent: React.FC = () => {
       // Record history if we have column IDs
       if (toColumnId) {
         leadsService.recordHistory(leadId, fromColumnId || null, toColumnId);
+
+        // Optimistically update history cache
+        const fromColumn = fromColumnId ? { name: '...' } : undefined; // Column names will be fetched or should be passed if possible
+        // Actually, to keep it simple and accurate, we can just fetch the single lead history after record
+        leadsService.fetchHistory(leadId).then(history => {
+          setLeadsHistory(prev => ({
+            ...prev,
+            [leadId]: history as LeadColumnHistory[]
+          }));
+        });
       }
     }
   };
@@ -129,6 +149,7 @@ const AppContent: React.FC = () => {
           <Kanban
             searchQuery={searchQuery}
             filteredLeads={filteredLeads}
+            leadsHistory={leadsHistory}
             onLeadsUpdate={handleLeadsUpdate}
             onUpdateLeadStatus={handleUpdateLeadStatus}
             onSelectChat={(id) => {
