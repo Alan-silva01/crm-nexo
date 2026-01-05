@@ -187,6 +187,20 @@
       outline: none !important;
     }
 
+    /* Ensure tooltip label (date) is visible in light mode - keep it white on dark tooltip bg */
+    .light .recharts-tooltip-label {
+      color: #ffffff !important;
+    }
+
+    .light .recharts-tooltip-wrapper .recharts-default-tooltip {
+      background-color: #0c0c0e !important;
+      border: 1px solid #27272a !important;
+    }
+
+    .light .recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-label {
+      color: #ffffff !important;
+    }
+
     .light .bg-zinc-900\/80.text-zinc-500 {
       background-color: #f1f1f4 !important;
       color: #18181b !important;
