@@ -1,11 +1,25 @@
 import React, { useState, useRef } from 'react';
 import { User, Camera, Lock, User as UserIcon, Save, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../src/lib/supabase';
+import UserAvatar from './UserAvatar';
 
 interface SettingsProps {
     user: any;
     onUpdate: () => void;
 }
+
+const translateError = (msg: string) => {
+    if (msg.toLowerCase().includes('password should be different')) {
+        return 'A nova senha deve ser diferente da senha atual.';
+    }
+    if (msg.toLowerCase().includes('invalid login credentials')) {
+        return 'Credenciais de login inválidas.';
+    }
+    if (msg.toLowerCase().includes('email not confirmed')) {
+        return 'E-mail ainda não confirmado.';
+    }
+    return msg;
+};
 
 const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
     const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
@@ -13,7 +27,6 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -25,7 +38,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
         });
 
         if (error) {
-            setStatus({ type: 'error', message: error.message });
+            setStatus({ type: 'error', message: translateError(error.message) });
         } else {
             setStatus({ type: 'success', message: 'Perfil atualizado com sucesso!' });
             onUpdate();
@@ -44,7 +57,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
         const { error } = await supabase.auth.updateUser({ password: newPassword });
 
         if (error) {
-            setStatus({ type: 'error', message: error.message });
+            setStatus({ type: 'error', message: translateError(error.message) });
         } else {
             setStatus({ type: 'success', message: 'Senha redefinida com sucesso!' });
             setNewPassword('');
@@ -75,17 +88,12 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
                     </h2>
 
                     <div className="flex flex-col items-center mb-10">
-                        <div className="relative group cursor-pointer">
-                            <img
-                                src={`https://picsum.photos/seed/${user?.id}/200`}
-                                alt="Avatar Large"
-                                className="w-32 h-32 rounded-full border-4 border-zinc-800/50 shadow-2xl transition-transform group-hover:scale-105"
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Camera className="text-white" size={24} />
-                            </div>
-                        </div>
-                        <p className="mt-4 text-[11px] text-zinc-500">ID: {user?.id}</p>
+                        <UserAvatar
+                            name={fullName}
+                            email={user?.email}
+                            size="xl"
+                            className="border-4 border-zinc-800/50 shadow-2xl"
+                        />
                     </div>
 
                     <form onSubmit={handleUpdateProfile} className="space-y-6">

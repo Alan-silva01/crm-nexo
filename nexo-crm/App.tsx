@@ -7,6 +7,7 @@ import CalendarPage from './components/Calendar';
 import WhatsAppChat from './components/WhatsAppChat';
 import DetailedAnalytics from './components/DetailedAnalytics';
 import Settings from './components/Settings';
+import UserAvatar from './components/UserAvatar';
 import Auth from './components/Auth';
 import { Bell, Search, Calendar, LogOut } from 'lucide-react';
 import { Lead, LeadColumnHistory } from './types';
@@ -272,7 +273,7 @@ const AppContent: React.FC = () => {
                   Sair da conta <LogOut size={10} />
                 </button>
               </div>
-              <img src={`https://picsum.photos/seed/${session?.user?.id}/100`} alt="Avatar" className="w-9 h-9 rounded-full border-2 border-indigo-500/20 shadow-sm" />
+              <UserAvatar name={user?.user_metadata?.full_name} email={user?.email} size="md" className="border-2 border-indigo-500/20 shadow-sm" />
             </div>
           </div>
         </header>

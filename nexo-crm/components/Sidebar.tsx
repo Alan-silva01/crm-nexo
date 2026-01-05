@@ -1,4 +1,5 @@
 import React from 'react';
+import UserAvatar from './UserAvatar';
 import { User } from '@supabase/supabase-js';
 import {
   LayoutDashboard,
@@ -83,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
         </button>
         <div className={`pt-2 ${effectiveCollapsed ? 'flex justify-center' : ''}`}>
           <div className={`flex items-center ${effectiveCollapsed ? 'w-10 h-10 justify-center' : 'gap-3 p-2'} rounded-xl bg-zinc-900/50 border border-zinc-800/50`}>
-            <img src={`https://picsum.photos/seed/${user?.id || 'default'}/100`} alt="Avatar" className="w-6 h-6 rounded-full border border-zinc-700" />
+            <UserAvatar name={user?.user_metadata?.full_name} email={user?.email} size="sm" />
             {!effectiveCollapsed && (
               <div className="flex-1 overflow-hidden">
                 <p className="text-[10px] font-medium truncate">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuário'}</p>
