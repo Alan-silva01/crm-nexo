@@ -94,7 +94,7 @@ const VerticalLabel = (props: any) => {
     <text
       x={x + width / 2}
       y={y + height - 20}
-      fill="#a1a1aa"
+      fill="#0c0c0e"
       textAnchor="start"
       fontSize={9}
       fontWeight="bold"

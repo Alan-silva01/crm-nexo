@@ -2,7 +2,7 @@ import React from 'react';
 import { Lead } from '../types';
 import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell, Legend, Sector
 } from 'recharts';
 import { Download, Calendar, ArrowUpRight, TrendingUp, Users, Target, DollarSign, Briefcase } from 'lucide-react';
 
@@ -82,29 +82,47 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
   };
 
   const renderActiveShape = (props: any) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+    const {
+      cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value
+    } = props;
 
     return (
       <g>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+        <filter id="glow-pie">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <path
-          d={`M ${cx},${cy} L ${cx},${cy} L ${cx},${cy} Z`}
+        <text x={cx} y={cy} dy={-20} textAnchor="middle" fill="#71717a" fontSize={10} fontWeight="bold" className="uppercase tracking-widest">
+          {payload.name}
+        </text>
+        <text x={cx} y={cy} dy={10} textAnchor="middle" fill="#fff" fontSize={22} fontWeight="bold">
+          {value}
+        </text>
+        <text x={cx} y={cy} dy={25} textAnchor="middle" fill="#10b981" fontSize={10} fontWeight="bold">
+          {`${(percent * 100).toFixed(1)}%`}
+        </text>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 10}
+          startAngle={startAngle}
+          endAngle={endAngle}
           fill={fill}
-          filter="url(#glow)"
-        />
-        <Pie
-          {...props}
-          outerRadius={outerRadius + 12}
-          innerRadius={innerRadius - 4}
-          stroke={fill}
-          strokeWidth={2}
+          filter="url(#glow-pie)"
           style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          innerRadius={outerRadius + 12}
+          outerRadius={outerRadius + 15}
+          fill={fill}
         />
       </g>
     );
