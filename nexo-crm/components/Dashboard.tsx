@@ -313,25 +313,39 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
             </ResponsiveContainer>
           </div>
 
-          {/* Custom Grid Legend */}
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 shrink-0">
-            {pieData.map((entry, index) => {
-              const isLastOdd = pieData.length % 2 === 1 && index === pieData.length - 1;
-              return (
-                <div
-                  key={`legend-${index}`}
-                  className={`flex items-center gap-1.5 ${isLastOdd ? 'col-span-2 justify-center' : ''}`}
-                >
+          {/* Custom Grid Legend - Two equal columns */}
+          <div className="flex justify-between mt-2 shrink-0">
+            {/* Left column */}
+            <div className="flex-1 flex flex-col items-center gap-0.5">
+              {pieData.slice(0, Math.ceil(pieData.length / 2)).map((entry, index) => (
+                <div key={`legend-l-${index}`} className="flex items-center gap-1.5">
                   <div
                     className="w-2 h-2 rounded-full shrink-0"
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
-                  <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight truncate">
+                  <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight">
                     {entry.name.length > 12 ? `${entry.name.substring(0, 10)}...` : entry.name}
                   </span>
                 </div>
-              );
-            })}
+              ))}
+            </div>
+            {/* Right column */}
+            <div className="flex-1 flex flex-col items-center gap-0.5">
+              {pieData.slice(Math.ceil(pieData.length / 2)).map((entry, index) => {
+                const realIndex = Math.ceil(pieData.length / 2) + index;
+                return (
+                  <div key={`legend-r-${index}`} className="flex items-center gap-1.5">
+                    <div
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: COLORS[realIndex % COLORS.length] }}
+                    />
+                    <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight">
+                      {entry.name.length > 12 ? `${entry.name.substring(0, 10)}...` : entry.name}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="mt-3 pt-3 border-t border-zinc-800/50 flex justify-between shrink-0">
