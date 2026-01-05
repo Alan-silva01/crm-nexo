@@ -249,7 +249,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
           </h3>
           <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barChartData} margin={{ top: 10, right: 5, left: 5, bottom: 10 }}>
+              <BarChart data={barChartData} margin={{ top: 10, right: 5, left: 5, bottom: 10 }} barCategoryGap="20%">
                 <XAxis dataKey="name" hide />
                 <Tooltip
                   cursor={{ fill: 'rgba(255,255,255,0.02)' }}
@@ -258,7 +258,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
                   itemStyle={{ color: '#fff', fontSize: '10px' }}
                   formatter={(value: any) => [`${value} leads`, 'Quantidade']}
                 />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40} isAnimationActive={false}>
+                <Bar dataKey="value" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                   {barChartData.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}

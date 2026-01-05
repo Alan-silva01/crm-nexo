@@ -234,6 +234,7 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
               <PieChart>
                 {/* @ts-ignore */}
                 <Pie
+                  {...(pieData as any)} // Forçamos o tipo para evitar erros de lint com activeIndex
                   data={pieData}
                   cx="50%"
                   cy="50%"
