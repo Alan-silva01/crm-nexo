@@ -30,6 +30,8 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [isSaving, setIsSaving] = useState(false);
     const [duration, setDuration] = useState<number>(30); // Default 30 min
+    const [selectedDayEvents, setSelectedDayEvents] = useState<Lead[] | null>(null);
+    const [selectedDateLabel, setSelectedDateLabel] = useState<string>('');
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
@@ -74,7 +76,19 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
         const hasEvent = dayEvents.length > 0;
 
         days.push(
-            <div key={d} className="relative flex flex-col items-center justify-center group cursor-pointer">
+            <div
+                key={d}
+                onClick={() => {
+                    if (hasEvent) {
+                        setSelectedDayEvents(dayEvents);
+                        setSelectedDateLabel(`${d} de ${monthName} de ${year}`);
+                    } else {
+                        setEventDate(`${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}T09:00`);
+                        setIsEventModalOpen(true);
+                    }
+                }}
+                className="relative flex flex-col items-center justify-center group cursor-pointer"
+            >
                 <div className={`h-12 w-12 flex flex-col items-center justify-center rounded-xl transition-all duration-300
           ${isToday
                         ? 'bg-[#1a1a1c] shadow-[inset_4px_4px_8px_#0d0d0e,inset_-4px_-4px_8px_#27272a] text-indigo-400 font-bold border border-indigo-500/20'
@@ -354,6 +368,69 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead }) => {
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+            {/* Day Detail Modal */}
+            {selectedDayEvents && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+                    <div
+                        className="bg-[#0c0c0e] w-full max-w-lg rounded-[3rem] p-8 shadow-[20px_20px_40px_#050506,-20px_-20px_40px_#131316] border border-zinc-800/30 animate-in zoom-in-95 duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex justify-between items-center mb-8">
+                            <div>
+                                <h2 className="text-xl font-bold bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">Compromissos do Dia</h2>
+                                <p className="text-xs text-zinc-500 mt-1 font-medium">{selectedDateLabel}</p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedDayEvents(null)}
+                                className="p-3 rounded-full bg-[#0c0c0e] shadow-[4px_4px_8px_#060607,-4px_-4px_8px_#121215] text-zinc-500 hover:text-white transition-all active:scale-90"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                            {selectedDayEvents.sort((a, b) => new Date(a.dataHora_Agendamento!).getTime() - new Date(b.dataHora_Agendamento!).getTime()).map((event, i) => (
+                                <div key={event.id} className="p-6 rounded-[2rem] bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-zinc-800/10 flex items-start gap-4">
+                                    <div className="p-4 rounded-2xl bg-indigo-500/10 text-indigo-400 font-bold text-center min-w-[70px]">
+                                        <div className="text-xs uppercase opacity-60 mb-0.5">Hora</div>
+                                        <div className="text-sm">
+                                            {new Date(event.dataHora_Agendamento!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h4 className="text-sm font-bold text-zinc-200 truncate">{event.name}</h4>
+                                            <span className="px-2 py-0.5 rounded-md bg-zinc-800/50 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">{duration}m</span>
+                                        </div>
+                                        <p className="text-xs text-zinc-500 mb-3 flex items-center gap-1.5 font-medium italic">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                            {event.servico_interesse || 'Serviço não especificado'}
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <button className="px-4 py-2 rounded-xl bg-[#0c0c0e] shadow-[4px_4px_8px_#050506,-4px_-4px_8px_#131316] text-[10px] font-bold text-zinc-400 hover:text-white transition-all active:scale-95">
+                                                Reagendar
+                                            </button>
+                                            <button className="px-4 py-2 rounded-xl bg-indigo-600 shadow-lg shadow-indigo-600/20 text-[10px] font-bold text-white hover:bg-indigo-500 transition-all active:scale-95">
+                                                Ver Detalhes
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                setSelectedDayEvents(null);
+                                setIsEventModalOpen(true);
+                            }}
+                            className="w-full mt-8 py-4 rounded-[1.5rem] bg-[#0c0c0e] shadow-[6px_6px_12px_#050506,-6px_-6px_12px_#131316] text-xs font-bold text-zinc-500 hover:text-indigo-400 transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <Plus size={16} /> Adicionar outro evento
+                        </button>
                     </div>
                 </div>
             )}

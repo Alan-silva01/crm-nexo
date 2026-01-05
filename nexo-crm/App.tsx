@@ -75,6 +75,56 @@ const AppContent: React.FC = () => {
     };
   }, [session?.user?.id]);
 
+  // Realtime subscription for history
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const channel = supabase
+      .channel('history-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'lead_column_history',
+          filter: `user_id=eq.${session.user.id}`
+        },
+        async (payload) => {
+          console.log('History realtime update:', payload);
+          const newHistory = payload.new as LeadColumnHistory;
+
+          // Fetch the full record with joined column names
+          const { data, error } = await supabase
+            .from('lead_column_history')
+            .select(`
+                *,
+                from_column:kanban_columns!from_column_id(name),
+                to_column:kanban_columns!to_column_id(name)
+            `)
+            .eq('id', newHistory.id)
+            .single();
+
+          if (data && !error) {
+            setLeadsHistory(prev => {
+              const leadId = data.lead_id;
+              const existing = prev[leadId] || [];
+              // Avoid duplicates
+              if (existing.some(h => h.id === data.id)) return prev;
+              return {
+                ...prev,
+                [leadId]: [data as LeadColumnHistory, ...existing]
+              };
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id]);
+
   const filteredLeads = useMemo(() => {
     if (!searchQuery) return leads;
     const lower = searchQuery.toLowerCase();
@@ -123,21 +173,6 @@ const AppContent: React.FC = () => {
       // Rollback
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: originalStatus } : l));
     } else {
-      console.log(`Lead ${leadId} successfully moved to "${newStatus}"`);
-      // Record history if we have column IDs
-      if (toColumnId) {
-        leadsService.recordHistory(leadId, fromColumnId || null, toColumnId);
-
-        // Optimistically update history cache
-        const fromColumn = fromColumnId ? { name: '...' } : undefined; // Column names will be fetched or should be passed if possible
-        // Actually, to keep it simple and accurate, we can just fetch the single lead history after record
-        leadsService.fetchHistory(leadId).then(history => {
-          setLeadsHistory(prev => ({
-            ...prev,
-            [leadId]: history as LeadColumnHistory[]
-          }));
-        });
-      }
     }
   };
 
