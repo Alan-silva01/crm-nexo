@@ -51,7 +51,7 @@
       color: #18181b;
     }
 
-    /* CORE OVERRIDES FOR LIGHT MODE - Aggressive & Escaped */
+    /* CORE OVERRIDES FOR LIGHT MODE */
 
     /* Backgrounds */
     .light .bg-black,
@@ -68,6 +68,16 @@
       background-color: #ffffff !important;
     }
 
+    /* Calendar Datetime-local and Inputs */
+    .light input[type="datetime-local"],
+    .light input[type="text"],
+    .light select {
+      background-color: #ffffff !important;
+      color: #18181b !important;
+      color-scheme: light !important;
+      border: 1px solid #f1f1f4 !important;
+    }
+
     .light main,
     .light .bg-zinc-900\/10,
     .light .bg-zinc-900\/5 {
@@ -81,78 +91,54 @@
       background-color: #ffffff !important;
     }
 
-    /* Kanban & Dashboard Specific Gray Fixes */
     .light .bg-zinc-900\/30,
-    .light .bg-zinc-900\/20 {
-      background-color: #f1f1f4 !important;
-    }
-
     .light .bg-zinc-800,
     .light .bg-zinc-800\/20,
     .light .bg-zinc-800\/80 {
       background-color: #f1f1f4 !important;
     }
 
-    /* Kanban Lead Counter Bubbles */
     .light .bg-zinc-900\/80.text-zinc-500 {
       background-color: #f1f1f4 !important;
       color: #18181b !important;
     }
 
-    /* Fix Avatar Box in Sidebar */
-    .light .bg-zinc-900\/50.border-zinc-800\/50 {
-      background-color: #f1f1f4 !important;
-      border-color: #f1f1f4 !important;
+    /* SOFT PURPLE BUTTONS FOR LIGHT MODE */
+    .light .bg-indigo-600 {
+      background-color: #6366f1 !important;
+      /* Slightly more vibrant/soft indigo */
+      color: #ffffff !important;
     }
 
-    /* GREEN CONVERSATIONS READABILITY (Agent/IA) */
-    /* AI Bubble (Right) */
+    .light .bg-indigo-600:hover {
+      background-color: #4f46e5 !important;
+    }
+
+    .light .text-indigo-400 {
+      color: #4f46e5 !important;
+      font-weight: 600 !important;
+    }
+
+    /* GREEN MESSAGES READABILITY */
     .light .bg-\[\#056162\] {
       background-color: #dcfce7 !important;
-      /* Very light green */
       border: 1px solid #bbf7d0 !important;
     }
 
-    /* Agent Bubble (Right) */
     .light .bg-\[\#005c4b\] {
       background-color: #f0fdf4 !important;
-      /* Even lighter */
       border: 1px solid #dcfce7 !important;
     }
 
-    /* Badges AI/Agent */
-    .light .bg-\[\#04514f\],
-    .light .bg-\[\#004d40\] {
-      background-color: #bbf7d0 !important;
-      border-bottom: 1px solid #86efac !important;
-    }
-
-    .light .text-emerald-200,
-    .light .text-teal-200 {
-      color: #065f46 !important;
-    }
-
-    /* Dark Green Text */
-
-    /* Message Text inside bubbles */
     .light .bg-\[\#056162\] p,
     .light .bg-\[\#005c4b\] p {
       color: #064e3b !important;
     }
 
-    .light .bg-\[\#1e2a30\] p {
-      color: #18181b !important;
-    }
-
-    /* Client Bubble (Left) - Fix Text and BG */
+    /* Client Bubble (Left) */
     .light .bg-\[\#1e2a30\] {
       background-color: #ffffff !important;
       border: 1px solid #f1f1f4 !important;
-    }
-
-    .light .bg-\[\#1a242a\] {
-      background-color: #f8f9fa !important;
-      border-bottom: 1px solid #e4e4e7 !important;
     }
 
     /* Borders */
@@ -169,7 +155,7 @@
     .light .text-zinc-100,
     .light .text-zinc-200,
     .light .text-zinc-300,
-    .light .text-white {
+    .light .text-white:not(.bg-indigo-600 *) {
       color: #18181b !important;
     }
 
@@ -178,71 +164,38 @@
       color: #8e8e93 !important;
     }
 
-    .light .text-indigo-400 {
-      color: #4f46e5 !important;
-    }
-
-    /* Advanced Shadows for Premium Depth */
+    /* DEEPER PREMIUM SHADOWS */
     .light [class*="shadow-"] {
-      box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.08), 0 2px 6px -2px rgba(0, 0, 0, 0.05) !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
     }
 
     .light .shadow-\[weighted_all_variations\],
     .light [class*="shadow-\["] {
-      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 5px 15px -5px rgba(0, 0, 0, 0.06) !important;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15), 0 10px 20px -5px rgba(0, 0, 0, 0.08) !important;
     }
 
     .light .shadow-inner,
     .light .shadow-inset,
     .light [class*="shadow-\[inset"] {
-      box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.03) !important;
+      box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.05) !important;
     }
 
     /* Scrollbars */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #27272a;
-      border-radius: 10px;
-    }
-
     .light ::-webkit-scrollbar-thumb {
       background: #e4e4e7;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #3f3f46;
     }
 
     .light ::-webkit-scrollbar-thumb:hover {
       background: #d4d4d8;
     }
 
-    .glass {
-      background: rgba(15, 15, 15, 0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
     .light .glass {
-      background: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(0, 0, 0, 0.05);
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #f1f1f4;
     }
 
     .kanban-column {
       height: calc(100vh - 12rem);
-    }
-
-    .dragging {
-      opacity: 0.5;
-      transform: scale(1.02);
     }
   </style>
   <script type="importmap">
