@@ -17,11 +17,80 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
+    /* Dark Theme is the default - Hardcoded in components as requested */
+    :root {
+      --bg-main: #0c0c0e;
+      --bg-card: #0c0c0e;
+      --bg-sidebar: #09090b;
+      --border-base: rgba(255, 255, 255, 0.05);
+      --text-main: #f4f4f5;
+      --text-muted: #71717a;
+      --shadow-base: 8px 8px 16px #060607, -8px -8px 16px #121215;
+    }
+
+    /* Light Theme Overrides */
+    .light {
+      --bg-main: #f4f4f5;
+      --bg-card: #ffffff;
+      --bg-sidebar: #ffffff;
+      --border-base: #e4e4e7;
+      --text-main: #18181b;
+      --text-muted: #71717a;
+      --shadow-base: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #09090b;
-      color: #e4e4e7;
+      background-color: var(--bg-main);
+      color: var(--text-main);
       overflow: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Global Overrides for Light Mode */
+    .light body {
+      background-color: #f4f4f5;
+      color: #18181b;
+    }
+
+    /* Target common dark-mode specific hardcoded classes and override them in .light context */
+    .light .bg-\[\#09090b\],
+    .light .bg-zinc-950 {
+      background-color: #ffffff !important;
+    }
+
+    .light .bg-\[\#0c0c0e\],
+    .light .bg-zinc-900 {
+      background-color: #ffffff !important;
+    }
+
+    .light .border-zinc-800,
+    .light .border-zinc-800\/50,
+    .light .border-zinc-800\/40 {
+      border-color: #e4e4e7 !important;
+    }
+
+    .light .text-zinc-100,
+    .light .text-white {
+      color: #18181b !important;
+    }
+
+    .light .text-zinc-400,
+    .light .text-zinc-500 {
+      color: #71717a !important;
+    }
+
+    /* Restore shadows in light mode to be soft, while dark mode keeps its neumorphism */
+    .light .shadow-\[10px_10px_20px_\#050506\,-10px_-10px_20px_\#131316\] {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .light .shadow-\[8px_8px_16px_\#060607\,-8px_-8px_16px_\#121215\] {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .light .shadow-\[inset_4px_4px_8px_\#060607\,inset_-4px_-4px_8px_\#121215\] {
+      box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.05) !important;
     }
 
     ::-webkit-scrollbar {
@@ -38,14 +107,27 @@
       border-radius: 10px;
     }
 
+    .light ::-webkit-scrollbar-thumb {
+      background: #e4e4e7;
+    }
+
     ::-webkit-scrollbar-thumb:hover {
       background: #3f3f46;
+    }
+
+    .light ::-webkit-scrollbar-thumb:hover {
+      background: #d4d4d8;
     }
 
     .glass {
       background: rgba(15, 15, 15, 0.7);
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .light .glass {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     .kanban-column {

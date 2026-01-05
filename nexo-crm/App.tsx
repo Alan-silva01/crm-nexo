@@ -9,9 +9,10 @@ import DetailedAnalytics from './components/DetailedAnalytics';
 import Settings from './components/Settings';
 import UserAvatar from './components/UserAvatar';
 import Auth from './components/Auth';
-import { Bell, Search, Calendar, LogOut } from 'lucide-react';
+import { Bell, Search, Calendar, LogOut, Sun, Moon } from 'lucide-react';
 import { Lead, LeadColumnHistory } from './types';
 import { AuthProvider, useAuth } from './src/lib/AuthProvider';
+import { ThemeProvider, useTheme } from './src/lib/ThemeContext';
 import { leadsService } from './src/lib/leadsService';
 import { supabase } from './src/lib/supabase';
 
@@ -213,6 +214,8 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const { theme, toggleTheme } = useTheme();
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -289,6 +292,13 @@ const AppContent: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-zinc-400 hover:text-indigo-400 transition-colors bg-zinc-900 border border-zinc-800 rounded-xl"
+              title={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-full text-[11px] font-medium text-zinc-500">
               <Calendar size={12} />
               {new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -319,7 +329,9 @@ const AppContent: React.FC = () => {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </AuthProvider>
   );
 }
