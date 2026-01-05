@@ -53,7 +53,7 @@
 
     /* CORE OVERRIDES FOR LIGHT MODE */
 
-    /* Backgrounds */
+    /* Global Background Fixes */
     .light .bg-black,
     .light .bg-zinc-950,
     .light .bg-zinc-900,
@@ -66,6 +66,32 @@
     .light .bg-\[\#1e2a30\],
     .light .bg-\[\#2a3942\] {
       background-color: #ffffff !important;
+    }
+
+    /* Top App Header Fix */
+    .light header.bg-zinc-900\/20 {
+      background-color: #f8f9fa !important;
+      border-bottom: 1px solid #f1f1f4 !important;
+    }
+
+    /* Sidebar Hover & Active Fix */
+    .light .hover\:bg-zinc-900\/50:hover,
+    .light .hover\:bg-zinc-900:hover,
+    .light .bg-zinc-900\/50,
+    .light .bg-zinc-900 {
+      background-color: #f1f1f4 !important;
+    }
+
+    .light .hover\:text-zinc-300:hover {
+      color: #18181b !important;
+    }
+
+    /* Fix vanishing "Compromissos do Dia" (removes transparent gradient) */
+    .light .from-white {
+      background: none !important;
+      -webkit-background-clip: initial !important;
+      background-clip: initial !important;
+      color: #18181b !important;
     }
 
     /* Calendar Datetime-local and Inputs */
@@ -84,10 +110,7 @@
       background-color: #f8f9fa !important;
     }
 
-    .light aside,
-    .light .bg-zinc-900\/50,
-    .light .bg-zinc-900\/80,
-    .light .bg-\[\#18181b\] {
+    .light aside {
       background-color: #ffffff !important;
     }
 
@@ -103,10 +126,9 @@
       color: #18181b !important;
     }
 
-    /* SOFT PURPLE BUTTONS FOR LIGHT MODE */
+    /* SOFT PURPLE BUTTONS */
     .light .bg-indigo-600 {
       background-color: #6366f1 !important;
-      /* Slightly more vibrant/soft indigo */
       color: #ffffff !important;
     }
 
