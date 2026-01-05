@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Kanban from './components/Kanban';
 import LeadsList from './components/LeadsList';
+import CalendarPage from './components/Calendar';
 import WhatsAppChat from './components/WhatsAppChat';
 import DetailedAnalytics from './components/DetailedAnalytics';
 import Auth from './components/Auth';
@@ -158,8 +159,9 @@ const AppContent: React.FC = () => {
             }}
           />
         );
-      case 'leads':
         return <LeadsList searchQuery={searchQuery} filteredLeads={filteredLeads} />;
+      case 'calendar':
+        return <CalendarPage leads={leads} />;
       case 'chats':
         return (
           <WhatsAppChat

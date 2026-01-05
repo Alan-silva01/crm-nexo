@@ -10,7 +10,8 @@ import {
   BarChart3,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Calendar
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -26,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
     { id: 'kanban', icon: KanbanIcon, label: 'Kanban de Leads' },
     { id: 'leads', icon: Users, label: 'Contatos' },
     { id: 'chats', icon: MessageSquare, label: 'Conversas' },
+    { id: 'calendar', icon: Calendar, label: 'Calendário' },
     { id: 'analytics', icon: BarChart3, label: 'Relatórios' },
   ];
 
