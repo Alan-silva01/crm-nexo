@@ -30,13 +30,13 @@
 
     /* Light Theme Overrides */
     .light {
-      --bg-main: #f4f4f5;
+      --bg-main: #f8f9fa;
       --bg-card: #ffffff;
       --bg-sidebar: #ffffff;
-      --border-base: #e4e4e7;
+      --border-base: #f1f1f4;
       --text-main: #18181b;
-      --text-muted: #71717a;
-      --shadow-base: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --text-muted: #8e8e93;
+      --shadow-base: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
     }
 
     body {
@@ -66,31 +66,38 @@
 
     .light .border-zinc-800,
     .light .border-zinc-800\/50,
-    .light .border-zinc-800\/40 {
-      border-color: #e4e4e7 !important;
-    }
-
-    .light .text-zinc-100,
-    .light .text-white {
-      color: #18181b !important;
+    .light .border-zinc-800\/40,
+    .light .border-zinc-800\/10 {
+      border-color: #f1f1f4 !important;
     }
 
     .light .text-zinc-400,
     .light .text-zinc-500 {
-      color: #71717a !important;
+      color: #8e8e93 !important;
+    }
+
+    .light .text-zinc-100,
+    .light .text-white,
+    .light .text-zinc-300 {
+      color: #18181b !important;
     }
 
     /* Restore shadows in light mode to be soft, while dark mode keeps its neumorphism */
-    .light .shadow-\[10px_10px_20px_\#050506\,-10px_-10px_20px_\#131316\] {
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    .light .shadow-\[10px_10px_20px_\#050506\,-10px_-10px_20px_\#131316\],
+    .light .shadow-\[var\(--shadow-base\)\] {
+      box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.08) !important;
     }
 
     .light .shadow-\[8px_8px_16px_\#060607\,-8px_-8px_16px_\#121215\] {
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+      box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.06) !important;
     }
 
     .light .shadow-\[inset_4px_4px_8px_\#060607\,inset_-4px_-4px_8px_\#121215\] {
-      box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.05) !important;
+      box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.03) !important;
+    }
+
+    .light .shadow-lg.shadow-indigo-600\/20 {
+      box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.15) !important;
     }
 
     ::-webkit-scrollbar {
