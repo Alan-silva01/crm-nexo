@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    /* Dark Theme is the default - Hardcoded in components as requested */
+    /* Dark Theme is the default - Hardcoded in components */
     :root {
       --bg-main: #0c0c0e;
       --bg-card: #0c0c0e;
@@ -28,7 +28,7 @@
       --shadow-base: 8px 8px 16px #060607, -8px -8px 16px #121215;
     }
 
-    /* Light Theme Overrides - Targeted and Soft */
+    /* Light Theme Overrides */
     .light {
       --bg-main: #f8f9fa;
       --bg-card: #ffffff;
@@ -36,10 +36,8 @@
       --border-base: #f1f1f4;
       --text-main: #18181b;
       --text-muted: #8e8e93;
-      --shadow-base: 0 4px 15px rgba(0, 0, 0, 0.04);
     }
 
-    /* Global Body Logic */
     body {
       font-family: 'Inter', sans-serif;
       background-color: var(--bg-main);
@@ -53,52 +51,69 @@
       color: #18181b;
     }
 
-    /* Fix Avatars - Black in Dark, Light Gray in Light */
-    .light .bg-black {
+    /* Fix ALL Dark Backgrounds in Light Mode */
+    .light .bg-black,
+    .light .bg-\[\#121214\],
+    .light .bg-\[\#1e1e1e\],
+    .light .bg-\[\#1a242a\],
+    .light .bg-\[\#1e2a30\],
+    .light .bg-\[\#2a3942\],
+    .light .bg-\[\#0b141a\],
+    .light .bg-zinc-950,
+    .light .bg-zinc-900 {
       background-color: #f1f1f4 !important;
     }
 
-    .light .text-indigo-400 {
-      color: #4f46e5 !important;
-    }
-
-    /* Fix Sidebar & Main Containers */
-    .light aside,
     .light .bg-\[\#09090b\],
-    .light .bg-zinc-950,
-    .light .bg-zinc-900,
-    .light .bg-zinc-900\/20,
-    .light .bg-zinc-900\/50,
-    .light .bg-zinc-900\/80 {
+    .light .bg-\[\#0c0c0e\],
+    .light aside {
       background-color: #ffffff !important;
     }
 
-    .light main,
-    .light .bg-\[\#0c0c0e\],
-    .light .bg-zinc-900\/30 {
-      background-color: #f8f9fa !important;
-    }
-
-    /* Fix Sidebar Active State and Toggle Button */
+    /* Fix Sidebar & Chat Items Active State */
     .light .bg-zinc-800,
     .light .bg-zinc-800\/80,
-    .light .bg-zinc-800\/50 {
+    .light .bg-zinc-800\/50,
+    .light .bg-\[\#18181b\] {
       background-color: #f1f1f4 !important;
       color: #18181b !important;
     }
 
+    /* Fix Chat Bubbles - Clients (Left) should be lighter gray, Agent (Right) keep emerald/teal but refined */
+    .light .bg-\[\#1e2a30\] {
+      background-color: #ffffff !important;
+      border: 1px solid #f1f1f4;
+    }
+
+    .light .text-emerald-200 {
+      color: #065f46 !important;
+    }
+
+    .light .text-teal-200 {
+      color: #0f766e !important;
+    }
+
+    .light .text-emerald-100\/70 {
+      color: #064e3b !important;
+    }
+
+    /* Borders */
     .light .border-zinc-800,
     .light .border-zinc-800\/50,
     .light .border-zinc-800\/40,
-    .light .border-zinc-700 {
+    .light .border-zinc-800\/10,
+    .light .border-zinc-700,
+    .light .border-\[\#09090b\],
+    .light .border-\[\#1e2a30\],
+    .light .border-\[\#151d22\] {
       border-color: #f1f1f4 !important;
     }
 
-    /* Fix Texts */
+    /* Texts */
     .light .text-zinc-100,
-    .light .text-white,
     .light .text-zinc-200,
-    .light .text-zinc-300 {
+    .light .text-zinc-300,
+    .light .text-white {
       color: #18181b !important;
     }
 
@@ -107,33 +122,38 @@
       color: #8e8e93 !important;
     }
 
-    /* Shadow Overrides for Light Mode - Broad and Soft */
-    .light [class*="shadow-["] {
-      box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05) !important;
+    .light .text-indigo-400 {
+      color: #4f46e5 !important;
+    }
+
+    /* Shadow depth for Light Mode - Slightly more visible for a "premium card" feel */
+    .light [class*="shadow-"] {
+      box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.08), 0 2px 6px -2px rgba(0, 0, 0, 0.05) !important;
     }
 
     .light .shadow-\[8px_8px_16px_\#060607\,-8px_-8px_16px_\#121215\],
     .light .shadow-\[10px_10px_20px_\#050506\,-10px_-10px_20px_\#131316\],
+    .light .shadow-\[15px_15px_30px_\#050506\,-15px_-15px_30px_\#131316\],
     .light .shadow-\[var\(--shadow-base\)\] {
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04) !important;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 5px 15px -5px rgba(0, 0, 0, 0.05) !important;
     }
 
-    .light .shadow-\[inset_4px_4px_8px_\#060607\,inset_-4px_-4px_8px_\#121215\],
     .light .shadow-inner,
-    .light .shadow-inset {
-      box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.02) !important;
+    .light .shadow-inset,
+    .light .shadow-\[inset_4px_4px_8px_\#060607\,inset_-4px_-4px_8px_\#121215\] {
+      box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.03) !important;
     }
 
-    /* Header & Scrollbars */
-    .light header {
-      background-color: rgba(255, 255, 255, 0.8) !important;
-      border-bottom-color: #f1f1f4 !important;
+    /* WhatsApp Specific Adjustments */
+    .light .bg-\[\#005c4b\] {
+      background-color: #008069 !important;
     }
 
-    .light .bg-zinc-900\/20 {
-      background-color: rgba(248, 249, 250, 0.5) !important;
+    .light .bg-\[\#056162\] {
+      background-color: #005c4b !important;
     }
 
+    /* Scrollbars */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
