@@ -296,6 +296,19 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
                     />
                   ))}
                 </Pie>
+                {activeIndex === null && (
+                  <g>
+                    <text x="50%" y="45%" dy={-25} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest">
+                      Colunas do Kanban
+                    </text>
+                    <text x="50%" y="45%" dy={10} textAnchor="middle" fill="#fff" fontSize={24} fontWeight="bold">
+                      100%
+                    </text>
+                    <text x="50%" y="45%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold">
+                      Visão Geral
+                    </text>
+                  </g>
+                )}
                 <Legend
                   iconType="circle"
                   layout="horizontal"
