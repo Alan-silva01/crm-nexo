@@ -9,7 +9,7 @@ import DetailedAnalytics from './components/DetailedAnalytics';
 import Settings from './components/Settings';
 import UserAvatar from './components/UserAvatar';
 import Auth from './components/Auth';
-import { Bell, Search, Calendar, LogOut, Sun, Moon } from 'lucide-react';
+import { Bell, Search, Calendar, LogOut, Sun, Moon, Users, ArrowUpRight } from 'lucide-react';
 import { Lead, LeadColumnHistory } from './types';
 import { formatRelativeTime } from './src/lib/formatRelativeTime';
 import { AuthProvider, useAuth } from './src/lib/AuthProvider';
@@ -208,7 +208,9 @@ const AppContent: React.FC = () => {
       console.error('Error updating lead status, rolling back...');
       // Rollback
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: originalStatus } : l));
-    } else {
+    } else if (toColumnId) {
+      // Record history
+      await leadsService.recordHistory(leadId, fromColumnId || null, toColumnId);
     }
   };
 
@@ -325,7 +327,9 @@ const AppContent: React.FC = () => {
               >
                 <Bell size={18} />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
+                  <span className="absolute top-1 right-1 flex items-center justify-center min-w-4 h-4 px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full animate-pulse ring-2 ring-[#0c0c0e]">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
                 )}
               </button>
 
@@ -335,7 +339,7 @@ const AppContent: React.FC = () => {
                     className="fixed inset-0 z-40"
                     onClick={() => setShowNotifications(false)}
                   ></div>
-                  <div className="absolute right-0 mt-2 w-72 bg-[#0c0c0e] border border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="absolute right-0 mt-3 w-80 bg-[#0c0c0e] border border-zinc-800/80 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-white/5">
                     <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50">
                       <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Notificações</h3>
                       <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20 font-bold">Recent</span>
@@ -357,7 +361,7 @@ const AppContent: React.FC = () => {
                                   <ArrowUpRight size={8} className="rotate-90" />
                                   <span className="text-zinc-300">{notif.to_column?.name}</span>
                                 </div>
-                                <p className="text-[9px] text-zinc-600 mt-1 font-medium">{formatRelativeTime(notif.created_at)}</p>
+                                <p className="text-[9px] text-zinc-600 mt-1 font-medium">{formatRelativeTime(notif.moved_at)}</p>
                               </div>
                             </div>
                           </div>

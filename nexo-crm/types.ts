@@ -61,6 +61,7 @@ export interface LeadColumnHistory {
   moved_at: string;
   user_id: string | null;
   // Join fields
+  lead?: { name: string };
   from_column?: { name: string };
   to_column?: { name: string };
 }
