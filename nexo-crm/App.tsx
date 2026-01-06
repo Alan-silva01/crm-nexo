@@ -11,6 +11,7 @@ import UserAvatar from './components/UserAvatar';
 import Auth from './components/Auth';
 import { Bell, Search, Calendar, LogOut, Sun, Moon } from 'lucide-react';
 import { Lead, LeadColumnHistory } from './types';
+import { formatRelativeTime } from './src/lib/formatRelativeTime';
 import { AuthProvider, useAuth } from './src/lib/AuthProvider';
 import { ThemeProvider, useTheme } from './src/lib/ThemeContext';
 import { leadsService } from './src/lib/leadsService';
@@ -25,6 +26,9 @@ const AppContent: React.FC = () => {
   const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [columns, setColumns] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<LeadColumnHistory[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch columns and leads on session change
   useEffect(() => {
@@ -60,6 +64,9 @@ const AppContent: React.FC = () => {
           return acc;
         }, {});
         setLeadsHistory(grouped);
+
+        // Take latest 5 for notifications
+        setNotifications(history.slice(0, 5));
       });
     }
   }, [session]);
@@ -139,6 +146,10 @@ const AppContent: React.FC = () => {
                 [leadId]: [data as LeadColumnHistory, ...existing]
               };
             });
+
+            // Update notifications
+            setNotifications(prev => [data as LeadColumnHistory, ...prev].slice(0, 5));
+            setUnreadCount(prev => prev + 1);
           }
         }
       )
@@ -303,10 +314,72 @@ const AppContent: React.FC = () => {
               <Calendar size={12} />
               {new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
-            <button className="p-2 hover:bg-zinc-800 rounded-lg relative text-zinc-400 hover:text-white transition-colors">
-              <Bell size={18} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowNotifications(!showNotifications);
+                  if (!showNotifications) setUnreadCount(0);
+                }}
+                className={`p-2 hover:bg-zinc-800 rounded-lg relative transition-colors ${showNotifications ? 'text-indigo-400 bg-zinc-800' : 'text-zinc-400 hover:text-white'}`}
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowNotifications(false)}
+                  ></div>
+                  <div className="absolute right-0 mt-2 w-72 bg-[#0c0c0e] border border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50">
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Notificações</h3>
+                      <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20 font-bold">Recent</span>
+                    </div>
+                    <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
+                      {notifications.length > 0 ? (
+                        notifications.map((notif, idx) => (
+                          <div key={notif.id} className={`p-3 border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors ${idx === 0 && unreadCount > 0 ? 'bg-indigo-500/5' : ''}`}>
+                            <div className="flex gap-3">
+                              <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0 border border-indigo-500/20">
+                                <Users size={12} className="text-indigo-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[11px] text-zinc-100 font-medium leading-tight mb-1">
+                                  <span className="text-indigo-400 font-bold">{notif.lead_name || 'Lead'}</span> mudou de etapa
+                                </p>
+                                <div className="flex items-center gap-1.5 text-[9px] text-zinc-500 uppercase font-bold tracking-tighter">
+                                  <span>{notif.from_column?.name || 'Início'}</span>
+                                  <ArrowUpRight size={8} className="rotate-90" />
+                                  <span className="text-zinc-300">{notif.to_column?.name}</span>
+                                </div>
+                                <p className="text-[9px] text-zinc-600 mt-1 font-medium">{formatRelativeTime(notif.created_at)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-8 text-center">
+                          <p className="text-xs text-zinc-600 font-medium">Nenhuma notificação recente</p>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setActiveTab('dashboard');
+                        setShowNotifications(false);
+                      }}
+                      className="w-full p-3 text-center text-[10px] font-bold text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all border-t border-zinc-800 bg-zinc-900/30"
+                    >
+                      Ver Atividades
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
             <div className="flex items-center gap-3 pl-4 border-l border-zinc-800">
               <div className="text-right">
                 <p className="text-[11px] font-semibold leading-none">{(user?.user_metadata?.full_name || session?.user?.email) ?? 'Usuário'}</p>
