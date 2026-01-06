@@ -124,11 +124,12 @@ const AppContent: React.FC = () => {
           console.log('History realtime update:', payload);
           const newHistory = payload.new as LeadColumnHistory;
 
-          // Fetch the full record with joined column names
+          // Fetch the full record with joined column names and lead name
           const { data, error } = await supabase
             .from('lead_column_history')
             .select(`
                 *,
+                lead:leads!lead_id(name),
                 from_column:kanban_columns!from_column_id(name),
                 to_column:kanban_columns!to_column_id(name)
             `)
@@ -349,7 +350,7 @@ const AppContent: React.FC = () => {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-[11px] text-zinc-100 font-medium leading-tight mb-1">
-                                  <span className="text-indigo-400 font-bold">{notif.lead_name || 'Lead'}</span> mudou de etapa
+                                  <span className="text-indigo-400 font-bold">{notif.lead?.name || 'Lead'}</span> mudou de etapa
                                 </p>
                                 <div className="flex items-center gap-1.5 text-[9px] text-zinc-500 uppercase font-bold tracking-tighter">
                                   <span>{notif.from_column?.name || 'Início'}</span>

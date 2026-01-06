@@ -97,6 +97,7 @@ export const leadsService = {
             .from('lead_column_history')
             .select(`
                 *,
+                lead:leads!lead_id(name),
                 from_column:kanban_columns!from_column_id(name),
                 to_column:kanban_columns!to_column_id(name)
             `)
@@ -119,6 +120,7 @@ export const leadsService = {
             .from('lead_column_history')
             .select(`
                 *,
+                lead:leads!lead_id(name),
                 from_column:kanban_columns!from_column_id(name),
                 to_column:kanban_columns!to_column_id(name)
             `)
