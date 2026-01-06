@@ -151,6 +151,15 @@ const AppContent: React.FC = () => {
             // Update notifications
             setNotifications(prev => [data as LeadColumnHistory, ...prev].slice(0, 5));
             setUnreadCount(prev => prev + 1);
+
+            // Play notification sound
+            try {
+              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+              audio.volume = 0.5;
+              audio.play();
+            } catch (err) {
+              console.warn('Playback blocked or failed:', err);
+            }
           }
         }
       )
