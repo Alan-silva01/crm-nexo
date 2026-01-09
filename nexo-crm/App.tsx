@@ -106,6 +106,41 @@ const AppContent: React.FC = () => {
     };
   }, [session?.user?.id]);
 
+  // Realtime subscription for kanban columns
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const channel = supabase
+      .channel('columns-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'kanban_columns',
+          filter: `user_id=eq.${session.user.id}`
+        },
+        (payload) => {
+          console.log('Columns realtime update:', payload);
+
+          if (payload.eventType === 'INSERT') {
+            setColumns(prev => [...prev, payload.new as any].sort((a, b) => a.position - b.position));
+          } else if (payload.eventType === 'UPDATE') {
+            setColumns(prev => prev.map(col =>
+              col.id === payload.new.id ? { ...col, ...payload.new as any } : col
+            ).sort((a, b) => a.position - b.position));
+          } else if (payload.eventType === 'DELETE') {
+            setColumns(prev => prev.filter(col => col.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id]);
+
   // Realtime subscription for history
   useEffect(() => {
     if (!session?.user?.id) return;

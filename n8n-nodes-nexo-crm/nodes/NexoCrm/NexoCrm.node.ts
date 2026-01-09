@@ -225,6 +225,19 @@ export class NexoCrm implements INodeType {
                 },
                 description: 'Faturamento mensal do lead (ex: R$ 50.000,00)',
             },
+            {
+                displayName: 'Dados (JSON)',
+                name: 'dados',
+                type: 'json',
+                default: '{}',
+                displayOptions: {
+                    show: {
+                        resource: ['lead'],
+                        operation: ['create'],
+                    },
+                },
+                description: 'Dados adicionais do lead em formato JSON (ex: {"whatsapp": "(99) 99137-2552", "modelo_veiculo": "Honda Bros 160", "preocupacao": "Roubo"})',
+            },
             // Fields for Lead Update
             {
                 displayName: 'Lead ID',
@@ -296,6 +309,13 @@ export class NexoCrm implements INodeType {
                         type: 'string',
                         default: '',
                         description: 'Faturamento mensal (ex: R$ 50.000,00)',
+                    },
+                    {
+                        displayName: 'Dados (JSON)',
+                        name: 'dados',
+                        type: 'json',
+                        default: '{}',
+                        description: 'Dados adicionais do lead em formato JSON',
                     },
                 ],
             },
@@ -399,6 +419,8 @@ export class NexoCrm implements INodeType {
                         const description = this.getNodeParameter('description', i) as string;
                         const company_name = this.getNodeParameter('company_name', i) as string;
                         const monthly_revenue = this.getNodeParameter('monthly_revenue', i) as string;
+                        const dadosRaw = this.getNodeParameter('dados', i, {}) as IDataObject | string;
+                        const dados = typeof dadosRaw === 'string' ? (dadosRaw.trim() ? JSON.parse(dadosRaw) : null) : (Object.keys(dadosRaw).length > 0 ? dadosRaw : null);
 
                         // Check if column exists, create if not
                         const existingColumns = await this.helpers.request({
@@ -460,6 +482,7 @@ export class NexoCrm implements INodeType {
                                 last_message: description || null,
                                 company_name: company_name || null,
                                 monthly_revenue: monthly_revenue || null,
+                                dados: dados,
                                 avatar: `https://picsum.photos/seed/${encodeURIComponent(name)}/200`,
                             },
                             json: true,

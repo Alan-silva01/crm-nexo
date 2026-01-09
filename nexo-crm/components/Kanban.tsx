@@ -9,7 +9,10 @@ import {
   Trash2,
   X,
   Check,
-  GitCommit
+  GitCommit,
+  Phone,
+  MapPin,
+  Car
 } from 'lucide-react';
 import { Lead, LeadColumnHistory } from '../types';
 import { leadsService } from '../src/lib/leadsService';
@@ -391,6 +394,57 @@ const Kanban: React.FC<KanbanProps> = ({
                           </p>
                         </div>
                       )}
+
+                      {/* Dados Customizados */}
+                      {lead.dados && Object.keys(lead.dados).length > 0 && (() => {
+                        const d = lead.dados as Record<string, unknown>;
+                        // Helper to check if a value is truly filled (not empty string, null, undefined)
+                        const hasValue = (val: unknown) => val !== null && val !== undefined && val !== '';
+                        const whatsapp = hasValue(d.whatsapp) ? String(d.whatsapp) : null;
+                        const cidade = hasValue(d.cidade) ? String(d.cidade) : null;
+                        const bairro = hasValue(d.bairro) ? String(d.bairro) : null;
+                        const modeloVeiculo = hasValue(d.modelo_veiculo) ? String(d.modelo_veiculo) : null;
+                        const placaVeiculo = hasValue(d.placa_veiculo) ? String(d.placa_veiculo) : null;
+                        const statusVenda = hasValue(d.status_venda) ? String(d.status_venda) : null;
+
+                        // Only show the section if at least one field has a real value
+                        const hasAnyData = whatsapp || cidade || bairro || modeloVeiculo || placaVeiculo || statusVenda;
+                        if (!hasAnyData) return null;
+
+                        return (
+                          <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/30 rounded-xl p-3 border border-zinc-800/30 mb-4 space-y-2">
+                            {whatsapp && (
+                              <div className="flex items-center gap-2 text-[10px]">
+                                <Phone size={10} className="text-emerald-400" />
+                                <span className="text-zinc-300 font-medium">{whatsapp}</span>
+                              </div>
+                            )}
+                            {(cidade || bairro) && (
+                              <div className="flex items-center gap-2 text-[10px]">
+                                <MapPin size={10} className="text-blue-400" />
+                                <span className="text-zinc-300 font-medium">
+                                  {[bairro, cidade].filter(Boolean).join(', ')}
+                                </span>
+                              </div>
+                            )}
+                            {(modeloVeiculo || placaVeiculo) && (
+                              <div className="flex items-center gap-2 text-[10px]">
+                                <Car size={10} className="text-amber-400" />
+                                <span className="text-zinc-300 font-medium">
+                                  {[modeloVeiculo, placaVeiculo].filter(Boolean).join(' • ')}
+                                </span>
+                              </div>
+                            )}
+                            {statusVenda && (
+                              <div className="mt-2 pt-2 border-t border-zinc-800/50">
+                                <span className="text-[9px] px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full font-bold uppercase tracking-wider">
+                                  {statusVenda.replace(/_/g, ' ')}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* Horizontal Timeline */}
                       {(leadsHistory[lead.id] || []).length > 0 && (
