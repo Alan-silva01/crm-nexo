@@ -370,9 +370,9 @@ const Kanban: React.FC<KanbanProps> = ({
                             ></div>
                           </div>
                           <div>
-                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-200 group-hover/card:text-white transition-colors">{lead.name}</h4>
+                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-200 dark:text-zinc-200 light:text-zinc-900 group-hover/card:text-white dark:group-hover/card:text-white light:group-hover/card:text-indigo-600 transition-colors uppercase">{lead.name}</h4>
                             {lead.company_name && <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter">{lead.company_name}</p>}
-                            <p className="text-[10px] text-zinc-500 font-medium mt-1">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
+                            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 light:text-zinc-400 font-medium mt-1 uppercase">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
                           </div>
                         </div>
                         <button
@@ -388,8 +388,8 @@ const Kanban: React.FC<KanbanProps> = ({
                       </div>
 
                       {lead.last_message && (
-                        <div className="bg-zinc-900/30 rounded-xl p-3 border border-zinc-800/30 mb-4">
-                          <p className="text-[11px] text-zinc-400 line-clamp-2 italic leading-relaxed">
+                        <div className="bg-zinc-900/30 dark:bg-zinc-900/30 light:bg-zinc-50 rounded-xl p-3 border border-zinc-800/30 dark:border-zinc-800/30 light:border-zinc-100 mb-4">
+                          <p className="text-[11px] text-zinc-400 dark:text-zinc-400 light:text-zinc-600 line-clamp-2 italic leading-relaxed">
                             "{lead.last_message}"
                           </p>
                         </div>
@@ -522,8 +522,8 @@ const Kanban: React.FC<KanbanProps> = ({
               })}
 
               {filteredLeads.filter(l => l.status?.trim().toUpperCase() === col.name?.trim().toUpperCase()).length === 0 && (
-                <div className="border border-dashed border-zinc-800/50 rounded-[2rem] h-32 flex flex-col items-center justify-center text-zinc-700 text-[10px] font-bold uppercase tracking-widest p-6 text-center bg-zinc-900/10">
-                  <Layout size={24} className="mb-2 opacity-20" />
+                <div className="border border-dashed border-zinc-800/50 dark:border-zinc-800/50 light:border-zinc-200 rounded-[2rem] h-32 flex flex-col items-center justify-center text-zinc-700 dark:text-zinc-700 light:text-zinc-300 text-[10px] font-bold uppercase tracking-widest p-6 text-center bg-zinc-900/10 dark:bg-zinc-900/10 light:bg-zinc-50/50">
+                  <Layout size={24} className="mb-2 opacity-20 light:opacity-40" />
                   Nenhum lead nesta etapa
                 </div>
               )}
