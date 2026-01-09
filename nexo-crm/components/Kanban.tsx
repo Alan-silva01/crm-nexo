@@ -3,6 +3,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   Plus,
   MoreVertical,
+  MoreHorizontal,
   MessageSquare,
   Clock,
   Layout,
@@ -12,7 +13,8 @@ import {
   GitCommit,
   Phone,
   MapPin,
-  Car
+  Car,
+  Users
 } from 'lucide-react';
 import { Lead, LeadColumnHistory } from '../types';
 import { leadsService } from '../src/lib/leadsService';
