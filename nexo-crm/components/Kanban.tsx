@@ -371,10 +371,10 @@ const Kanban: React.FC<KanbanProps> = ({
                               style={{ backgroundColor: borderColor }}
                             ></div>
                           </div>
-                          <div>
-                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-200 dark:text-zinc-200 light:text-zinc-900 group-hover/card:text-white dark:group-hover/card:text-white light:group-hover/card:text-indigo-600 transition-colors uppercase">{lead.name}</h4>
-                            {lead.company_name && <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter">{lead.company_name}</p>}
-                            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 light:text-zinc-400 font-medium mt-1 uppercase">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-none">{lead.name}</h4>
+                            {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1">{lead.company_name}</p>}
+                            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
                           </div>
                         </div>
                         <button

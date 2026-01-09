@@ -1,5 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { X, MessageSquare, Phone, Mail, Clock, Calendar, User, GitCommit } from 'lucide-react';
+import {
+    X,
+    MessageSquare,
+    Phone,
+    Mail,
+    Clock,
+    Calendar,
+    User,
+    GitCommit,
+    Car,
+    MoreHorizontal,
+    Users,
+    Layout,
+    MapPin
+} from 'lucide-react';
 import { Lead, LeadColumnHistory } from '../types';
 import { leadsService } from '../src/lib/leadsService';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
