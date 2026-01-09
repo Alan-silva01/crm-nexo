@@ -419,7 +419,7 @@ const Kanban: React.FC<KanbanProps> = ({
                         if (visibleFields.length === 0 && !obs && !statusVenda) return null;
 
                         return (
-                          <div className="bg-zinc-50 dark:bg-zinc-900/40 rounded-2xl p-4 border border-zinc-100 dark:border-zinc-800/30 mb-4 space-y-3">
+                          <div className="bg-zinc-50 dark:bg-zinc-900/40 rounded-2xl p-4 border border-zinc-100 dark:border-zinc-800/30 mb-4 space-y-3 shadow-inner dark:shadow-none">
                             {visibleFields.length > 0 && (
                               <div className="grid grid-cols-2 gap-3">
                                 {visibleFields.map(f => (
@@ -437,7 +437,7 @@ const Kanban: React.FC<KanbanProps> = ({
                             )}
 
                             {obs && (
-                              <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/40">
+                              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800/40">
                                 <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter block mb-1">Observações</span>
                                 <p className="text-[10px] text-zinc-600 dark:text-zinc-400 leading-relaxed line-clamp-3 italic">
                                   "{obs}"
@@ -447,7 +447,7 @@ const Kanban: React.FC<KanbanProps> = ({
 
                             {statusVenda && (
                               <div className="pt-2">
-                                <span className="text-[9px] px-2.5 py-1 bg-indigo-500/10 text-indigo-400 rounded-lg font-black uppercase tracking-widest border border-indigo-500/20">
+                                <span className="text-[9px] px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg font-black uppercase tracking-widest border border-indigo-500/20">
                                   {statusVenda.replace(/_/g, ' ')}
                                 </span>
                               </div>
