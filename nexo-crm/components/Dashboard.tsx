@@ -83,7 +83,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
   const oneDayAgo = new Date();
   oneDayAgo.setDate(oneDayAgo.getDate() - 1);
   const newLeads = leads.filter(l => l.created_at && new Date(l.created_at) > oneDayAgo).length;
-  const leadsWaitingDecision = leads.filter(l => l.status === 'AGUARDANDO DECISAO').length;
+  const leadsWaitingDecision = leads.filter(l => l.status?.trim().toUpperCase() === 'AGUARDANDO DECISAO').length;
   const leadsWithAppointment = leads.filter(l => l.dataHora_Agendamento !== null).length;
   const conversionRate = totalLeads > 0 ? ((leadsWithAppointment / totalLeads) * 100).toFixed(1) : '0';
 
@@ -107,10 +107,15 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
 
   // Distribution by status for Pie Chart
   const statusDistribution = React.useMemo(() => leads.reduce((acc: any, lead) => {
-    const status = lead.status || 'Sem Status';
-    acc[status] = (acc[status] || 0) + 1;
+    // Normalize status name based on effective columns if possible, or just uppercase it
+    const rawStatus = lead.status?.trim().toUpperCase() || 'SEM STATUS';
+    // Find matching column name for display
+    const matchingCol = columns.find(c => c.name.trim().toUpperCase() === rawStatus);
+    const statusName = matchingCol ? matchingCol.name : rawStatus;
+
+    acc[statusName] = (acc[statusName] || 0) + 1;
     return acc;
-  }, {}), [leads]);
+  }, {}), [leads, columns]);
 
   const pieData = React.useMemo(() => Object.entries(statusDistribution).map(([name, value]) => ({
     name,

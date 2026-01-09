@@ -34,46 +34,27 @@ const AppContent: React.FC = () => {
   // Fetch columns and leads on session change
   useEffect(() => {
     if (session) {
-      // Fetch columns first to ensure we have status names
-      Promise.all([
-        supabase
-          .from('kanban_columns')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('position'),
-        leadsService.fetchLeads()
-      ]).then(([colsResult, leadsResult]) => {
-        const dbColumns = colsResult.data || [];
-        const currentLeads = leadsResult || [];
+      supabase
+        .from('kanban_columns')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('position')
+        .then(({ data, error }) => {
+          if (!error && data && data.length > 0) {
+            setColumns(data);
+          } else if (!error) {
+            // Default columns if none exist
+            setColumns([
+              { id: '1', name: 'Novos Leads', position: 0 },
+              { id: '2', name: 'Em Atendimento', position: 1 },
+              { id: '3', name: 'Negociação', position: 2 },
+              { id: '4', name: 'Venda Concluída', position: 3 }
+            ]);
+          }
+        });
 
-        // Identify statuses from leads that aren't in columns
-        const leadStatuses = Array.from(new Set(currentLeads.map(l => l.status).filter(Boolean)));
-        const existingStatusNames = new Set(dbColumns.map(c => c.name.trim().toUpperCase()));
-
-        const extraColumns = leadStatuses
-          .filter(status => !existingStatusNames.has(status!.trim().toUpperCase()))
-          .map((status, index) => ({
-            id: `virtual-${status}`,
-            name: status!,
-            position: dbColumns.length + index,
-            is_virtual: true
-          }));
-
-        const finalColumns = [...dbColumns, ...extraColumns];
-
-        if (finalColumns.length > 0) {
-          setColumns(finalColumns);
-        } else {
-          // Default columns if none exist and no leads
-          setColumns([
-            { id: '1', name: 'Novos Leads', position: 0 },
-            { id: '2', name: 'Em Atendimento', position: 1 },
-            { id: '3', name: 'Negociação', position: 2 },
-            { id: '4', name: 'Venda Concluída', position: 3 }
-          ]);
-        }
-
-        setLeads(currentLeads);
+      leadsService.fetchLeads().then(data => {
+        setLeads(data);
       });
 
       // Fetch initial history cache
@@ -236,6 +217,28 @@ const AppContent: React.FC = () => {
     );
   }, [searchQuery, leads]);
 
+  // Dynamically compute effective columns (DB Columns + Virtual columns from leads)
+  const effectiveColumns = useMemo(() => {
+    const dbStatusNames = new Set(columns.map(c => c.name.trim().toUpperCase()));
+
+    // Find statuses in leads that don't have a matching DB column
+    const orphanedStatuses = leads
+      .map(l => l.status)
+      .filter((status): status is string => !!status && !dbStatusNames.has(status.trim().toUpperCase()));
+
+    // Unique list of orphaned statuses
+    const uniqueOrphans = Array.from(new Set(orphanedStatuses));
+
+    const virtualColumns = uniqueOrphans.map((status, index) => ({
+      id: `virtual-${status}`,
+      name: status,
+      position: columns.length + index,
+      is_virtual: true
+    }));
+
+    return [...columns, ...virtualColumns].sort((a, b) => a.position - b.position);
+  }, [columns, leads]);
+
   if (loading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-[#09090b]">
@@ -302,7 +305,7 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard leads={leads} columns={columns} />;
+        return <Dashboard leads={leads} columns={effectiveColumns} />;
       case 'kanban':
         return (
           <Kanban
@@ -311,7 +314,7 @@ const AppContent: React.FC = () => {
             leadsHistory={leadsHistory}
             onLeadsUpdate={handleLeadsUpdate}
             onUpdateLeadStatus={handleUpdateLeadStatus}
-            columns={columns}
+            columns={effectiveColumns}
             onColumnsUpdate={setColumns}
             onSelectChat={(id) => {
               setSelectedChatId(id);
