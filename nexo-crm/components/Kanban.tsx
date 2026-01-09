@@ -200,7 +200,7 @@ const Kanban: React.FC<KanbanProps> = ({
   };
 
   const removeColumn = async (column: KanbanColumn) => {
-    const leadsInColumn = filteredLeads.filter(l => l.status === column.name).length;
+    const leadsInColumn = filteredLeads.filter(l => l.status?.trim().toUpperCase() === column.name?.trim().toUpperCase()).length;
     if (leadsInColumn > 0) {
       setAlertModal({
         isOpen: true,
@@ -333,7 +333,7 @@ const Kanban: React.FC<KanbanProps> = ({
                 <div className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: BORDER_COLORS[colIndex % BORDER_COLORS.length], color: BORDER_COLORS[colIndex % BORDER_COLORS.length] }}></div>
                 <h3 className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">{col.name}</h3>
                 <span className="text-[10px] bg-zinc-900/80 text-zinc-500 px-2 py-0.5 rounded-full border border-zinc-800/50 font-bold shadow-inner">
-                  {filteredLeads.filter(l => l.status === col.name).length}
+                  {filteredLeads.filter(l => l.status?.trim().toUpperCase() === col.name?.trim().toUpperCase()).length}
                 </span>
               </div>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -347,7 +347,7 @@ const Kanban: React.FC<KanbanProps> = ({
             </div>
 
             <div className="flex-1 space-y-6 kanban-column overflow-y-auto pr-2 custom-scrollbar">
-              {filteredLeads.filter(lead => lead.status === col.name).map((lead) => {
+              {filteredLeads.filter(lead => lead.status?.trim().toUpperCase() === col.name?.trim().toUpperCase()).map((lead) => {
                 const borderColor = BORDER_COLORS[parseInt(lead.id.slice(0, 8), 16) % BORDER_COLORS.length];
                 return (
                   <div
@@ -513,7 +513,7 @@ const Kanban: React.FC<KanbanProps> = ({
                 );
               })}
 
-              {filteredLeads.filter(l => l.status === col.name).length === 0 && (
+              {filteredLeads.filter(l => l.status?.trim().toUpperCase() === col.name?.trim().toUpperCase()).length === 0 && (
                 <div className="border border-dashed border-zinc-800/50 rounded-[2rem] h-32 flex flex-col items-center justify-center text-zinc-700 text-[10px] font-bold uppercase tracking-widest p-6 text-center bg-zinc-900/10">
                   <Layout size={24} className="mb-2 opacity-20" />
                   Nenhum lead nesta etapa

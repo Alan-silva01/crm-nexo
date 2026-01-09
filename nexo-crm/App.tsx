@@ -35,28 +35,47 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (session) {
       // Fetch columns first to ensure we have status names
-      supabase
-        .from('kanban_columns')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('position')
-        .then(({ data, error }) => {
-          if (!error && data && data.length > 0) {
-            setColumns(data);
-          } else {
-            // Default columns if none exist
-            setColumns([
-              { id: '1', name: 'Novos Leads', position: 0 },
-              { id: '2', name: 'Em Atendimento', position: 1 },
-              { id: '3', name: 'Negociação', position: 2 },
-              { id: '4', name: 'Venda Concluída', position: 3 }
-            ]);
-          }
-        });
+      Promise.all([
+        supabase
+          .from('kanban_columns')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('position'),
+        leadsService.fetchLeads()
+      ]).then(([colsResult, leadsResult]) => {
+        const dbColumns = colsResult.data || [];
+        const currentLeads = leadsResult || [];
 
-      leadsService.fetchLeads().then(data => {
-        setLeads(data);
+        // Identify statuses from leads that aren't in columns
+        const leadStatuses = Array.from(new Set(currentLeads.map(l => l.status).filter(Boolean)));
+        const existingStatusNames = new Set(dbColumns.map(c => c.name.trim().toUpperCase()));
+
+        const extraColumns = leadStatuses
+          .filter(status => !existingStatusNames.has(status!.trim().toUpperCase()))
+          .map((status, index) => ({
+            id: `virtual-${status}`,
+            name: status!,
+            position: dbColumns.length + index,
+            is_virtual: true
+          }));
+
+        const finalColumns = [...dbColumns, ...extraColumns];
+
+        if (finalColumns.length > 0) {
+          setColumns(finalColumns);
+        } else {
+          // Default columns if none exist and no leads
+          setColumns([
+            { id: '1', name: 'Novos Leads', position: 0 },
+            { id: '2', name: 'Em Atendimento', position: 1 },
+            { id: '3', name: 'Negociação', position: 2 },
+            { id: '4', name: 'Venda Concluída', position: 3 }
+          ]);
+        }
+
+        setLeads(currentLeads);
       });
+
       // Fetch initial history cache
       leadsService.fetchAllHistory().then(history => {
         const grouped = history.reduce((acc: Record<string, LeadColumnHistory[]>, item) => {
@@ -242,20 +261,25 @@ const AppContent: React.FC = () => {
     }
     const originalStatus = originalLead.status;
 
-    console.log(`Moving lead ${leadId} from "${originalStatus}" to "${newStatus}"`);
+    // Normalize newStatus against existing columns to avoid duplicate casings
+    const targetCol = columns.find(c => c.name.trim().toUpperCase() === newStatus.trim().toUpperCase());
+    const finalStatus = targetCol ? targetCol.name : newStatus;
+    const finalToColumnId = targetCol ? targetCol.id : toColumnId;
+
+    console.log(`Moving lead ${leadId} from "${originalStatus}" to "${finalStatus}"`);
 
     // Optimistic update
-    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: finalStatus } : l));
 
     // Persist to Supabase
-    const success = await leadsService.updateLead(leadId, { status: newStatus });
+    const success = await leadsService.updateLead(leadId, { status: finalStatus });
     if (!success) {
       console.error('Error updating lead status, rolling back...');
       // Rollback
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: originalStatus } : l));
-    } else if (toColumnId) {
-      // Record history
-      await leadsService.recordHistory(leadId, fromColumnId || null, toColumnId);
+    } else if (finalToColumnId && !finalToColumnId.startsWith('virtual-')) {
+      // Record history (only for real DB columns)
+      await leadsService.recordHistory(leadId, fromColumnId || null, finalToColumnId);
     }
   };
 
