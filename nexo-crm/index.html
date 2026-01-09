@@ -243,27 +243,52 @@
       border: 1px solid #f1f1f4 !important;
     }
 
-    /* Borders */
+    /* Borders and Shadows */
     .light .border-zinc-800,
     .light .border-zinc-800\/50,
     .light .border-zinc-800\/40,
     .light .border-zinc-800\/20,
     .light .border-zinc-700,
-    .light .border-zinc-800\/10 {
+    .light .border-zinc-800\/10,
+    .light .border-zinc-800\/30 {
       border-color: #f1f1f4 !important;
     }
 
-    /* Texts */
-    .light .text-zinc-100,
-    .light .text-zinc-200,
+    .light .divide-zinc-800 > * + * {
+      border-color: #f1f1f4 !important;
+    }
+
+    /* Card Backgrounds specifically */
+    .light .bg-\[\#0c0c0e\] {
+       background-color: #ffffff !important;
+    }
+
+    /* Sidebar Background explicitly */
+    .light .bg-\[\#09090b\] {
+      background-color: #ffffff !important;
+    }
+
+    /* Fixed Kanban columns height issues and colors */
+    .light .bg-zinc-900\/10 {
+       background-color: #f8f9fa !important;
+    }
+
+    /* Text Contrast in Light Mode */
+    .light .text-zinc-400,
+    .light .text-zinc-500,
+    .light .text-zinc-600 {
+      color: #71717a !important;
+    }
+
     .light .text-zinc-300,
-    .light .text-white:not(.bg-indigo-600 *) {
+    .light .text-zinc-200,
+    .light .text-zinc-100,
+    .light .text-white:not(button *) {
       color: #18181b !important;
     }
 
-    .light .text-zinc-400,
-    .light .text-zinc-500 {
-      color: #8e8e93 !important;
+    .light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
+       color: #18181b !important;
     }
 
     /* DEEPER PREMIUM SHADOWS */

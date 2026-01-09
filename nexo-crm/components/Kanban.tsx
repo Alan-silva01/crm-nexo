@@ -395,49 +395,57 @@ const Kanban: React.FC<KanbanProps> = ({
                         </div>
                       )}
 
-                      {/* Dados Customizados */}
+                      {/* Dados Customizados Detalhados */}
                       {lead.dados && Object.keys(lead.dados).length > 0 && (() => {
-                        const d = lead.dados as Record<string, unknown>;
-                        // Helper to check if a value is truly filled (not empty string, null, undefined)
-                        const hasValue = (val: unknown) => val !== null && val !== undefined && val !== '';
-                        const whatsapp = hasValue(d.whatsapp) ? String(d.whatsapp) : null;
-                        const cidade = hasValue(d.cidade) ? String(d.cidade) : null;
-                        const bairro = hasValue(d.bairro) ? String(d.bairro) : null;
-                        const modeloVeiculo = hasValue(d.modelo_veiculo) ? String(d.modelo_veiculo) : null;
-                        const placaVeiculo = hasValue(d.placa_veiculo) ? String(d.placa_veiculo) : null;
+                        const d = lead.dados as Record<string, any>;
+                        const hasValue = (val: any) => val !== null && val !== undefined && String(val).trim() !== '';
+
+                        // Define relevant fields to show, excluding redundant ones (name, email, phone)
+                        const fields = [
+                          { key: 'modelo_veiculo', label: 'Veículo', icon: Car, color: 'text-amber-400' },
+                          { key: 'placa_veiculo', label: 'Placa', icon: MoreHorizontal, color: 'text-zinc-400' },
+                          { key: 'tipo_uso', label: 'Uso', icon: Users, color: 'text-blue-400' },
+                          { key: 'preocupacao', label: 'Preocupação', icon: Phone, color: 'text-rose-400' },
+                          { key: 'cidade', label: 'Cidade', icon: MapPin, color: 'text-emerald-400' },
+                          { key: 'bairro', label: 'Bairro', icon: MapPin, color: 'text-emerald-400' },
+                        ];
+
+                        const visibleFields = fields.filter(f => hasValue(d[f.key]));
+                        const obs = hasValue(d.observacoes) ? String(d.observacoes) : null;
                         const statusVenda = hasValue(d.status_venda) ? String(d.status_venda) : null;
 
-                        // Only show the section if at least one field has a real value
-                        const hasAnyData = whatsapp || cidade || bairro || modeloVeiculo || placaVeiculo || statusVenda;
-                        if (!hasAnyData) return null;
+                        if (visibleFields.length === 0 && !obs && !statusVenda) return null;
 
                         return (
-                          <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/30 rounded-xl p-3 border border-zinc-800/30 mb-4 space-y-2">
-                            {whatsapp && (
-                              <div className="flex items-center gap-2 text-[10px]">
-                                <Phone size={10} className="text-emerald-400" />
-                                <span className="text-zinc-300 font-medium">{whatsapp}</span>
+                          <div className="bg-zinc-900/40 dark:bg-zinc-900/40 light:bg-zinc-50 rounded-2xl p-4 border border-zinc-800/30 dark:border-zinc-800/30 light:border-zinc-200 mb-4 space-y-3">
+                            {visibleFields.length > 0 && (
+                              <div className="grid grid-cols-2 gap-3">
+                                {visibleFields.map(f => (
+                                  <div key={f.key} className="flex items-center gap-2 overflow-hidden">
+                                    <f.icon size={12} className={`${f.color} shrink-0`} />
+                                    <div className="flex flex-col">
+                                      <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-tighter opacity-70">{f.label}</span>
+                                      <span className="text-[10px] text-zinc-300 dark:text-zinc-300 light:text-zinc-700 font-bold truncate leading-tight">
+                                        {String(d[f.key])}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             )}
-                            {(cidade || bairro) && (
-                              <div className="flex items-center gap-2 text-[10px]">
-                                <MapPin size={10} className="text-blue-400" />
-                                <span className="text-zinc-300 font-medium">
-                                  {[bairro, cidade].filter(Boolean).join(', ')}
-                                </span>
+
+                            {obs && (
+                              <div className="pt-2 border-t border-zinc-800/40 dark:border-zinc-800/40 light:border-zinc-200">
+                                <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-tighter block mb-1">Observações</span>
+                                <p className="text-[10px] text-zinc-400 dark:text-zinc-400 light:text-zinc-600 leading-relaxed line-clamp-3 italic">
+                                  "{obs}"
+                                </p>
                               </div>
                             )}
-                            {(modeloVeiculo || placaVeiculo) && (
-                              <div className="flex items-center gap-2 text-[10px]">
-                                <Car size={10} className="text-amber-400" />
-                                <span className="text-zinc-300 font-medium">
-                                  {[modeloVeiculo, placaVeiculo].filter(Boolean).join(' • ')}
-                                </span>
-                              </div>
-                            )}
+
                             {statusVenda && (
-                              <div className="mt-2 pt-2 border-t border-zinc-800/50">
-                                <span className="text-[9px] px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full font-bold uppercase tracking-wider">
+                              <div className="pt-2">
+                                <span className="text-[9px] px-2.5 py-1 bg-indigo-500/10 text-indigo-400 rounded-lg font-black uppercase tracking-widest border border-indigo-500/20">
                                   {statusVenda.replace(/_/g, ' ')}
                                 </span>
                               </div>
