@@ -356,7 +356,7 @@ const Kanban: React.FC<KanbanProps> = ({
                     onDragStart={(e) => onDragStart(e, lead.id)}
                     onDragEnd={onDragEnd}
                     onClick={() => setDetailsModal({ isOpen: true, lead })}
-                    className={`bg-[#0c0c0e] border border-zinc-800/40 rounded-[2rem] cursor-pointer active:cursor-grabbing hover:border-zinc-700/50 transition-all duration-300 shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316] relative overflow-hidden group/card
+                    className={`bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/40 rounded-[2rem] cursor-pointer active:cursor-grabbing hover:border-indigo-200 dark:hover:border-zinc-700/50 transition-all duration-300 shadow-[10px_10px_30px_rgba(0,0,0,0.05)] dark:shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316] relative overflow-hidden group/card
                       ${draggingId === lead.id ? 'dragging ring-2 ring-indigo-500/50 scale-[1.02]' : ''}`}
                   >
                     <div className="p-6">
