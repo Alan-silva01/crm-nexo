@@ -481,7 +481,25 @@ class NexoCrm {
                         const filteredFields = {};
                         for (const [key, value] of Object.entries(updateFields)) {
                             if (value !== undefined && value !== '' && value !== null) {
-                                filteredFields[key] = value;
+                                // Special handling for dados field - parse JSON if string
+                                if (key === 'dados') {
+                                    let parsedDados = value;
+                                    if (typeof value === 'string') {
+                                        try {
+                                            parsedDados = value.trim() ? JSON.parse(value) : undefined;
+                                        }
+                                        catch {
+                                            parsedDados = undefined;
+                                        }
+                                    }
+                                    // Only include if it's a non-empty object
+                                    if (parsedDados && typeof parsedDados === 'object' && Object.keys(parsedDados).length > 0) {
+                                        filteredFields[key] = parsedDados;
+                                    }
+                                }
+                                else {
+                                    filteredFields[key] = value;
+                                }
                             }
                         }
                         if (Object.keys(filteredFields).length === 0) {
