@@ -390,8 +390,8 @@ const Kanban: React.FC<KanbanProps> = ({
                       </div>
 
                       {lead.last_message && (
-                        <div className="bg-zinc-900/30 dark:bg-zinc-900/30 light:bg-zinc-50 rounded-xl p-3 border border-zinc-800/30 dark:border-zinc-800/30 light:border-zinc-100 mb-4">
-                          <p className="text-[11px] text-zinc-400 dark:text-zinc-400 light:text-zinc-600 line-clamp-2 italic leading-relaxed">
+                        <div className="bg-zinc-50 dark:bg-zinc-900/30 rounded-xl p-3 border border-zinc-100 dark:border-zinc-800/30 mb-4">
+                          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 line-clamp-2 italic leading-relaxed">
                             "{lead.last_message}"
                           </p>
                         </div>
@@ -419,15 +419,15 @@ const Kanban: React.FC<KanbanProps> = ({
                         if (visibleFields.length === 0 && !obs && !statusVenda) return null;
 
                         return (
-                          <div className="bg-zinc-900/40 dark:bg-zinc-900/40 light:bg-zinc-50 rounded-2xl p-4 border border-zinc-800/30 dark:border-zinc-800/30 light:border-zinc-200 mb-4 space-y-3">
+                          <div className="bg-zinc-50 dark:bg-zinc-900/40 rounded-2xl p-4 border border-zinc-100 dark:border-zinc-800/30 mb-4 space-y-3">
                             {visibleFields.length > 0 && (
                               <div className="grid grid-cols-2 gap-3">
                                 {visibleFields.map(f => (
                                   <div key={f.key} className="flex items-center gap-2 overflow-hidden">
                                     <f.icon size={12} className={`${f.color} shrink-0`} />
                                     <div className="flex flex-col">
-                                      <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-tighter opacity-70">{f.label}</span>
-                                      <span className="text-[10px] text-zinc-300 dark:text-zinc-300 light:text-zinc-700 font-bold truncate leading-tight">
+                                      <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter opacity-70">{f.label}</span>
+                                      <span className="text-[10px] text-zinc-800 dark:text-zinc-300 font-bold truncate leading-tight">
                                         {String(d[f.key])}
                                       </span>
                                     </div>
@@ -437,9 +437,9 @@ const Kanban: React.FC<KanbanProps> = ({
                             )}
 
                             {obs && (
-                              <div className="pt-2 border-t border-zinc-800/40 dark:border-zinc-800/40 light:border-zinc-200">
-                                <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-tighter block mb-1">Observações</span>
-                                <p className="text-[10px] text-zinc-400 dark:text-zinc-400 light:text-zinc-600 leading-relaxed line-clamp-3 italic">
+                              <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/40">
+                                <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter block mb-1">Observações</span>
+                                <p className="text-[10px] text-zinc-600 dark:text-zinc-400 leading-relaxed line-clamp-3 italic">
                                   "{obs}"
                                 </p>
                               </div>
