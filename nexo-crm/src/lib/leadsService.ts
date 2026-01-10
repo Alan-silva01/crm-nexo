@@ -46,9 +46,24 @@ export const leadsService = {
             return null;
         }
 
+        // Formatar telefone para o padrão WhatsApp: 55 + últimos 10 dígitos + @s.whatsapp.net
+        let formattedPhone = lead.phone;
+        if (formattedPhone) {
+            // Se já tem @s.whatsapp.net, não formatar
+            if (!formattedPhone.includes('@s.whatsapp.net')) {
+                // Remover tudo que não for número
+                const digits = formattedPhone.replace(/\D/g, '');
+
+                // Pegar apenas os últimos 10 dígitos (DDD + 8 dígitos do número)
+                const last10 = digits.slice(-10);
+
+                formattedPhone = `55${last10}@s.whatsapp.net`;
+            }
+        }
+
         const { data, error } = await supabase
             .from('leads')
-            .insert([{ ...lead, user_id: user.id }])
+            .insert([{ ...lead, phone: formattedPhone, user_id: user.id }])
             .select()
             .single();
 
