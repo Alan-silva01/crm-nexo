@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Phone, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare, Bot, User, Pause, Play } from 'lucide-react';
-import { Lead, SDRMessage } from '../types';
+import { Lead, SDRMessage, getLeadDisplayName } from '../types';
 import LetterAvatar from './LetterAvatar';
 import { chatsSdrService } from '../src/lib/chatsSdrService';
 import { supabase } from '../src/lib/supabase';
@@ -503,13 +503,13 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                 ${selectedChatId === chat.id ? 'bg-[#18181b] border-l-4 border-l-indigo-500 shadow-inner' : ''}`}
             >
               <div className="relative">
-                <LetterAvatar name={chat.name} size="lg" />
+                <LetterAvatar name={getLeadDisplayName(chat)} size="lg" />
                 <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-[#09090b] ${chat.ai_paused === true ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-baseline mb-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <h4 className="text-[13px] font-semibold truncate text-zinc-200">{chat.name}</h4>
+                    <h4 className="text-[13px] font-semibold truncate text-zinc-200">{getLeadDisplayName(chat)}</h4>
                     {chat.ai_paused === false && (
                       <div className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md shrink-0 ring-1 ring-emerald-500/20">
                         <Bot size={10} className="text-emerald-500" />
@@ -547,11 +547,11 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
           <header className="h-[64px] px-4 border-b border-zinc-800/50 flex items-center justify-between bg-[#1e2a30] z-10 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <LetterAvatar name={selectedChat.name} size="md" />
+                <LetterAvatar name={getLeadDisplayName(selectedChat)} size="md" />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#1e2a30]"></span>
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-zinc-100">{selectedChat.name}</h4>
+                <h4 className="text-sm font-semibold text-zinc-100">{getLeadDisplayName(selectedChat)}</h4>
                 <p className="text-[11px] text-zinc-400">{formatPhoneNumber(selectedChat.phone) || 'online'}</p>
               </div>
             </div>

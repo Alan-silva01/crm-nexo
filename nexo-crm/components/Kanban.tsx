@@ -625,7 +625,7 @@ const Kanban: React.FC<KanbanProps> = ({
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-1.5 text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/10">
                             <MessageSquare size={12} />
-                            <span>SDR</span>
+                            <span>Agente IA</span>
                           </div>
                           {lead.monthly_revenue && (
                             <span className="text-[10px] text-emerald-400 font-bold">
