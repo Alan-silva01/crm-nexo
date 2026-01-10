@@ -102,7 +102,12 @@ const AppContent: React.FC = () => {
           console.log('Realtime update:', payload);
 
           if (payload.eventType === 'INSERT') {
-            setLeads(prev => [payload.new as Lead, ...prev]);
+            // Evitar duplicação: só adicionar se o lead ainda não existir na lista
+            setLeads(prev => {
+              const exists = prev.some(lead => lead.id === (payload.new as Lead).id);
+              if (exists) return prev;
+              return [payload.new as Lead, ...prev];
+            });
           } else if (payload.eventType === 'UPDATE') {
             setLeads(prev => prev.map(lead =>
               lead.id === payload.new.id ? { ...lead, ...payload.new as Lead } : lead
