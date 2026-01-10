@@ -77,10 +77,10 @@ export const chatsSdrService = {
             return null;
         }
 
-        // Buscar tabela de chats do usuário
+        // Buscar tabela de chats E webhook do usuário
         const { data: profile } = await supabase
             .from('profiles')
-            .select('chat_table_name')
+            .select('chat_table_name, webhook_url')
             .eq('id', user.id)
             .single();
 
@@ -88,6 +88,9 @@ export const chatsSdrService = {
             console.error('Chat table not configured for user');
             return null;
         }
+
+        // Se não tiver webhook configurado, não envia para o n8n
+        const userWebhookUrl = profile.webhook_url;
 
         const phoneNumbers = extractNumbers(phone);
         const cleanPhone = extractNumbers(phone);
@@ -109,29 +112,33 @@ export const chatsSdrService = {
         // Webhook Proxy URL (Edge Function)
         const proxyUrl = 'https://jreklrhamersmamdmjna.supabase.co/functions/v1/crm_api/proxy-webhook';
 
-        // Enviar para o Webhook (Intervenção Humana) via Proxy
-        try {
-            console.log('Sending to Webhook (Message) via Proxy for:', finalSessionId);
+        // Enviar para o Webhook do usuário (se configurado)
+        if (userWebhookUrl) {
+            try {
+                console.log('Sending to User Webhook via Proxy for:', finalSessionId, 'URL:', userWebhookUrl);
 
-            const response = await fetch(proxyUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    targetUrl: 'https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/intervencaohumana',
-                    data: {
-                        phone: finalSessionId,
-                        message: content,
-                        agent_name: agentName
-                    }
-                })
-            });
-            const result = await response.json();
-            console.log('Webhook proxy response (Message):', result);
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        targetUrl: userWebhookUrl,
+                        data: {
+                            phone: finalSessionId,
+                            message: content,
+                            agent_name: agentName
+                        }
+                    })
+                });
+                const result = await response.json();
+                console.log('Webhook proxy response (Message):', result);
 
-        } catch (error) {
-            console.error('Error sending to webhook via proxy:', error);
+            } catch (error) {
+                console.error('Error sending to webhook via proxy:', error);
+            }
+        } else {
+            console.log('No webhook configured for this user, skipping external notification');
         }
 
         // Salvar no banco (na tabela específica do usuário)
