@@ -8,52 +8,94 @@ function extractNumbers(phone: string | null): string {
 }
 
 export const chatsSdrService = {
-    async fetchChatsByPhone(phone: string): Promise<SDRMessage[]> {
-        if (!phone) return [];
+    async fetchChatsByPhone(phone: string, limit: number = 50, offset: number = 0): Promise<{ messages: SDRMessage[], hasMore: boolean }> {
+        if (!phone) return { messages: [], hasMore: false };
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.error('No authenticated user');
+            return { messages: [], hasMore: false };
+        }
+
+        // 1. Buscar nome da tabela de chats do usuário
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('chat_table_name')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError || !profile?.chat_table_name) {
+            console.error('Chat table not found for user:', profileError);
+            return { messages: [], hasMore: false };
+        }
 
         const phoneNumbers = extractNumbers(phone);
-        console.log('Fetching chats for phone:', phone, '-> numbers:', phoneNumbers);
+        console.log('Fetching chats from table:', profile.chat_table_name, 'for phone:', phone, 'limit:', limit, 'offset:', offset);
 
-        // Primeiro tenta buscar por match exato do session_id
-        let { data, error } = await supabase
-            .from('chats_sdr')
-            .select('*')
+        // 2. Buscar chats da tabela específica do usuário com paginação
+        // Ordenamos por ID descendente para pegar os mais recentes primeiro
+        let { data, error, count } = await supabase
+            .from(profile.chat_table_name)
+            .select('*', { count: 'exact' })
             .eq('session_id', phone)
-            .order('id', { ascending: true });
+            .order('id', { ascending: false })
+            .range(offset, offset + limit - 1);
 
-        // Se não encontrar, tenta buscar por session_id que começa com os números
+        // Se não encontrar, tenta por números
         if ((!data || data.length === 0) && phoneNumbers) {
             const result = await supabase
-                .from('chats_sdr')
-                .select('*')
+                .from(profile.chat_table_name)
+                .select('*', { count: 'exact' })
                 .like('session_id', `${phoneNumbers}%`)
-                .order('id', { ascending: true });
+                .order('id', { ascending: false })
+                .range(offset, offset + limit - 1);
             data = result.data;
             error = result.error;
+            count = result.count;
         }
 
-        console.log('Chats found:', data?.length || 0, error ? `Error: ${error.message}` : '');
+        console.log('Chats found:', data?.length || 0, 'Total count:', count, error ? `Error: ${error.message}` : '');
 
         if (error) {
-            console.error('Error fetching SDR chats:', error);
-            return [];
+            console.error('Error fetching chats:', error);
+            return { messages: [], hasMore: false };
         }
 
-        return (data || []) as SDRMessage[];
+        // Inverter para ordem cronológica (mais antigo primeiro) para exibição
+        const messages = ((data || []) as SDRMessage[]).reverse();
+        const hasMore = count !== null && (offset + limit) < count;
+
+        return { messages, hasMore };
     },
 
     async sendMessage(phone: string, content: string, agentName: string): Promise<SDRMessage | null> {
         if (!phone) return null;
 
-        const phoneNumbers = extractNumbers(phone);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.error('No authenticated user');
+            return null;
+        }
 
-        // Limpar o telefone para busca no banco
+        // Buscar tabela de chats do usuário
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('chat_table_name')
+            .eq('id', user.id)
+            .single();
+
+        if (!profile?.chat_table_name) {
+            console.error('Chat table not configured for user');
+            return null;
+        }
+
+        const phoneNumbers = extractNumbers(phone);
         const cleanPhone = extractNumbers(phone);
         let finalSessionId = phone;
 
         // Buscar session_id correto no banco usando número limpo
         const { data: existingChats } = await supabase
-            .from('chats_sdr')
+            .from(profile.chat_table_name)
             .select('session_id')
             .or(`session_id.eq.${phone},session_id.ilike.%${cleanPhone}%`)
             .limit(1);
@@ -92,7 +134,7 @@ export const chatsSdrService = {
             console.error('Error sending to webhook via proxy:', error);
         }
 
-        // Salvar no banco (Exatamente no formato solicitado pela IA para manter compatibilidade)
+        // Salvar no banco (na tabela específica do usuário)
         const messagePayload = {
             type: 'ai' as const,
             content,
@@ -103,10 +145,11 @@ export const chatsSdrService = {
         };
 
         const { data, error } = await supabase
-            .from('chats_sdr')
+            .from(profile.chat_table_name)
             .insert([{
                 session_id: finalSessionId,
-                message: messagePayload
+                message: messagePayload,
+                atendente: agentName // Identifica que foi enviado por um humano
             }])
             .select()
             .single();

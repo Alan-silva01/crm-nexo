@@ -202,12 +202,12 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
             <div className="p-2 bg-rose-500/10 rounded-lg">
               <Target size={16} className="text-rose-400" />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest">Op. de Agendamento</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Agendamentos</span>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-bold">{scheduledLeads}</span>
           </div>
-          <p className="text-[10px] text-zinc-500 mt-2">Leads com call agendada</p>
+          <p className="text-[10px] text-zinc-500 mt-2">Leads com horário marcado</p>
         </div>
       </div>
 

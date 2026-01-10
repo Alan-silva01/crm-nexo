@@ -23,7 +23,7 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
-import { Lead } from '../types';
+import { Lead, LeadColumnHistory } from '../types';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e', '#0ea5e9', '#f97316', '#22c55e', '#d946ef'];
 
@@ -76,9 +76,10 @@ const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) 
 interface DashboardProps {
   leads: Lead[];
   columns: any[];
+  leadsHistory: Record<string, LeadColumnHistory[]>;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
+const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) => {
   const totalLeads = leads.length;
   const oneDayAgo = new Date();
   oneDayAgo.setDate(oneDayAgo.getDate() - 1);
@@ -87,23 +88,90 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
   const leadsWithAppointment = leads.filter(l => l.dataHora_Agendamento !== null).length;
   const conversionRate = totalLeads > 0 ? ((leadsWithAppointment / totalLeads) * 100).toFixed(1) : '0';
 
+  const agendamentoCols = columns.filter(c => c.name.toLowerCase().includes('agendad'));
+  const agendamentoNames = new Set(agendamentoCols.map(c => c.name.trim().toUpperCase()));
+  const agendamentoLabel = agendamentoCols.length > 1 ? 'Agendados' : (agendamentoCols.length === 1 ? agendamentoCols[0].name : 'Agendados');
+
+  const noInterestCols = columns.filter(c =>
+    c.name.toLowerCase().includes('sem interess') ||
+    c.name.toLowerCase().includes('perdido') ||
+    c.name.toLowerCase().includes('desistiu') ||
+    c.name.toLowerCase().includes('lixo')
+  );
+  const noInterestNames = new Set(noInterestCols.map(c => c.name.trim().toUpperCase()));
+
+  const chartScrollRef = React.useRef<HTMLDivElement>(null);
+
   const areaChartData = React.useMemo(() => {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
+    // Helper to get YYYY-MM-DD from any date
+    const getIsoDate = (d: any) => {
+      if (!d) return null;
+      try {
+        const dateObj = new Date(d);
+        if (isNaN(dateObj.getTime())) return null;
+        return dateObj.toISOString().split('T')[0];
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const last30Days = Array.from({ length: 30 }, (_, i) => {
       const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
+      d.setDate(d.getDate() - (29 - i));
       return d.toISOString().split('T')[0];
     });
 
-    return last7Days.map(dateStr => {
-      const dayLeads = leads.filter(l => l.created_at?.split('T')[0] === dateStr);
+    // 1. Pre-calculate 'No Interest' arrivals per date for current leads only
+    const noInterestArrivals: Record<string, number> = {};
+    leads.forEach(lead => {
+      const isCurrentlyNoInterest = lead.status && noInterestNames.has(lead.status.trim().toUpperCase());
+      if (!isCurrentlyNoInterest) return;
+
+      const history = leadsHistory[lead.id] || [];
+      const latestMoveToNoInterest = [...history].reverse().find(h =>
+        h.to_column?.name && (
+          h.to_column.name.toLowerCase().includes('sem interess') ||
+          h.to_column.name.toLowerCase().includes('perdido') ||
+          h.to_column.name.toLowerCase().includes('desistiu') ||
+          h.to_column.name.toLowerCase().includes('lixo')
+        )
+      );
+
+      const arrivalDate = latestMoveToNoInterest ? latestMoveToNoInterest.moved_at : lead.created_at;
+      const isoArrival = getIsoDate(arrivalDate);
+      if (isoArrival) {
+        noInterestArrivals[isoArrival] = (noInterestArrivals[isoArrival] || 0) + 1;
+      }
+    });
+
+    return last30Days.map(dateStr => {
+      const dayLeadsCount = leads.filter(l => getIsoDate(l.created_at) === dateStr).length;
+
+      const dayAppointmentsCount = leads.filter(l => {
+        if (l.dataHora_Agendamento) {
+          return getIsoDate(l.dataHora_Agendamento) === dateStr;
+        }
+        const isAgendadoStatus = l.status && agendamentoNames.has(l.status.trim().toUpperCase());
+        return isAgendadoStatus && getIsoDate(l.created_at) === dateStr;
+      }).length;
+
       const dateObj = new Date(dateStr + 'T12:00:00');
+
       return {
         name: dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', ''),
-        leads: dayLeads.length,
-        appointments: dayLeads.filter(l => l.dataHora_Agendamento !== null).length
+        leads: dayLeadsCount,
+        appointments: dayAppointmentsCount,
+        noInterest: noInterestArrivals[dateStr] || 0
       };
     });
-  }, [leads]);
+  }, [leads, columns, agendamentoNames, noInterestNames, leadsHistory]);
+
+  // Auto-scroll to the end of the chart (latest data)
+  React.useEffect(() => {
+    if (chartScrollRef.current) {
+      chartScrollRef.current.scrollLeft = chartScrollRef.current.scrollWidth;
+    }
+  }, [areaChartData]);
 
   // Distribution by status for Pie Chart
   const statusDistribution = React.useMemo(() => leads.reduce((acc: any, lead) => {
@@ -240,34 +308,45 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                <span className="text-[9px] text-zinc-500 font-bold uppercase">Call Agendada</span>
+                <span className="text-[9px] text-zinc-500 font-bold uppercase">{agendamentoLabel}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                <span className="text-[9px] text-zinc-500 font-bold uppercase">Sem Interesse</span>
               </div>
             </div>
           </div>
-          <div className="flex-1 w-full min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={areaChartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorAppointments" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" opacity={0.3} />
-                <XAxis dataKey="name" stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} />
-                <YAxis stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '15px', padding: '10px' }}
-                  itemStyle={{ color: '#fff', fontSize: '10px' }}
-                />
-                <Area type="monotone" dataKey="leads" name="Leads" stroke="#6366f1" fillOpacity={1} fill="url(#colorLeads)" strokeWidth={2} />
-                <Area type="monotone" dataKey="appointments" name="Call Agendada" stroke="#10b981" fillOpacity={1} fill="url(#colorAppointments)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="flex-1 w-full min-h-0 overflow-x-auto custom-scrollbar" ref={chartScrollRef}>
+            <div className="h-full min-w-[2000px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={areaChartData} margin={{ top: 5, right: 30, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorAppointments" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorNoInterest" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" opacity={0.3} />
+                  <XAxis dataKey="name" stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} interval={0} tick={{ dy: 10 }} />
+                  <YAxis stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '15px', padding: '10px', zIndex: 100 }}
+                    itemStyle={{ color: '#fff', fontSize: '10px' }}
+                  />
+                  <Area type="monotone" dataKey="leads" name="Leads" stroke="#6366f1" fillOpacity={1} fill="url(#colorLeads)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="appointments" name={agendamentoLabel} stroke="#10b981" fillOpacity={1} fill="url(#colorAppointments)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="noInterest" name="Sem Interesse" stroke="#f43f5e" fillOpacity={1} fill="url(#colorNoInterest)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
@@ -278,20 +357,21 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns }) => {
           <div className="flex-1 w-full min-h-0" style={{ minHeight: '200px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                {/* @ts-ignore */}
                 <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={85}
-                  outerRadius={115}
-                  paddingAngle={8}
-                  dataKey="value"
-                  stroke="none"
-                  activeIndex={activeIndex !== null ? activeIndex : undefined}
-                  activeShape={renderActiveShape}
-                  onMouseEnter={onPieEnter}
-                  onMouseLeave={onPieLeave}
+                  {...({
+                    data: pieData,
+                    cx: "50%",
+                    cy: "50%",
+                    innerRadius: 85,
+                    outerRadius: 115,
+                    paddingAngle: 8,
+                    dataKey: "value",
+                    stroke: "none",
+                    activeIndex: activeIndex !== null ? activeIndex : undefined,
+                    activeShape: renderActiveShape,
+                    onMouseEnter: onPieEnter,
+                    onMouseLeave: onPieLeave,
+                  } as any)}
                 >
                   {pieData.map((entry, index) => (
                     <Cell

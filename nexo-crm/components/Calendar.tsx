@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Search, Plus, Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, Check, X, Bell, LogOut, Trash2
 } from 'lucide-react';
-import { Lead, LeadColumnHistory } from '../types';
+import { Lead, LeadColumnHistory, getLeadDisplayName } from '../types';
 import LetterAvatar from './LetterAvatar';
 import LeadDetailsModal from './LeadDetailsModal';
 import ConfirmModal from './ConfirmModal';
@@ -177,7 +177,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
     };
 
     const filteredLeadsForSelect = leads.filter(l =>
-        l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getLeadDisplayName(l).toLowerCase().includes(searchTerm.toLowerCase()) ||
         (l.phone && l.phone.includes(searchTerm))
     ).slice(0, 5);
 
@@ -258,7 +258,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                     key={event.id}
                                     onClick={() => {
                                         setSelectedLeadId(event.id);
-                                        setSearchTerm(event.name);
+                                        setSearchTerm(getLeadDisplayName(event));
                                         const date = new Date(event.dataHora_Agendamento!);
                                         const localISODate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
                                         setEventDate(localISODate);
@@ -270,7 +270,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${i === 0 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]' : 'bg-zinc-700'} `}></div>
-                                            <p className="text-xs font-bold truncate text-zinc-300 group-hover:text-white transition-colors">{event.name}</p>
+                                            <p className="text-xs font-bold truncate text-zinc-300 group-hover:text-white transition-colors">{getLeadDisplayName(event)}</p>
                                         </div>
                                         <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/5 px-2 py-0.5 rounded-md border border-indigo-500/10">
                                             {new Date(event.dataHora_Agendamento!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
@@ -378,7 +378,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                             key={lead.id}
                                             onClick={() => {
                                                 setSelectedLeadId(lead.id);
-                                                setSearchTerm(lead.name);
+                                                setSearchTerm(getLeadDisplayName(lead));
                                             }}
                                             className={`w-full p-4 rounded-2xl flex items-center justify-between transition-all group
                         ${selectedLeadId === lead.id
@@ -386,7 +386,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                                     : 'hover:bg-zinc-900/40 border border-transparent'}`}
                                         >
                                             <div className="text-left">
-                                                <p className={`text-xs font-bold ${selectedLeadId === lead.id ? 'text-indigo-400' : 'text-zinc-400 group-hover:text-zinc-200'}`}>{lead.name}</p>
+                                                <p className={`text-xs font-bold ${selectedLeadId === lead.id ? 'text-indigo-400' : 'text-zinc-400 group-hover:text-zinc-200'}`}>{getLeadDisplayName(lead)}</p>
                                                 <p className="text-[10px] text-zinc-600">{lead.phone}</p>
                                             </div>
                                             {selectedLeadId === lead.id && <Check size={14} className="text-indigo-500" />}
@@ -525,7 +525,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <h4 className="text-sm font-bold text-zinc-200 truncate">{event.name}</h4>
+                                            <h4 className="text-sm font-bold text-zinc-200 truncate">{getLeadDisplayName(event)}</h4>
                                             <span className="px-2 py-0.5 rounded-md bg-zinc-800/50 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">{duration}m</span>
                                         </div>
                                         <p className="text-xs text-zinc-500 mb-3 flex items-center gap-1.5 font-medium italic">
@@ -536,7 +536,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                             <button
                                                 onClick={() => {
                                                     setSelectedLeadId(event.id);
-                                                    setSearchTerm(event.name);
+                                                    setSearchTerm(getLeadDisplayName(event));
                                                     // Set local time for datetime-local input
                                                     const date = new Date(event.dataHora_Agendamento!);
                                                     // This ensures the input shows the correct local time regardless of timezone

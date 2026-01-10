@@ -65,14 +65,42 @@ function shouldHideMessage(content: string): boolean {
   return !cleaned || /^[\.\s]*$/.test(cleaned);
 }
 
+const capitalize = (str: string | undefined | null) => {
+  if (!str) return '';
+  return str.trim().split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+};
+
+const getAgentColor = (name: string | undefined | null) => {
+  if (!name) return 'bg-zinc-500';
+  const n = name.toLowerCase().trim();
+  if (n === 'alan' || n.includes('alan')) return 'bg-blue-500';
+
+  const colors = [
+    'bg-blue-400', 'bg-purple-400', 'bg-pink-400', 'bg-indigo-400',
+    'bg-cyan-400', 'bg-teal-400', 'bg-orange-400', 'bg-rose-400',
+    'bg-emerald-400', 'bg-amber-400', 'bg-violet-400', 'bg-fuchsia-400'
+  ];
+  let hash = 0;
+  for (let i = 0; i < n.length; i++) {
+    hash = n.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
+
 const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selectedChatId, onSelectChat }) => {
   const [inputText, setInputText] = useState('');
   const [sdrMessages, setSdrMessages] = useState<SDRMessage[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [currentOffset, setCurrentOffset] = useState(0);
   const [currentUserName, setCurrentUserName] = useState<string>('Agente');
   const [aiPaused, setAiPaused] = useState(false);
-  const [messagesCache, setMessagesCache] = useState<Record<string, SDRMessage[]>>({});
+  const [messagesCache, setMessagesCache] = useState<Record<string, { messages: SDRMessage[], hasMore: boolean, offset: number }>>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const isFirstLoad = useRef(true);
+  const MESSAGE_PAGE_SIZE = 50;
 
   const setSelectedChatId = onSelectChat;
   const selectedChat = leads.find(l => l.id === selectedChatId) || leads[0];
@@ -81,10 +109,10 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user?.user_metadata?.name) {
-        setCurrentUserName(user.user_metadata.name);
-      } else if (user?.email) {
-        setCurrentUserName(user.email.split('@')[0]);
+      const meta = user?.user_metadata;
+      const name = meta?.full_name || meta?.name || user?.email?.split('@')[0];
+      if (name) {
+        setCurrentUserName(capitalize(name));
       }
     };
     getUser();
@@ -106,7 +134,12 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
       // 1. Usar Cache imediatamente se existir
       if (messagesCache[cacheKey]) {
-        if (isMounted) setSdrMessages(messagesCache[cacheKey]);
+        const cached = messagesCache[cacheKey];
+        if (isMounted) {
+          setSdrMessages(cached.messages);
+          setHasMoreMessages(cached.hasMore);
+          setCurrentOffset(cached.offset);
+        }
       } else {
         if (isMounted) setLoadingMessages(true);
       }
@@ -115,8 +148,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const actualAiStatus = await chatsSdrService.getAIStatus(selectedChat.phone);
       if (isMounted) setAiPaused(actualAiStatus);
 
-      // 3. Buscar mensagens do banco
-      const messages = await chatsSdrService.fetchChatsByPhone(selectedChat.phone);
+      // 3. Buscar mensagens do banco (primeiras 50)
+      const { messages, hasMore } = await chatsSdrService.fetchChatsByPhone(selectedChat.phone, MESSAGE_PAGE_SIZE, 0);
 
       const processedMessages: SDRMessage[] = [];
       messages.forEach((msg) => {
@@ -135,7 +168,9 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
       if (isMounted) {
         setSdrMessages(processedMessages);
-        setMessagesCache(prev => ({ ...prev, [cacheKey]: processedMessages }));
+        setHasMoreMessages(hasMore);
+        setCurrentOffset(MESSAGE_PAGE_SIZE);
+        setMessagesCache(prev => ({ ...prev, [cacheKey]: { messages: processedMessages, hasMore, offset: MESSAGE_PAGE_SIZE } }));
         setLoadingMessages(false);
       }
 
@@ -180,7 +215,10 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               if (messageExists) return prev;
 
               const updated = [...prev, ...newProcessed];
-              setMessagesCache(cache => ({ ...cache, [cacheKey]: updated }));
+              setMessagesCache(cache => {
+                const existingCache = cache[cacheKey] || { messages: [], hasMore: false, offset: 0 };
+                return { ...cache, [cacheKey]: { ...existingCache, messages: updated } };
+              });
               return updated;
             });
           }
@@ -191,6 +229,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     };
 
     fetchMessages();
+    isFirstLoad.current = true;
 
     // Cleanup: Remove subscription when chat changes
     return () => {
@@ -204,7 +243,15 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   // Auto-scroll to bottom
   useEffect(() => {
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      const behavior = isFirstLoad.current ? 'instant' : 'smooth';
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: behavior as ScrollBehavior
+      });
+
+      if (sdrMessages.length > 0) {
+        isFirstLoad.current = false;
+      }
     }
   }, [sdrMessages]);
 
@@ -218,16 +265,109 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const handleSendMessage = async () => {
     if (!inputText.trim() || !selectedChat?.phone) return;
 
-    const sentMessage = await chatsSdrService.sendMessage(
+    const messageContent = inputText;
+    setInputText('');
+
+    // Optimistic Update
+    const tempId = -Date.now();
+    const optimisticMessage: SDRMessage = {
+      id: tempId,
+      session_id: selectedChat.phone,
+      message: {
+        type: 'agent',
+        content: messageContent,
+        agent_name: currentUserName
+      },
+      atendente: currentUserName, // Identifica localmente no update otimista
+      created_at: new Date().toISOString()
+    };
+
+    setSdrMessages(prev => [...prev, optimisticMessage]);
+
+    try {
+      const sentMessage = await chatsSdrService.sendMessage(
+        selectedChat.phone,
+        messageContent,
+        currentUserName
+      );
+
+      if (sentMessage) {
+        setSdrMessages(prev =>
+          prev.map(m => m.id === tempId ? sentMessage : m)
+        );
+
+        // Update cache too
+        const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
+        const cacheKey = phoneNumbers || selectedChat.phone;
+        setMessagesCache(prev => {
+          const existingCache = prev[cacheKey] || { messages: [], hasMore: false, offset: 0 };
+          const updatedMsgs = [...existingCache.messages.filter(m => m.id !== tempId), sentMessage];
+          return { ...prev, [cacheKey]: { ...existingCache, messages: updatedMsgs } };
+        });
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Remove optimistic message on error
+      setSdrMessages(prev => prev.filter(m => m.id !== tempId));
+    }
+  };
+
+  const loadMoreMessages = async () => {
+    if (!selectedChat?.phone || loadingMore || !hasMoreMessages) return;
+
+    setLoadingMore(true);
+    const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
+    const cacheKey = phoneNumbers || selectedChat.phone;
+
+    // Preserve scroll position
+    const container = chatContainerRef.current;
+    const previousScrollHeight = container?.scrollHeight || 0;
+
+    const { messages, hasMore } = await chatsSdrService.fetchChatsByPhone(
       selectedChat.phone,
-      inputText,
-      currentUserName
+      MESSAGE_PAGE_SIZE,
+      currentOffset
     );
 
-    if (sentMessage) {
-      setSdrMessages(prev => [...prev, sentMessage]);
-    }
-    setInputText('');
+    const processedMessages: SDRMessage[] = [];
+    messages.forEach((msg) => {
+      const cleaned = cleanContent(msg.message.content || '');
+      const parts = cleaned.split(/\n\n+/);
+      parts.forEach((part, index) => {
+        if (part.trim() && !shouldHideMessage(part)) {
+          processedMessages.push({
+            ...msg,
+            id: msg.id * 10000 + index,
+            message: { ...msg.message, content: part.trim() }
+          });
+        }
+      });
+    });
+
+    // Prepend older messages
+    setSdrMessages(prev => [...processedMessages, ...prev]);
+    setHasMoreMessages(hasMore);
+    setCurrentOffset(prev => prev + MESSAGE_PAGE_SIZE);
+    setMessagesCache(prev => {
+      const existingCache = prev[cacheKey] || { messages: [], hasMore: false, offset: 0 };
+      return {
+        ...prev,
+        [cacheKey]: {
+          messages: [...processedMessages, ...existingCache.messages],
+          hasMore,
+          offset: currentOffset + MESSAGE_PAGE_SIZE
+        }
+      };
+    });
+    setLoadingMore(false);
+
+    // Restore scroll position after DOM updates
+    requestAnimationFrame(() => {
+      if (container) {
+        const newScrollHeight = container.scrollHeight;
+        container.scrollTop = newScrollHeight - previousScrollHeight;
+      }
+    });
   };
 
   const handleToggleAI = async () => {
@@ -242,13 +382,12 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   // Render message bubble
   const renderMessage = (msg: SDRMessage) => {
     const messageType = msg.message.type;
-    const agentName = msg.message.agent_name;
+    const agentName = msg.atendente || msg.message.agent_name;
     const isFromClient = messageType === 'human';
 
-    // Se a mensagem foi enviada nesta sessão, ela terá agentName no objeto local
-    // Se foi carregada do banco e é type: 'ai' sem agent_name, exibimos como IA
-    const isFromAgent = messageType === 'agent' || (!!agentName);
-    const isFromAI = messageType === 'ai' && !agentName;
+    // Se houver nome na coluna atendente ou no objeto da mensagem, é Humano
+    const isFromAgent = !!agentName;
+    const isFromAI = messageType === 'ai' && !isFromAgent;
 
     const rawContent = msg.message.content || '';
     const cleanedContent = cleanContent(rawContent);
@@ -280,8 +419,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                 </>
               ) : (
                 <>
-                  <User size={12} />
-                  <span>{agentName || 'Agente'}</span>
+                  <div className={`w-2 h-2 rounded-full ${getAgentColor(agentName)} shadow-sm`} />
+                  <span>{capitalize(agentName) || 'Agente'}</span>
                 </>
               )}
             </div>
@@ -361,16 +500,30 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               key={chat.id}
               onClick={() => setSelectedChatId(chat.id)}
               className={`w-full p-4 flex gap-3 items-center hover:bg-[#18181b] transition-colors border-b border-zinc-800/10 text-left
-                ${selectedChatId === chat.id ? 'bg-[#18181b] border-l-4 border-l-indigo-500' : ''}`}
+                ${selectedChatId === chat.id ? 'bg-[#18181b] border-l-4 border-l-indigo-500 shadow-inner' : ''}`}
             >
               <div className="relative">
                 <LetterAvatar name={chat.name} size="lg" />
-                <span className="absolute bottom-0.5 right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#09090b]"></span>
+                <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-[#09090b] ${chat.ai_paused === true ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-baseline mb-1">
-                  <h4 className="text-[13px] font-semibold truncate text-zinc-200">{chat.name}</h4>
-                  <span className="text-[10px] text-zinc-500">{chat.lastActive || 'Agora'}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <h4 className="text-[13px] font-semibold truncate text-zinc-200">{chat.name}</h4>
+                    {chat.ai_paused === false && (
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md shrink-0 ring-1 ring-emerald-500/20">
+                        <Bot size={10} className="text-emerald-500" />
+                        <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">IA Ativa</span>
+                      </div>
+                    )}
+                    {chat.ai_paused === true && (
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-md shrink-0 ring-1 ring-amber-500/20">
+                        <Pause size={10} className="text-amber-500" />
+                        <span className="text-[8px] font-black text-amber-500 uppercase tracking-tighter">IA Pausada</span>
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-zinc-500 shrink-0">{chat.lastActive || 'Agora'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <p className="text-[11px] text-zinc-500 truncate pr-4">
@@ -423,15 +576,12 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                   </>
                 )}
               </button>
-              <button className="hover:text-white transition-colors"><Phone size={20} /></button>
-              <button className="hover:text-white transition-colors"><Paperclip size={20} /></button>
-              <button className="hover:text-white transition-colors"><MoreVertical size={20} /></button>
             </div>
           </header>
 
           <div
             ref={chatContainerRef}
-            className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 relative bg-[#0b141a] scroll-smooth"
+            className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 relative bg-[#0b141a]"
           >
             <div
               className="absolute inset-0 opacity-[0.05] pointer-events-none"
@@ -453,7 +603,27 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                   <p className="text-zinc-600 text-sm">Nenhuma mensagem ainda. Comece a conversa!</p>
                 </div>
               ) : (
-                sdrMessages.filter(msg => !shouldHideMessage(msg.message.content || '')).map(renderMessage)
+                <>
+                  {hasMoreMessages && (
+                    <div className="text-center pb-4">
+                      <button
+                        onClick={loadMoreMessages}
+                        disabled={loadingMore}
+                        className="px-4 py-2 bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-400 text-xs font-medium rounded-full border border-zinc-700/50 transition-all disabled:opacity-50"
+                      >
+                        {loadingMore ? (
+                          <span className="flex items-center gap-2">
+                            <div className="w-3 h-3 border-2 border-zinc-500/20 border-t-zinc-500 rounded-full animate-spin"></div>
+                            Carregando...
+                          </span>
+                        ) : (
+                          '↑ Carregar mais antigas'
+                        )}
+                      </button>
+                    </div>
+                  )}
+                  {sdrMessages.filter(msg => !shouldHideMessage(msg.message.content || '')).map(renderMessage)}
+                </>
               )}
             </div>
           </div>

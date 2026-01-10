@@ -24,6 +24,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [companyName, setCompanyName] = useState('');
 
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
@@ -71,7 +72,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           return;
         }
 
-        const { data, error } = await signUp(email, password, name);
+        const { data, error } = await signUp(email, password, name, companyName);
 
         if (error) {
           console.error('Signup error:', error);
@@ -156,6 +157,23 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ex: João Silva"
+                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-zinc-700"
+                  />
+                </div>
+              </div>
+            )}
+
+            {mode === 'register' && (
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-zinc-500 uppercase px-1">Nome da Empresa</label>
+                <div className="relative">
+                  <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
+                  <input
+                    required
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Ex: Nexo Soluções"
                     className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-zinc-700"
                   />
                 </div>

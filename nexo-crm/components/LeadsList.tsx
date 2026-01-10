@@ -2,16 +2,20 @@
 import React from 'react';
 import { Search, Filter, MoreHorizontal, Download, UserPlus, Phone, Mail, Users } from 'lucide-react';
 import { STATUS_LABELS } from '../constants';
-import { Lead } from '../types';
+import { Lead, getLeadDisplayName } from '../types';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
 import LetterAvatar from './LetterAvatar';
 
 interface LeadsListProps {
   searchQuery: string;
+  onSearchChange: (query: string) => void;
   filteredLeads: Lead[];
+  onViewDetails: (lead: Lead) => void;
+  onViewChat: (lead: Lead) => void;
 }
 
-const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, filteredLeads }) => {
+const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filteredLeads, onViewDetails, onViewChat }) => {
+  const [showLocalSearch, setShowLocalSearch] = React.useState(false);
   return (
     <div className="p-8 h-full flex flex-col space-y-8 overflow-y-auto custom-scrollbar">
       <header className="flex justify-between items-center shrink-0">
@@ -20,8 +24,8 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, filteredLeads }) => 
           <p className="text-zinc-500 text-sm">Gerencie todos os seus leads e clientes em um ambiente seguro.</p>
         </div>
         <div className="flex gap-4">
-          <button className="flex items-center gap-2 px-6 py-2.5 bg-zinc-900/50 border border-zinc-800/50 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all hover:bg-zinc-800 shadow-lg active:scale-95">
-            <Download size={14} className="text-indigo-400" />
+          <button className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 rounded-xl text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95">
+            <Download size={14} />
             Exportar CSV
           </button>
           <button className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 rounded-xl text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95">
@@ -42,10 +46,28 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, filteredLeads }) => 
               <span className="text-zinc-100 ml-2 bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700/50">{filteredLeads.length}</span>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-xl text-xs font-bold text-zinc-400 hover:text-zinc-200 transition-all active:scale-95">
-            <Filter size={14} className="text-indigo-400" />
-            Filtros Avançados
-          </button>
+          <div className="flex items-center gap-4">
+            {showLocalSearch && (
+              <div className="relative animate-in fade-in slide-in-from-right-4 duration-300">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Filtrar por nome, tel ou status..."
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="pl-9 pr-4 py-2 bg-zinc-950/50 border border-zinc-800 rounded-xl text-xs w-64 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-bold"
+                />
+              </div>
+            )}
+            <button
+              onClick={() => setShowLocalSearch(!showLocalSearch)}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-bold transition-all active:scale-95 ${showLocalSearch ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:text-zinc-200'}`}
+            >
+              <Filter size={14} className={showLocalSearch ? 'text-white' : 'text-indigo-400'} />
+              {showLocalSearch ? 'Fechar Filtro' : 'Filtros Avançados'}
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto flex-1 custom-scrollbar">
@@ -63,9 +85,9 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, filteredLeads }) => 
                 <tr key={lead.id} className="hover:bg-zinc-800/10 transition-colors group">
                   <td className="px-8 py-5 whitespace-nowrap">
                     <div className="flex items-center gap-4">
-                      <LetterAvatar name={lead.name} size="md" />
+                      <LetterAvatar name={getLeadDisplayName(lead)} size="md" />
                       <div>
-                        <div className="text-[13px] font-bold text-zinc-200 group-hover:text-white transition-colors">{lead.name}</div>
+                        <div className="text-[13px] font-bold text-zinc-200 group-hover:text-white transition-colors">{getLeadDisplayName(lead)}</div>
                         <div className="text-[10px] text-zinc-500 font-medium mt-0.5">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</div>
                       </div>
                     </div>
@@ -88,15 +110,18 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, filteredLeads }) => 
                     </div>
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-1 group-hover:translate-x-0">
-                      <button className="p-2 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-500 hover:text-indigo-400 hover:border-indigo-500/30 transition-all shadow-lg active:scale-95" title="Chamar no WhatsApp">
-                        <Phone size={14} />
+                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-1 group-hover:translate-x-0">
+                      <button
+                        onClick={() => onViewDetails(lead)}
+                        className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] font-bold text-zinc-400 hover:text-white hover:border-indigo-500/30 transition-all shadow-lg active:scale-95 uppercase tracking-tighter"
+                      >
+                        Ver Cliente
                       </button>
-                      <button className="p-2 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-500 hover:text-emerald-400 hover:border-emerald-500/30 transition-all shadow-lg active:scale-95" title="Enviar E-mail">
-                        <Mail size={14} />
-                      </button>
-                      <button className="p-2 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-500 hover:text-white hover:border-zinc-600 transition-all shadow-lg active:scale-95">
-                        <MoreHorizontal size={14} />
+                      <button
+                        onClick={() => onViewChat(lead)}
+                        className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] font-bold text-zinc-400 hover:text-white hover:border-emerald-500/30 transition-all shadow-lg active:scale-95 uppercase tracking-tighter"
+                      >
+                        Ver Conversa
                       </button>
                     </div>
                   </td>
@@ -123,12 +148,12 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, filteredLeads }) => 
         {filteredLeads.length > 0 && (
           <div className="px-8 py-4 border-t border-zinc-800/50 flex items-center justify-between text-[10px] font-bold text-zinc-600 uppercase tracking-widest bg-zinc-900/5 shadow-inner">
             <div className="flex items-center gap-4">
-              <span>Sincronizado com Supabase</span>
+              <span>Sincronizado com Banco de Dados</span>
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-zinc-400">Total:</span>
-              <span className="text-zinc-200">{filteredLeads.length} contatoss</span>
+              <span className="text-zinc-200">{filteredLeads.length} contatos</span>
             </div>
           </div>
         )}

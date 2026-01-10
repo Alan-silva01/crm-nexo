@@ -24,6 +24,7 @@ export interface Lead {
   dataHora_Agendamento?: string | null;
   servico_interesse?: string | null;
   dados?: Record<string, unknown> | null;
+  ai_paused?: boolean | null;
   // UI-only fields (not in database)
   lastMessage?: string;
   lastActive?: string;
@@ -31,6 +32,20 @@ export interface Lead {
   value?: number;
   messages?: Message[];
 }
+
+/**
+ * Returns the display name for a lead, prioritizing dados.nome over name
+ */
+export const getLeadDisplayName = (lead: Lead): string => {
+  // Priority: dados.nome > name
+  if (lead.dados && typeof lead.dados === 'object') {
+    const dadosNome = (lead.dados as Record<string, unknown>)['nome'];
+    if (dadosNome && typeof dadosNome === 'string' && dadosNome.trim()) {
+      return dadosNome.trim();
+    }
+  }
+  return lead.name || 'Sem Nome';
+};
 
 export interface MetricData {
   name: string;
@@ -52,6 +67,7 @@ export interface SDRMessage {
   session_id: string;
   message: SDRMessageContent;
   created_at?: string;
+  atendente?: string | null;
 }
 
 export interface LeadColumnHistory {

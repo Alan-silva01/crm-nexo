@@ -30,6 +30,8 @@ const AppContent: React.FC = () => {
   const [notifications, setNotifications] = useState<LeadColumnHistory[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [profile, setProfile] = useState<any>(null);
+  const [externalSelectedLead, setExternalSelectedLead] = useState<Lead | null>(null);
 
   // Fetch columns and leads on session change
   useEffect(() => {
@@ -69,6 +71,16 @@ const AppContent: React.FC = () => {
         // Take latest 5 for notifications
         setNotifications(history.slice(0, 5));
       });
+
+      // Fetch user profile
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single()
+        .then(({ data }) => {
+          if (data) setProfile(data);
+        });
     }
   }, [session]);
 
@@ -190,7 +202,7 @@ const AppContent: React.FC = () => {
 
             // Play notification sound
             try {
-              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+              const audio = new Audio('https://jreklrhamersmamdmjna.supabase.co/storage/v1/object/public/audio/Editor%20Clideo.mp3');
               audio.volume = 0.5;
               audio.play();
             } catch (err) {
@@ -207,14 +219,48 @@ const AppContent: React.FC = () => {
   }, [session?.user?.id]);
 
   const filteredLeads = useMemo(() => {
-    if (!searchQuery) return leads;
-    const lower = searchQuery.toLowerCase();
-    return leads.filter(l =>
-      l.name?.toLowerCase().includes(lower) ||
-      (l.phone && l.phone.includes(lower)) ||
-      (l.email && l.email.toLowerCase().includes(lower)) ||
-      (l.last_message && l.last_message.toLowerCase().includes(lower))
-    );
+    // Force leads to be an array and searchQuery to be a string
+    const safeLeads = Array.isArray(leads) ? leads : [];
+    const query = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+
+    if (!query) return safeLeads;
+
+    const lower = query.toLowerCase();
+    const queryDigits = query.replace(/\D/g, '');
+
+    return safeLeads.filter(l => {
+      // 1. Text Search (Name, Email, Status, Company, Last Message)
+      const matchesText =
+        (l.name && l.name.toLowerCase().includes(lower)) ||
+        (l.email && l.email.toLowerCase().includes(lower)) ||
+        (l.status && l.status.toLowerCase().includes(lower)) ||
+        (l.company_name && l.company_name.toLowerCase().includes(lower)) ||
+        (l.last_message && l.last_message.toLowerCase().includes(lower));
+
+      if (matchesText) return true;
+
+      // 2. Phone search - Normalized
+      if (l.phone) {
+        const phoneDigits = l.phone.replace(/\D/g, '');
+        if (l.phone.includes(lower) || (queryDigits && phoneDigits.includes(queryDigits))) {
+          return true;
+        }
+      }
+
+      // 3. Search inside custom JSONB data (dados)
+      if (l.dados && typeof l.dados === 'object') {
+        try {
+          const values = Object.values(l.dados);
+          if (values.some(val => val && String(val).toLowerCase().includes(lower))) {
+            return true;
+          }
+        } catch (e) {
+          console.error("Error searching in dados JSONB", e);
+        }
+      }
+
+      return false;
+    });
   }, [searchQuery, leads]);
 
   // Dynamically compute effective columns (DB Columns + Virtual columns from leads)
@@ -280,10 +326,8 @@ const AppContent: React.FC = () => {
       console.error('Error updating lead status, rolling back...');
       // Rollback
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: originalStatus } : l));
-    } else if (finalToColumnId && !finalToColumnId.startsWith('virtual-')) {
-      // Record history (only for real DB columns)
-      await leadsService.recordHistory(leadId, fromColumnId || null, finalToColumnId);
     }
+    // History is now recorded automatically by the `on_lead_status_change` trigger in Supabase
   };
 
   const handleUpdateLeadGeneric = async (id: string, updates: Partial<Lead>) => {
@@ -305,7 +349,7 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard leads={leads} columns={effectiveColumns} />;
+        return <Dashboard leads={leads} columns={effectiveColumns} leadsHistory={leadsHistory} />;
       case 'kanban':
         return (
           <Kanban
@@ -320,10 +364,26 @@ const AppContent: React.FC = () => {
               setSelectedChatId(id);
               setActiveTab('chats');
             }}
+            externalSelectedLead={externalSelectedLead}
+            onClearExternalLead={() => setExternalSelectedLead(null)}
           />
         );
       case 'leads':
-        return <LeadsList searchQuery={searchQuery} filteredLeads={filteredLeads} />;
+        return (
+          <LeadsList
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            filteredLeads={filteredLeads}
+            onViewDetails={(lead) => {
+              setExternalSelectedLead(lead);
+              setActiveTab('kanban');
+            }}
+            onViewChat={(lead) => {
+              setSelectedChatId(lead.id);
+              setActiveTab('chats');
+            }}
+          />
+        );
       case 'calendar':
         return (
           <CalendarPage
@@ -350,7 +410,7 @@ const AppContent: React.FC = () => {
       case 'ajustes':
         return <Settings user={user} onUpdate={() => {/* User metadata updates are handled by Supabase session listener, but we could add manual refresh here if needed */ }} />;
       default:
-        return <Dashboard leads={leads} columns={columns} />;
+        return <Dashboard leads={leads} columns={columns} leadsHistory={leadsHistory} />;
     }
   };
 
@@ -364,8 +424,15 @@ const AppContent: React.FC = () => {
         user={user}
       />
       <main className="flex-1 flex flex-col min-w-0 bg-[#0c0c0e] relative">
-        <header className="h-16 border-b border-zinc-800/50 flex items-center justify-between px-8 bg-zinc-900/20 z-10">
-          <div className="flex items-center gap-4 flex-1">
+        <header className="h-16 border-b border-zinc-800/50 flex items-center justify-between px-8 bg-zinc-900/20 z-40">
+          <div className="flex items-center gap-6 flex-1">
+            {profile?.company_name && (
+              <div className="flex items-center gap-2 pr-6 border-r border-zinc-800/50">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 whitespace-nowrap">
+                  {profile.company_name}
+                </span>
+              </div>
+            )}
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input
@@ -408,11 +475,11 @@ const AppContent: React.FC = () => {
               {showNotifications && (
                 <>
                   <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-40 bg-black/5"
                     onClick={() => setShowNotifications(false)}
                   ></div>
-                  <div className="absolute right-0 mt-3 w-80 bg-[#0c0c0e] border border-zinc-800/80 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-white/5">
-                    <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50">
+                  <div className="absolute right-0 top-full mt-3 w-80 bg-[#0c0c0e] border border-zinc-800/80 rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.8)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-white/10">
+                    <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900">
                       <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Notificações</h3>
                       <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20 font-bold">Recent</span>
                     </div>

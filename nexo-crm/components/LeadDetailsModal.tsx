@@ -12,9 +12,13 @@ import {
     MoreHorizontal,
     Users,
     Layout,
-    MapPin
+    MapPin,
+    Scale,
+    Stethoscope,
+    ShoppingBag,
+    DollarSign
 } from 'lucide-react';
-import { Lead, LeadColumnHistory } from '../types';
+import { Lead, LeadColumnHistory, getLeadDisplayName } from '../types';
 import { leadsService } from '../src/lib/leadsService';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
 import { formatRelativeTime } from '../src/lib/formatRelativeTime';
@@ -73,7 +77,7 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, le
 
                     <div className="absolute -bottom-8 left-8">
                         <div className="w-20 h-20 rounded-[1.5rem] bg-white dark:bg-[#0c0c0e] p-1 shadow-xl overflow-hidden flex items-center justify-center border border-zinc-200 dark:border-zinc-800/50">
-                            <LetterAvatar name={lead.name} size="xl" className="rounded-2xl" />
+                            <LetterAvatar name={getLeadDisplayName(lead)} size="xl" className="rounded-2xl" />
                         </div>
                     </div>
                 </div>
@@ -82,7 +86,7 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, le
                 <div className="flex-1 overflow-y-auto custom-scrollbar pt-12 pb-8 px-8 min-h-0 bg-white dark:bg-[#0c0c0e]">
                     <div className="flex justify-between items-start mb-8">
                         <div>
-                            <h2 className="text-2xl font-bold text-zinc-900 dark:bg-gradient-to-r dark:from-white dark:to-zinc-500 dark:bg-clip-text dark:text-transparent tracking-tight mb-2 uppercase">{lead.name}</h2>
+                            <h2 className="text-2xl font-bold text-zinc-900 dark:bg-gradient-to-r dark:from-white dark:to-zinc-500 dark:bg-clip-text dark:text-transparent tracking-tight mb-2 uppercase">{getLeadDisplayName(lead)}</h2>
                             <span className="px-3 py-1 bg-indigo-500/5 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-[0.2em] rounded-lg border border-indigo-500/10 dark:border-indigo-500/20">
                                 {lead.status}
                             </span>
@@ -120,45 +124,89 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ isOpen, onClose, le
                             </div>
                         </div>
 
-                        {/* Dados Detalhados na Modal */}
+                        {/* Dados Dinâmicos na Modal */}
                         {lead.dados && Object.keys(lead.dados).length > 0 && (() => {
                             const d = lead.dados as Record<string, any>;
                             const hasValue = (val: any) => val !== null && val !== undefined && String(val).trim() !== '';
 
-                            const fields = [
-                                { key: 'modelo_veiculo', label: 'Veículo', icon: Car, color: 'text-amber-500 dark:text-amber-400' },
-                                { key: 'placa_veiculo', label: 'Placa', icon: MoreHorizontal, color: 'text-zinc-500 dark:text-zinc-400' },
-                                { key: 'tipo_uso', label: 'Tipo de Uso', icon: Users, color: 'text-blue-500 dark:text-blue-400' },
-                                { key: 'preocupacao', label: 'Preocupação', icon: Phone, color: 'text-rose-500 dark:text-rose-400' },
-                                { key: 'cidade', label: 'Cidade', icon: MapPin, color: 'text-emerald-500 dark:text-emerald-400' },
-                                { key: 'bairro', label: 'Bairro', icon: MapPin, color: 'text-emerald-500 dark:text-emerald-400' },
-                            ];
+                            // Campos para pular (já estão no cabeçalho ou são reservados)
+                            const skipFields = ['nome', 'name', 'email', 'whatsapp', 'phone', 'empresa', 'company_name', 'id', 'observacoes', 'observação', 'status_venda', 'created_at', 'updated_at', 'agendamentos', 'consultas'];
 
-                            const visibleFields = fields.filter(f => hasValue(d[f.key]));
-                            const obs = hasValue(d.observacoes) ? String(d.observacoes) : null;
+                            // Mapeamento de ícones por palavra-chave
+                            const getIcon = (key: string) => {
+                                const k = key.toLowerCase();
+                                if (k.includes('veiculo') || k.includes('carro') || k.includes('modelo')) return { icon: Car, color: 'text-amber-500 dark:text-amber-400' };
+                                if (k.includes('placa')) return { icon: MoreHorizontal, color: 'text-zinc-500 dark:text-zinc-400' };
+                                if (k.includes('cidade') || k.includes('bairro') || k.includes('endereco') || k.includes('local')) return { icon: MapPin, color: 'text-emerald-500 dark:text-emerald-400' };
+                                if (k.includes('usuario') || k.includes('tipo') || k.includes('genero') || k.includes('uso') || k.includes('area')) return { icon: Users, color: 'text-blue-500 dark:text-blue-400' };
+                                if (k.includes('preocupacao') || k.includes('ajuda') || k.includes('problema') || k.includes('desafio')) return { icon: Phone, color: 'text-rose-500 dark:text-rose-400' };
+                                if (k.includes('processo') || k.includes('direito') || k.includes('justiça')) return { icon: Scale, color: 'text-indigo-500 dark:text-indigo-400' };
+                                if (k.includes('clinica') || k.includes('medico') || k.includes('saude') || k.includes('paciente')) return { icon: Stethoscope, color: 'text-emerald-500 dark:text-emerald-400' };
+                                if (k.includes('loja') || k.includes('venda') || k.includes('produto') || k.includes('compra')) return { icon: ShoppingBag, color: 'text-amber-500 dark:text-amber-400' };
+                                if (k.includes('faturamento') || k.includes('valor') || k.includes('preco') || k.includes('preço')) return { icon: DollarSign, color: 'text-emerald-500 dark:text-emerald-400' };
+                                return { icon: Layout, color: 'text-indigo-500 dark:text-indigo-400' };
+                            };
 
-                            if (visibleFields.length === 0 && !obs) return null;
+                            // Formatar Label (snake_case to Title Case)
+                            const formatLabel = (key: string) => {
+                                return key
+                                    .split('_')
+                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                    .join(' ');
+                            };
+
+                            const visibleKeys = Object.keys(d).filter(key => {
+                                return !skipFields.includes(key.toLowerCase()) && hasValue(d[key]);
+                            });
+
+                            const obs = hasValue(d.observacoes) ? String(d.observacoes) : (hasValue(d.observação) ? String(d.observação) : null);
+                            const hasConsultas = d.consultas && typeof d.consultas === 'object' && Object.keys(d.consultas).length > 0;
+                            const hasAgendamentos = d.agendamentos && typeof d.agendamentos === 'object' && Object.keys(d.agendamentos).length > 0;
+
+                            if (visibleKeys.length === 0 && !obs && !hasConsultas) return null;
 
                             return (
                                 <div className="p-6 rounded-[2rem] bg-zinc-50 dark:bg-zinc-900/20 shadow-inner dark:shadow-none border border-zinc-100 dark:border-zinc-800/30">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="p-1.5 bg-zinc-500/10 rounded-lg text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800/50">
-                                            <Layout size={14} />
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-1.5 bg-zinc-500/10 rounded-lg text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800/50">
+                                                <Layout size={14} />
+                                            </div>
+                                            <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-[0.15em]">Dados do Lead</span>
                                         </div>
-                                        <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-[0.15em]">Dados do Lead</span>
+                                        {hasConsultas && (
+                                            <span className="text-[9px] px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg font-black uppercase tracking-widest border border-emerald-500/20">
+                                                Já fez consultas conosco
+                                            </span>
+                                        )}
                                     </div>
 
-                                    {visibleFields.length > 0 && (
+                                    {visibleKeys.length > 0 && (
                                         <div className="grid grid-cols-2 gap-6 mb-6">
-                                            {visibleFields.map(f => (
-                                                <div key={f.key} className="flex flex-col gap-1.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <f.icon size={12} className={f.color} />
-                                                        <span className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">{f.label}</span>
+                                            {visibleKeys.map(key => {
+                                                const config = getIcon(key);
+                                                const value = d[key];
+
+                                                let displayValue = '';
+                                                if (typeof value === 'object' && value !== null) {
+                                                    const keys = Object.keys(value);
+                                                    displayValue = keys.length > 0 ? `${keys.length} itens registrados` : 'Vazio';
+                                                } else {
+                                                    displayValue = String(value);
+                                                }
+
+                                                return (
+                                                    <div key={key} className="flex flex-col gap-1.5 overflow-hidden">
+                                                        <div className="flex items-center gap-2">
+                                                            <config.icon size={12} className={config.color} />
+                                                            <span className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest truncate">{formatLabel(key)}</span>
+                                                        </div>
+                                                        <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200 pl-5 leading-tight truncate" title={displayValue}>
+                                                            {displayValue}
+                                                        </p>
                                                     </div>
-                                                    <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200 pl-5 leading-none">{String(d[f.key])}</p>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     )}
 

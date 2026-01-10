@@ -1,22 +1,40 @@
-
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Plus,
-  MoreVertical,
-  MoreHorizontal,
-  MessageSquare,
-  Clock,
   Layout,
+  Plus,
+  Search,
   Trash2,
+  MoreVertical,
+  Calendar,
+  Clock,
+  User,
+  CheckCircle2,
+  Filter,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  MessageSquare,
+  Sparkles,
+  Zap,
+  Phone,
+  Target,
+  ArrowUpRight,
+  Bot,
+  MapPin,
+  Briefcase,
+  Car,
+  Scale,
+  Stethoscope,
+  ShoppingBag,
+  DollarSign,
+  Users,
+  GitCommit,
   X,
   Check,
-  GitCommit,
-  Phone,
-  MapPin,
-  Car,
-  Users
+  MoreHorizontal
 } from 'lucide-react';
-import { Lead, LeadColumnHistory } from '../types';
+import { Lead, LeadColumnHistory, getLeadDisplayName } from '../types';
 import { leadsService } from '../src/lib/leadsService';
 import { supabase } from '../src/lib/supabase';
 import ConfirmModal from './ConfirmModal';
@@ -49,6 +67,8 @@ interface KanbanProps {
   onSelectChat: (id: string) => void;
   columns: KanbanColumn[];
   onColumnsUpdate: (columns: KanbanColumn[]) => void;
+  externalSelectedLead?: Lead | null;
+  onClearExternalLead?: () => void;
 }
 
 const Kanban: React.FC<KanbanProps> = ({
@@ -59,7 +79,9 @@ const Kanban: React.FC<KanbanProps> = ({
   onUpdateLeadStatus,
   onSelectChat,
   columns,
-  onColumnsUpdate
+  onColumnsUpdate,
+  externalSelectedLead,
+  onClearExternalLead
 }) => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draggingColumnId, setDraggingColumnId] = useState<string | null>(null);
@@ -77,6 +99,9 @@ const Kanban: React.FC<KanbanProps> = ({
     title: '',
     message: ''
   });
+  const boardRef = useRef<HTMLDivElement>(null);
+  const scrollIntervalRef = useRef<number | null>(null);
+  const mousePosRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
 
   // No longer fetching columns here as they are passed as props
   useEffect(() => {
@@ -85,22 +110,80 @@ const Kanban: React.FC<KanbanProps> = ({
     }
   }, [columns]);
 
+  // Handle external lead selection (from Contacts list)
+  useEffect(() => {
+    if (externalSelectedLead) {
+      setDetailsModal({ isOpen: true, lead: externalSelectedLead });
+      if (onClearExternalLead) onClearExternalLead();
+    }
+  }, [externalSelectedLead, onClearExternalLead]);
 
 
+
+
+  const startAutoScroll = () => {
+    if (scrollIntervalRef.current) return;
+
+    // Disable smooth scroll during drag for instant response
+    if (boardRef.current) {
+      boardRef.current.style.scrollBehavior = 'auto';
+    }
+
+    const scroll = () => {
+      if (!boardRef.current) return;
+
+      const rect = boardRef.current.getBoundingClientRect();
+      const x = mousePosRef.current.x;
+      const leftDist = x - rect.left;
+      const rightDist = rect.right - x;
+      const threshold = 250;
+      const maxSpeed = 80;
+
+      let speed = 0;
+      if (leftDist < threshold && leftDist > 0) {
+        speed = -Math.pow((threshold - leftDist) / threshold, 1.2) * maxSpeed;
+      } else if (rightDist < threshold && rightDist > 0) {
+        speed = Math.pow((threshold - rightDist) / threshold, 1.2) * maxSpeed;
+      }
+
+      if (speed !== 0) {
+        boardRef.current.scrollLeft += speed;
+      }
+
+      scrollIntervalRef.current = requestAnimationFrame(scroll);
+    };
+
+    scrollIntervalRef.current = requestAnimationFrame(scroll);
+  };
+
+  const stopAutoScroll = () => {
+    if (scrollIntervalRef.current) {
+      cancelAnimationFrame(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+    // Re-enable smooth scroll after drag
+    if (boardRef.current) {
+      boardRef.current.style.scrollBehavior = 'smooth';
+    }
+  };
 
   const onDragStart = (e: React.DragEvent, id: string) => {
     setDraggingId(id);
     e.dataTransfer.setData('leadId', id);
     e.dataTransfer.effectAllowed = 'move';
+    startAutoScroll();
+
   };
 
   const onDragEnd = () => {
     setDraggingId(null);
     setDraggingColumnId(null);
+    stopAutoScroll();
   };
 
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    mousePosRef.current = { x: e.clientX, y: e.clientY };
   };
 
   const onDrop = useCallback(async (e: React.DragEvent, targetColumn: KanbanColumn) => {
@@ -110,16 +193,16 @@ const Kanban: React.FC<KanbanProps> = ({
       const lead = filteredLeads.find(l => l.id === leadId);
       const fromColumn = columns.find(c => c.name === lead?.status);
       onUpdateLeadStatus(leadId, targetColumn.name, fromColumn?.id, targetColumn.id);
-
-      // Optimistic history update is now handled in App.tsx
     }
     setDraggingId(null);
-  }, [onUpdateLeadStatus, columns, filteredLeads]);
+    stopAutoScroll();
+  }, [onUpdateLeadStatus, columns, filteredLeads, stopAutoScroll]);
 
   const onColumnDragStart = (e: React.DragEvent, columnId: string) => {
     setDraggingColumnId(columnId);
     e.dataTransfer.setData('columnId', columnId);
     e.dataTransfer.effectAllowed = 'move';
+    startAutoScroll();
   };
 
   const onColumnDrop = async (e: React.DragEvent, targetIndex: number) => {
@@ -309,7 +392,11 @@ const Kanban: React.FC<KanbanProps> = ({
       <WeeklyCalendar onDateChange={(date) => console.log('Selected date:', date)} />
 
       {/* Kanban Board */}
-      <div className="flex-1 flex gap-6 overflow-x-auto pb-4 scroll-smooth">
+      <div
+        ref={boardRef}
+        className="flex-1 flex gap-6 overflow-x-auto pb-4 scroll-smooth"
+        onDragOver={onDragOver}
+      >
         {columns.map((col, colIndex) => (
           <div
             key={col.id}
@@ -365,14 +452,14 @@ const Kanban: React.FC<KanbanProps> = ({
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-4">
                           <div className="relative">
-                            <LetterAvatar name={lead.name} size="lg" />
+                            <LetterAvatar name={getLeadDisplayName(lead)} size="lg" />
                             <div
                               className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#0c0c0e] shadow-sm"
                               style={{ backgroundColor: borderColor }}
                             ></div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-none">{lead.name}</h4>
+                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-none">{getLeadDisplayName(lead)}</h4>
                             {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1">{lead.company_name}</p>}
                             <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
                           </div>
@@ -397,42 +484,77 @@ const Kanban: React.FC<KanbanProps> = ({
                         </div>
                       )}
 
-                      {/* Dados Customizados Detalhados */}
+                      {/* Dados Customizados Dinâmicos */}
                       {lead.dados && Object.keys(lead.dados).length > 0 && (() => {
                         const d = lead.dados as Record<string, any>;
                         const hasValue = (val: any) => val !== null && val !== undefined && String(val).trim() !== '';
 
-                        // Define relevant fields to show, excluding redundant ones (name, email, phone)
-                        const fields = [
-                          { key: 'modelo_veiculo', label: 'Veículo', icon: Car, color: 'text-amber-400' },
-                          { key: 'placa_veiculo', label: 'Placa', icon: MoreHorizontal, color: 'text-zinc-400' },
-                          { key: 'tipo_uso', label: 'Uso', icon: Users, color: 'text-blue-400' },
-                          { key: 'preocupacao', label: 'Preocupação', icon: Phone, color: 'text-rose-400' },
-                          { key: 'cidade', label: 'Cidade', icon: MapPin, color: 'text-emerald-400' },
-                          { key: 'bairro', label: 'Bairro', icon: MapPin, color: 'text-emerald-400' },
-                        ];
+                        // Campos para pular (já estão no cabeçalho ou são reservados)
+                        const skipFields = ['nome', 'name', 'email', 'whatsapp', 'phone', 'empresa', 'company_name', 'id', 'observacoes', 'observação', 'status_venda', 'agendamentos', 'consultas'];
 
-                        const visibleFields = fields.filter(f => hasValue(d[f.key]));
-                        const obs = hasValue(d.observacoes) ? String(d.observacoes) : null;
+                        // Mapeamento de ícones por palavra-chave
+                        const getIcon = (key: string) => {
+                          const k = key.toLowerCase();
+                          if (k.includes('veiculo') || k.includes('carro') || k.includes('modelo')) return { icon: Car, color: 'text-amber-400' };
+                          if (k.includes('placa')) return { icon: MoreHorizontal, color: 'text-zinc-400' };
+                          if (k.includes('cidade') || k.includes('bairro') || k.includes('endereco') || k.includes('local')) return { icon: MapPin, color: 'text-emerald-400' };
+                          if (k.includes('usuario') || k.includes('tipo') || k.includes('genero') || k.includes('uso') || k.includes('area')) return { icon: Users, color: 'text-blue-400' };
+                          if (k.includes('preocupacao') || k.includes('ajuda') || k.includes('problema') || k.includes('desafio')) return { icon: Phone, color: 'text-rose-400' };
+                          if (k.includes('processo') || k.includes('direito') || k.includes('justiça')) return { icon: Scale, color: 'text-indigo-400' };
+                          if (k.includes('clinica') || k.includes('medico') || k.includes('saude') || k.includes('paciente')) return { icon: Stethoscope, color: 'text-emerald-400' };
+                          if (k.includes('loja') || k.includes('venda') || k.includes('produto') || k.includes('compra')) return { icon: ShoppingBag, color: 'text-amber-400' };
+                          if (k.includes('faturamento') || k.includes('valor') || k.includes('preco') || k.includes('preço')) return { icon: DollarSign, color: 'text-emerald-400' };
+                          return { icon: Layout, color: 'text-indigo-400' };
+                        };
+
+                        // Formatar Label (snake_case to Title Case)
+                        const formatLabel = (key: string) => {
+                          return key
+                            .split('_')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ');
+                        };
+
+                        const visibleKeys = Object.keys(d).filter(key => {
+                          return !skipFields.includes(key.toLowerCase()) && hasValue(d[key]);
+                        });
+
+                        const obs = hasValue(d.observacoes) ? String(d.observacoes) : (hasValue(d.observação) ? String(d.observação) : null);
                         const statusVenda = hasValue(d.status_venda) ? String(d.status_venda) : null;
+                        const hasConsultas = d.consultas && typeof d.consultas === 'object' && Object.keys(d.consultas).length > 0;
+                        const hasAgendamentos = d.agendamentos && typeof d.agendamentos === 'object' && Object.keys(d.agendamentos).length > 0;
 
-                        if (visibleFields.length === 0 && !obs && !statusVenda) return null;
+                        if (visibleKeys.length === 0 && !obs && !statusVenda && !hasConsultas) return null;
 
                         return (
                           <div className="bg-zinc-50 dark:bg-zinc-900/40 rounded-2xl p-4 border border-zinc-100 dark:border-zinc-800/30 mb-4 space-y-3 shadow-inner dark:shadow-none">
-                            {visibleFields.length > 0 && (
+                            {hasConsultas && (
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-[10px] px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg font-black uppercase tracking-widest border border-emerald-500/20 shadow-sm">
+                                  Já fez consultas conosco
+                                </span>
+                              </div>
+                            )}
+
+                            {visibleKeys.length > 0 && (
                               <div className="grid grid-cols-2 gap-3">
-                                {visibleFields.map(f => (
-                                  <div key={f.key} className="flex items-center gap-2 overflow-hidden">
-                                    <f.icon size={12} className={`${f.color} shrink-0`} />
-                                    <div className="flex flex-col">
-                                      <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter opacity-70">{f.label}</span>
-                                      <span className="text-[10px] text-zinc-800 dark:text-zinc-300 font-bold truncate leading-tight">
-                                        {String(d[f.key])}
-                                      </span>
+                                {visibleKeys.map(key => {
+                                  const config = getIcon(key);
+                                  const value = d[key];
+                                  const displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+
+                                  return (
+                                    <div key={key} className="flex items-center gap-2 overflow-hidden">
+                                      <config.icon size={12} className={`${config.color} shrink-0`} />
+                                      <div className="flex flex-col">
+                                        <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter opacity-70">{formatLabel(key)}</span>
+                                        <span className="text-[10px] text-zinc-800 dark:text-zinc-300 font-bold truncate leading-tight">
+                                          {displayValue}
+                                        </span>
+                                      </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             )}
 
