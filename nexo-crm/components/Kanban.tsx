@@ -364,7 +364,7 @@ const Kanban: React.FC<KanbanProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col p-8 overflow-hidden relative">
+    <div className="h-full flex flex-col p-8 overflow-y-auto relative custom-scrollbar">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Kanban de Leads</h1>
@@ -394,13 +394,13 @@ const Kanban: React.FC<KanbanProps> = ({
       {/* Kanban Board */}
       <div
         ref={boardRef}
-        className="flex-1 flex gap-6 overflow-x-auto pb-4 scroll-smooth"
+        className="flex-1 flex gap-6 overflow-x-auto pb-4 scroll-smooth min-h-0"
         onDragOver={onDragOver}
       >
         {columns.map((col, colIndex) => (
           <div
             key={col.id}
-            className={`flex-shrink-0 w-80 flex flex-col group transition-all duration-300
+            className={`flex-shrink-0 w-80 flex flex-col max-h-full group transition-all duration-300
               ${draggingColumnId === col.id ? 'opacity-40 scale-95' : ''}`}
             onDragOver={onDragOver}
             onDrop={(e) => {
@@ -435,7 +435,7 @@ const Kanban: React.FC<KanbanProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 space-y-6 kanban-column overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-4 kanban-column overflow-y-auto pr-2 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 320px)' }}>
               {filteredLeads.filter(lead => lead.status?.trim().toUpperCase() === col.name?.trim().toUpperCase()).map((lead) => {
                 const borderColor = BORDER_COLORS[parseInt(lead.id.slice(0, 8), 16) % BORDER_COLORS.length];
                 return (
