@@ -268,11 +268,36 @@ const AppContent: React.FC = () => {
     });
   }, [searchQuery, leads]);
 
-  // Dynamically compute effective columns (DB Columns + Virtual columns from leads)
-  const effectiveColumns = useMemo(() => {
-    const dbStatusNames = new Set(columns.map(c => c.name.trim().toUpperCase()));
+  // Default columns to show when there are no leads
+  const DEFAULT_COLUMNS = [
+    { id: 'default-1', name: 'NOVO', position: 0, is_default: true },
+    { id: 'default-2', name: 'EM ATENDIMENTO', position: 1, is_default: true },
+    { id: 'default-3', name: 'AGENDADO', position: 2, is_default: true },
+    { id: 'default-4', name: 'CONCLUIDO', position: 3, is_default: true },
+    { id: 'default-5', name: 'SEM INTERESSE', position: 4, is_default: true }
+  ];
 
-    // Find statuses in leads that don't have a matching DB column
+  // Dynamically compute effective columns based on leads
+  const effectiveColumns = useMemo(() => {
+    // If no leads, show default columns
+    if (leads.length === 0) {
+      return DEFAULT_COLUMNS;
+    }
+
+    // Get all unique statuses from leads
+    const leadStatuses = new Set(
+      leads
+        .map(l => l.status?.trim().toUpperCase())
+        .filter((s): s is string => !!s)
+    );
+
+    // Filter DB columns to only those with leads
+    const dbColumnsWithLeads = columns.filter(col =>
+      leadStatuses.has(col.name.trim().toUpperCase())
+    );
+
+    // Find orphaned statuses (statuses in leads that don't have a matching DB column)
+    const dbStatusNames = new Set(columns.map(c => c.name.trim().toUpperCase()));
     const orphanedStatuses = leads
       .map(l => l.status)
       .filter((status): status is string => !!status && !dbStatusNames.has(status.trim().toUpperCase()));
@@ -283,11 +308,18 @@ const AppContent: React.FC = () => {
     const virtualColumns = uniqueOrphans.map((status, index) => ({
       id: `virtual-${status}`,
       name: status,
-      position: columns.length + index,
+      position: dbColumnsWithLeads.length + index,
       is_virtual: true
     }));
 
-    return [...columns, ...virtualColumns].sort((a, b) => a.position - b.position);
+    const result = [...dbColumnsWithLeads, ...virtualColumns].sort((a, b) => a.position - b.position);
+
+    // If no columns have leads, show default columns
+    if (result.length === 0) {
+      return DEFAULT_COLUMNS;
+    }
+
+    return result;
   }, [columns, leads]);
 
   if (loading) {

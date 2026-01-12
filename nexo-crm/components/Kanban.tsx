@@ -300,21 +300,10 @@ const Kanban: React.FC<KanbanProps> = ({
   const confirmDeleteColumn = async () => {
     if (!deleteColumnModal.column) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setAlertModal({
-        isOpen: true,
-        title: 'Erro de Autenticação',
-        message: 'Você precisa estar logado para excluir colunas.'
-      });
-      return;
-    }
-
     const { error } = await supabase
       .from('kanban_columns')
       .delete()
-      .eq('id', deleteColumnModal.column.id)
-      .eq('user_id', user.id);
+      .eq('id', deleteColumnModal.column.id);
 
     if (error) {
       console.error('Error deleting column:', error);
