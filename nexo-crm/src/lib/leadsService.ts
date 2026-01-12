@@ -148,5 +148,45 @@ export const leadsService = {
         }
 
         return data;
+    },
+
+    /**
+     * Cria múltiplos leads em lote (bulk insert).
+     * @param leads - Lista de leads a serem criados (sem id e user_id).
+     * @returns Objeto com leads criados e contagem de erros.
+     */
+    async createLeadsBatch(leads: Omit<Lead, 'id' | 'user_id'>[]): Promise<{ created: Lead[]; errorCount: number }> {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            console.error('No authenticated user');
+            return { created: [], errorCount: leads.length };
+        }
+
+        if (!leads || leads.length === 0) {
+            return { created: [], errorCount: 0 };
+        }
+
+        // Preparar leads com user_id (o telefone já deve vir formatado do parser)
+        const leadsToInsert = leads.map(lead => ({
+            ...lead,
+            user_id: user.id
+        }));
+
+        console.log('[createLeadsBatch] Inserindo', leadsToInsert.length, 'leads...');
+        console.log('[createLeadsBatch] Primeiro lead:', JSON.stringify(leadsToInsert[0], null, 2));
+
+        const { data, error } = await supabase
+            .from('leads')
+            .insert(leadsToInsert)
+            .select();
+
+        if (error) {
+            console.error('[createLeadsBatch] ERRO:', error.message, error.details, error.hint);
+            return { created: [], errorCount: leads.length };
+        }
+
+        console.log('[createLeadsBatch] Sucesso! Criados:', data?.length || 0, 'leads');
+        return { created: data as Lead[], errorCount: 0 };
     }
 };

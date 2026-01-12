@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Search, Filter, MoreHorizontal, Download, UserPlus, Phone, Mail, Users } from 'lucide-react';
+import { Search, Filter, MoreHorizontal, Download, UserPlus, Phone, Mail, Users, Database } from 'lucide-react';
 import { STATUS_LABELS } from '../constants';
 import { Lead, getLeadDisplayName } from '../types';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
 import LetterAvatar from './LetterAvatar';
+import ImportContactsModal from './ImportContactsModal';
 
 interface LeadsListProps {
   searchQuery: string;
@@ -12,10 +13,60 @@ interface LeadsListProps {
   filteredLeads: Lead[];
   onViewDetails: (lead: Lead) => void;
   onViewChat: (lead: Lead) => void;
+  onLeadsUpdate?: (leads: Lead[]) => void;
 }
 
-const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filteredLeads, onViewDetails, onViewChat }) => {
+const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filteredLeads, onViewDetails, onViewChat, onLeadsUpdate }) => {
   const [showLocalSearch, setShowLocalSearch] = React.useState(false);
+  const [showImportModal, setShowImportModal] = React.useState(false);
+
+  const handleImportComplete = (newLeads: Lead[]) => {
+    if (onLeadsUpdate) {
+      onLeadsUpdate([...newLeads, ...filteredLeads]);
+    }
+  };
+
+  const handleExportCSV = React.useCallback(() => {
+    if (filteredLeads.length === 0) {
+      alert('Não há contatos para exportar.');
+      return;
+    }
+
+    // Cabeçalho do CSV
+    const headers = ['Nome', 'Telefone'];
+
+    // Dados formatados
+    const rows = filteredLeads.map(lead => {
+      const name = getLeadDisplayName(lead);
+      const phone = formatPhoneNumber(lead.phone) || '';
+
+      // Escapar aspas duplas e envolver em aspas se contiver vírgula
+      const formatCell = (value: string) => {
+        if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      };
+
+      return [name, phone].map(formatCell).join(',');
+    });
+
+    // Montar CSV com BOM para suporte a caracteres especiais no Excel
+    const BOM = '\uFEFF';
+    const csvContent = BOM + [headers.join(','), ...rows].join('\n');
+
+    // Criar blob e download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `contatos_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [filteredLeads]);
+
   return (
     <div className="p-8 h-full flex flex-col space-y-8 overflow-y-auto custom-scrollbar">
       <header className="flex justify-between items-center shrink-0">
@@ -24,7 +75,17 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
           <p className="text-zinc-500 text-sm">Gerencie todos os seus leads e clientes em um ambiente seguro.</p>
         </div>
         <div className="flex gap-4">
-          <button className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 rounded-xl text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 rounded-xl text-xs font-bold text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
+          >
+            <Database size={14} />
+            Importar Contatos
+          </button>
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 rounded-xl text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+          >
             <Download size={14} />
             Exportar CSV
           </button>
@@ -34,6 +95,12 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
           </button>
         </div>
       </header>
+
+      <ImportContactsModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportComplete={handleImportComplete}
+      />
 
       <div className="bg-[#0c0c0e] border border-zinc-800/40 rounded-[2.5rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] overflow-hidden flex flex-col flex-1 min-h-0">
         <div className="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between gap-4 shrink-0 bg-zinc-900/10">
