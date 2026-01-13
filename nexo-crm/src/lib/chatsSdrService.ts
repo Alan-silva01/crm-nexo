@@ -125,6 +125,7 @@ export const chatsSdrService = {
                     body: JSON.stringify({
                         targetUrl: userWebhookUrl,
                         data: {
+                            evento: 'mensagem',
                             phone: finalSessionId,
                             message: content,
                             agent_name: agentName
@@ -172,12 +173,28 @@ export const chatsSdrService = {
     async toggleAI(phone: string, action: 'pausar' | 'ativar'): Promise<void> {
         if (!phone) return;
 
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.error('No authenticated user');
+            return;
+        }
+
+        // Buscar tabela de chats E webhook do usuário
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('chat_table_name, webhook_url')
+            .eq('id', user.id)
+            .single();
+
+        const userWebhookUrl = profile?.webhook_url;
+        const chatTableName = profile?.chat_table_name || 'chats_sdr';
+
         const cleanPhone = extractNumbers(phone);
         let sessionId = phone;
 
         // Buscar session_id correto no banco usando número limpo
         const { data: existingChats } = await supabase
-            .from('chats_sdr')
+            .from(chatTableName)
             .select('session_id')
             .or(`session_id.eq.${phone},session_id.ilike.%${cleanPhone}%`)
             .limit(1);
@@ -189,8 +206,8 @@ export const chatsSdrService = {
         }
 
         // Preparar dados
-        const actionText = action === 'pausar' ? 'Pausar IA' : 'Ativar IA';
         const isPaused = action === 'pausar';
+        const evento = action === 'pausar' ? 'pausar_ia' : 'ativar_ia';
 
         // Atualizar no banco de dados (tabela leads) para persistência real
         try {
@@ -208,29 +225,34 @@ export const chatsSdrService = {
             console.error('Failed to update leads table:', e);
         }
 
-        // Webhook Proxy URL
-        const proxyUrl = 'https://jreklrhamersmamdmjna.supabase.co/functions/v1/crm_api/proxy-webhook';
+        // Enviar para o Webhook do usuário (se configurado)
+        if (userWebhookUrl) {
+            const proxyUrl = 'https://jreklrhamersmamdmjna.supabase.co/functions/v1/crm_api/proxy-webhook';
 
-        try {
-            console.log('Sending to Webhook (Toggle AI) via Proxy for:', sessionId);
+            try {
+                console.log(`Sending ${evento} to User Webhook via Proxy for:`, sessionId, 'URL:', userWebhookUrl);
 
-            const response = await fetch(proxyUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    targetUrl: 'https://autonomia-n8n-webhook.w8liji.easypanel.host/webhook/pausa-ia',
-                    data: {
-                        phone: sessionId,
-                        action: actionText
-                    }
-                })
-            });
-            const result = await response.json();
-            console.log('Webhook proxy response (Toggle):', result);
-        } catch (error) {
-            console.error(`Error toggling AI (${action}) via proxy:`, error);
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        targetUrl: userWebhookUrl,
+                        data: {
+                            evento: evento,
+                            phone: sessionId,
+                            action: action === 'pausar' ? 'Pausar IA' : 'Ativar IA'
+                        }
+                    })
+                });
+                const result = await response.json();
+                console.log('Webhook proxy response (Toggle AI):', result);
+            } catch (error) {
+                console.error(`Error toggling AI (${action}) via proxy:`, error);
+            }
+        } else {
+            console.log('No webhook configured for this user, skipping AI toggle notification');
         }
     },
 
