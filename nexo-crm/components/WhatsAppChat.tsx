@@ -132,6 +132,20 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
       const cacheKey = phoneNumbers || selectedChat.phone;
 
+      // 0. Buscar nome da tabela de chats do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      let chatTableName = 'chats_sdr'; // fallback
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('chat_table_name')
+          .eq('id', user.id)
+          .single();
+        if (profile?.chat_table_name) {
+          chatTableName = profile.chat_table_name;
+        }
+      }
+
       // 1. Usar Cache imediatamente se existir
       if (messagesCache[cacheKey]) {
         const cached = messagesCache[cacheKey];
@@ -174,16 +188,17 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         setLoadingMessages(false);
       }
 
-      // 4. Configurar Realtime para a tabela (filtramos localmente para ser mais robusto)
-      // Precisamos identificar o session_id correto usado no banco
+      // 4. Configurar Realtime para a tabela DINÂMICA do usuário
       const finalSessionIdForRealtime = messages.length > 0 ? messages[0].session_id : selectedChat.phone;
+
+      console.log(`[Realtime] Subscribing to table: ${chatTableName}`);
 
       subscription = supabase
         .channel(`chat_realtime_${cacheKey}`)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
-          table: 'chats_sdr'
+          table: chatTableName  // Usar tabela dinâmica!
         }, (payload) => {
           const newMsg = payload.new as any;
 
@@ -191,7 +206,6 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
           console.log('Realtime message received:', newMsg);
 
           // Verificar se a mensagem pertence a este chat
-          // Buscamos o session_id correto nos dados carregados ou no cache
           const isRelevant = newMsg.session_id === finalSessionIdForRealtime ||
             newMsg.session_id.includes(phoneNumbers);
 
@@ -224,7 +238,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
           }
         })
         .subscribe((status) => {
-          console.log(`Realtime subscription status for ${cacheKey}:`, status);
+          console.log(`Realtime subscription status for ${chatTableName}/${cacheKey}:`, status);
         });
     };
 
