@@ -87,14 +87,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     const isAtendente = currSession.user.user_metadata?.is_atendente;
 
                     if (isAtendente && metaAdminId) {
-                        console.log('AuthProvider: Using admin_id from metadata:', metaAdminId);
+                        console.log('AuthProvider: User is an atendente based on metadata. Admin ID:', metaAdminId);
                         setUserType('atendente');
                         setEffectiveUserId(metaAdminId);
+                        // Se já temos o ID do metadado, já podemos liberar o Loading!
+                        // Deixa o fetchUserType rodar no background para atualizar o cache e o atendenteInfo.
+                        console.log('AuthProvider: Setting loading(false) early due to atendente metadata.');
+                        setLoading(false);
+                    } else {
+                        console.log('AuthProvider: No atendente metadata found or incomplete.');
                     }
 
-                    // Tentar determinar o tipo de usuário
+                    // Tentar determinar o tipo de usuário (pode rodar em paralelo se já liberamos loading)
                     await fetchUserType(currSession.user.id, currSession.user.user_metadata);
                 } else {
+                    console.log('AuthProvider: No active session found.');
                     setSession(null);
                     setUser(null);
                     setUserType(null);
