@@ -43,7 +43,20 @@ const AppContent: React.FC = () => {
   const [notifications, setNotifications] = useState<LeadColumnHistory[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [profile, setProfile] = useState<any>(null);
+
+  // Restaurar profile do cache para evitar delay no nome da empresa
+  const [profile, setProfile] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('nexo_profile_cache');
+      if (cached) {
+        const data = JSON.parse(cached);
+        console.log('App: Restored profile from cache:', data.company_name);
+        return data;
+      }
+    } catch (e) { }
+    return null;
+  });
+
   const [externalSelectedLead, setExternalSelectedLead] = useState<Lead | null>(null);
 
   // Fetch columns and leads on session change
@@ -163,6 +176,11 @@ const AppContent: React.FC = () => {
               ...profileData,
               logged_user_name: loggedName
             });
+            // Salvar no cache para evitar delay na próxima vez
+            localStorage.setItem('nexo_profile_cache', JSON.stringify({
+              ...profileData,
+              logged_user_name: loggedName
+            }));
             console.log(`[${rid}] App: Profile loaded: ${profileData.company_name}`);
           } else if (profileError) {
             console.error(`[${rid}] App: Error fetching profile:`, profileError);
