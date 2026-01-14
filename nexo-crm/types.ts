@@ -25,6 +25,7 @@ export interface Lead {
   servico_interesse?: string | null;
   dados?: Record<string, unknown> | null;
   ai_paused?: boolean | null;
+  assigned_to?: string | null;
   // UI-only fields (not in database)
   lastMessage?: string;
   lastActive?: string;

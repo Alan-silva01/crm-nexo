@@ -109,6 +109,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const [atendentes, setAtendentes] = useState<Atendente[]>([]);
   const [showAssignDropdown, setShowAssignDropdown] = useState(false);
   const [currentAssignment, setCurrentAssignment] = useState<Atendente | null>(null);
+  const [assignmentsMap, setAssignmentsMap] = useState<Record<string, Atendente | null>>({});
 
   const setSelectedChatId = onSelectChat;
   const selectedChat = leads.find(l => l.id === selectedChatId) || leads[0];
@@ -119,6 +120,24 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       atendentesService.listAtendentes().then(setAtendentes);
     }
   }, [userType]);
+
+  // Carregar todas as atribuições dos leads
+  useEffect(() => {
+    const loadAllAssignments = async () => {
+      const map: Record<string, Atendente | null> = {};
+      for (const lead of leads) {
+        if (lead.assigned_to) {
+          const atendente = atendentes.find(a => a.id === lead.assigned_to) || null;
+          map[lead.id] = atendente;
+        }
+      }
+      setAssignmentsMap(map);
+    };
+
+    if (atendentes.length > 0) {
+      loadAllAssignments();
+    }
+  }, [leads, atendentes]);
 
   // Carregar atribuição atual do lead selecionado
   useEffect(() => {
@@ -605,6 +624,15 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                     </span>
                   )}
                 </div>
+                {/* Atendente atribuído */}
+                {assignmentsMap[chat.id] && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <UserPlus size={10} className="text-indigo-400" />
+                    <span className="text-[9px] text-indigo-400 font-medium">
+                      Atribuído a {assignmentsMap[chat.id]?.nome.split(' ')[0]}
+                    </span>
+                  </div>
+                )}
               </div>
             </button>
           ))}
