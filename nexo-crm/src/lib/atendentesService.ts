@@ -31,58 +31,64 @@ export const atendentesService = {
                 return null;
             }
 
-            const targetUserId = userId;
-            const isAtendenteMetadata = userMetadata?.is_atendente === true;
+            // Se tem metadata de atendente com admin_id, usa direto - sem query!
+            if (userMetadata?.is_atendente === true && userMetadata?.admin_id) {
+                console.log(`[${requestId}] Using metadata directly - atendente with admin_id:`, userMetadata.admin_id);
+                return {
+                    type: 'atendente' as const,
+                    effectiveUserId: userMetadata.admin_id as string,
+                    atendenteInfo: null // Pode ser preenchido depois se necessário
+                };
+            }
 
-            // Busca na tabela atendentes com tentativa de retry
+            // Query única, sem retry, com timeout de 3 segundos
+            console.log(`[${requestId}] DB Query: Checking atendentes table for ${userId}...`);
+
+            const queryPromise = supabase
+                .from('atendentes')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('ativo', true)
+                .maybeSingle();
+
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Query timeout')), 3000)
+            );
+
             let atendente = null;
-            let error = null;
-            const maxRetries = isAtendenteMetadata ? 5 : 2;
-
-            for (let i = 0; i < maxRetries; i++) {
-                console.log(`[${requestId}] DB Query: Fetching atendente for ${targetUserId} (Attempt ${i + 1})...`);
-                const { data, error: qError } = await supabase
-                    .from('atendentes')
-                    .select('*')
-                    .eq('user_id', targetUserId)
-                    .eq('ativo', true)
-                    .maybeSingle();
-
-                console.log(`[${requestId}] DB Query result:`, { hasData: !!data, hasError: !!qError });
-                atendente = data;
-                error = qError;
-
-                if (!error && (atendente || !isAtendenteMetadata)) {
-                    console.log(`[${requestId}] Found atendente in DB:`, !!atendente);
-                    break;
+            try {
+                const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+                if (!error && data) {
+                    atendente = data;
                 }
-
-                console.warn(`[${requestId}] getUserTypeInfo retry ${i + 1}/${maxRetries} (Error: ${error?.message}, Data: ${!!atendente})`);
-                await new Promise(r => setTimeout(r, 500 * (i + 1)));
+                console.log(`[${requestId}] DB Query result:`, { found: !!atendente, error: error?.message });
+            } catch (e: any) {
+                console.warn(`[${requestId}] Query failed or timed out:`, e.message);
+                // Continua mesmo se a query falhar - vai retornar admin
             }
 
             if (atendente) {
                 console.log(`[${requestId}] Returning type: atendente, effectiveId:`, atendente.admin_id);
                 return {
-                    type: 'atendente',
-                    effectiveUserId: atendente.admin_id,
+                    type: 'atendente' as const,
+                    effectiveUserId: atendente.admin_id as string,
                     atendenteInfo: atendente as Atendente
                 };
             }
 
-            if (isAtendenteMetadata) {
-                console.error(`[${requestId}] Fatal: User metadata says is_atendente but DB has no active record.`);
-                throw new Error('Atendente record not found for metadata-marked atendente.');
-            }
-
-            console.log(`[${requestId}] Returning type: admin, effectiveId:`, targetUserId);
+            // Não é atendente ativo = é admin
+            console.log(`[${requestId}] Returning type: admin, effectiveId:`, userId);
             return {
-                type: 'admin',
-                effectiveUserId: targetUserId
+                type: 'admin' as const,
+                effectiveUserId: userId
             };
         } catch (e) {
-            console.error(`[${requestId}] Critical failure in getUserTypeInfo:`, e);
-            throw e;
+            console.error(`[${requestId}] Error in getUserTypeInfo, defaulting to admin:`, e);
+            // NUNCA lança erro - retorna admin como fallback
+            return {
+                type: 'admin' as const,
+                effectiveUserId: userId || ''
+            };
         }
     },
 
