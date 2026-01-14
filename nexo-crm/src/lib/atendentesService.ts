@@ -22,30 +22,41 @@ export const atendentesService = {
      * Retorna o effectiveUserId (sempre o admin_id para filtrar dados)
      */
     async getUserTypeInfo(): Promise<UserTypeInfo | null> {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return null;
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return null;
 
-        // Verifica se é atendente
-        const { data: atendente } = await supabase
-            .from('atendentes')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('ativo', true)
-            .single();
+            // Tenta verificar se é atendente (pode falhar se tabela não existir)
+            try {
+                const { data: atendente, error } = await supabase
+                    .from('atendentes')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('ativo', true)
+                    .single();
 
-        if (atendente) {
+                // Se encontrou e não deu erro, é atendente
+                if (atendente && !error) {
+                    return {
+                        type: 'atendente',
+                        effectiveUserId: atendente.admin_id,
+                        atendenteInfo: atendente as Atendente
+                    };
+                }
+            } catch (e) {
+                // Tabela não existe ou erro de RLS - ignora e trata como admin
+                console.log('Atendentes table check skipped:', e);
+            }
+
+            // Se não é atendente (ou tabela não existe), é admin
             return {
-                type: 'atendente',
-                effectiveUserId: atendente.admin_id,
-                atendenteInfo: atendente as Atendente
+                type: 'admin',
+                effectiveUserId: user.id
             };
+        } catch (e) {
+            console.error('Error in getUserTypeInfo:', e);
+            return null;
         }
-
-        // Se não é atendente, é admin
-        return {
-            type: 'admin',
-            effectiveUserId: user.id
-        };
     },
 
     /**

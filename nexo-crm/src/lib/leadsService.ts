@@ -4,19 +4,30 @@ import { atendentesService } from './atendentesService';
 
 export const leadsService = {
     async fetchLeads(): Promise<Lead[]> {
-        // Detectar tipo de usuário (admin ou atendente)
-        const userTypeInfo = await atendentesService.getUserTypeInfo();
-
-        if (!userTypeInfo) {
+        // Pegar usuário atual primeiro
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
             console.error('No authenticated user');
             return [];
         }
 
-        // Usar effectiveUserId (sempre o admin_id) para filtrar leads
+        // Tentar detectar tipo de usuário (com fallback seguro)
+        let effectiveUserId = user.id; // Fallback: usar ID do próprio usuário
+
+        try {
+            const userTypeInfo = await atendentesService.getUserTypeInfo();
+            if (userTypeInfo) {
+                effectiveUserId = userTypeInfo.effectiveUserId;
+            }
+        } catch (e) {
+            console.log('getUserTypeInfo failed, using user.id as fallback');
+        }
+
+        // Usar effectiveUserId para filtrar leads
         const { data, error } = await supabase
             .from('leads')
             .select('*')
-            .eq('user_id', userTypeInfo.effectiveUserId)
+            .eq('user_id', effectiveUserId)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -42,16 +53,24 @@ export const leadsService = {
     },
 
     async createLead(lead: Omit<Lead, 'id' | 'user_id'>): Promise<Lead | null> {
-        // Detectar tipo de usuário (admin ou atendente)
-        const userTypeInfo = await atendentesService.getUserTypeInfo();
-
-        if (!userTypeInfo) {
+        // Pegar usuário atual primeiro
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
             console.error('No authenticated user');
             return null;
         }
 
-        // Usar effectiveUserId (sempre o admin_id) para criar leads
-        const effectiveUserId = userTypeInfo.effectiveUserId;
+        // Tentar detectar tipo de usuário (com fallback seguro)
+        let effectiveUserId = user.id;
+
+        try {
+            const userTypeInfo = await atendentesService.getUserTypeInfo();
+            if (userTypeInfo) {
+                effectiveUserId = userTypeInfo.effectiveUserId;
+            }
+        } catch (e) {
+            console.log('getUserTypeInfo failed, using user.id as fallback');
+        }
 
         // Formatar telefone para o padrão WhatsApp: 55 + últimos 10 dígitos + @s.whatsapp.net
         let formattedPhone = lead.phone;
