@@ -1,19 +1,22 @@
 import { supabase } from './supabase';
 import { Lead } from '../../types';
+import { atendentesService } from './atendentesService';
 
 export const leadsService = {
     async fetchLeads(): Promise<Lead[]> {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Detectar tipo de usuário (admin ou atendente)
+        const userTypeInfo = await atendentesService.getUserTypeInfo();
 
-        if (!user) {
+        if (!userTypeInfo) {
             console.error('No authenticated user');
             return [];
         }
 
+        // Usar effectiveUserId (sempre o admin_id) para filtrar leads
         const { data, error } = await supabase
             .from('leads')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('user_id', userTypeInfo.effectiveUserId)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -39,12 +42,16 @@ export const leadsService = {
     },
 
     async createLead(lead: Omit<Lead, 'id' | 'user_id'>): Promise<Lead | null> {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Detectar tipo de usuário (admin ou atendente)
+        const userTypeInfo = await atendentesService.getUserTypeInfo();
 
-        if (!user) {
+        if (!userTypeInfo) {
             console.error('No authenticated user');
             return null;
         }
+
+        // Usar effectiveUserId (sempre o admin_id) para criar leads
+        const effectiveUserId = userTypeInfo.effectiveUserId;
 
         // Formatar telefone para o padrão WhatsApp: 55 + últimos 10 dígitos + @s.whatsapp.net
         let formattedPhone = lead.phone;
@@ -63,7 +70,7 @@ export const leadsService = {
 
         const { data, error } = await supabase
             .from('leads')
-            .insert([{ ...lead, phone: formattedPhone, user_id: user.id }])
+            .insert([{ ...lead, phone: formattedPhone, user_id: effectiveUserId }])
             .select()
             .single();
 
