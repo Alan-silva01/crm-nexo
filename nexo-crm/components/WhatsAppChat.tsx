@@ -115,10 +115,22 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const setSelectedChatId = onSelectChat;
   const selectedChat = leads.find(l => l.id === selectedChatId) || leads[0];
 
-  // Carregar lista de atendentes (para admin e atendentes verem as atribuições)
+  // Carregar lista de atendentes (com cache para evitar delay)
   useEffect(() => {
     if (effectiveUserId) {
-      atendentesService.listAtendentes(effectiveUserId).then(setAtendentes);
+      // Restaurar do cache primeiro
+      const cached = localStorage.getItem(`nexo_atendentes_${effectiveUserId}`);
+      if (cached) {
+        try {
+          setAtendentes(JSON.parse(cached));
+        } catch (e) { }
+      }
+
+      // Buscar do banco e atualizar cache
+      atendentesService.listAtendentes(effectiveUserId).then(data => {
+        setAtendentes(data);
+        localStorage.setItem(`nexo_atendentes_${effectiveUserId}`, JSON.stringify(data));
+      });
     }
   }, [effectiveUserId]);
 
