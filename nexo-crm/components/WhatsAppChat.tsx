@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Phone, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare, Bot, User, Pause, Play } from 'lucide-react';
+import { Search, Phone, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare, Bot, User, Pause, Play, UserPlus, ChevronDown, Users } from 'lucide-react';
 import { Lead, SDRMessage, getLeadDisplayName } from '../types';
 import LetterAvatar from './LetterAvatar';
 import { chatsSdrService } from '../src/lib/chatsSdrService';
 import { supabase } from '../src/lib/supabase';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
+import { useAuth } from '../src/lib/AuthProvider';
+import { atendentesService, Atendente } from '../src/lib/atendentesService';
 
 interface WhatsAppChatProps {
   leads: Lead[];
@@ -102,8 +104,30 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const isFirstLoad = useRef(true);
   const MESSAGE_PAGE_SIZE = 50;
 
+  // Atendentes
+  const { userType, atendenteInfo } = useAuth();
+  const [atendentes, setAtendentes] = useState<Atendente[]>([]);
+  const [showAssignDropdown, setShowAssignDropdown] = useState(false);
+  const [currentAssignment, setCurrentAssignment] = useState<Atendente | null>(null);
+
   const setSelectedChatId = onSelectChat;
   const selectedChat = leads.find(l => l.id === selectedChatId) || leads[0];
+
+  // Carregar lista de atendentes (apenas para admin)
+  useEffect(() => {
+    if (userType === 'admin') {
+      atendentesService.listAtendentes().then(setAtendentes);
+    }
+  }, [userType]);
+
+  // Carregar atribuição atual do lead selecionado
+  useEffect(() => {
+    if (selectedChat?.id) {
+      atendentesService.getLeadAssignment(selectedChat.id).then(setCurrentAssignment);
+    } else {
+      setCurrentAssignment(null);
+    }
+  }, [selectedChat?.id]);
 
   // Get current user name
   useEffect(() => {
@@ -279,8 +303,20 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const handleSendMessage = async () => {
     if (!inputText.trim() || !selectedChat?.phone) return;
 
+    // Verificar se pode enviar
+    if (!canSendMessage) {
+      alert('Esta conversa está atribuída a outro atendente.');
+      return;
+    }
+
     const messageContent = inputText;
     setInputText('');
+
+    // Auto-atribuir se for atendente e não tiver atribuição
+    if (userType === 'atendente' && atendenteInfo && !currentAssignment) {
+      await atendentesService.assignLeadToAtendente(selectedChat.id, atendenteInfo.id);
+      setCurrentAssignment(atendenteInfo);
+    }
 
     // Optimistic Update
     const tempId = -Date.now();
@@ -392,6 +428,26 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
     await chatsSdrService.toggleAI(selectedChat.phone, newStatus ? 'pausar' : 'ativar');
   };
+
+  const handleAssignLead = async (atendenteId: string | null) => {
+    if (!selectedChat?.id) return;
+
+    await atendentesService.assignLeadToAtendente(selectedChat.id, atendenteId);
+
+    if (atendenteId) {
+      const assigned = atendentes.find(a => a.id === atendenteId);
+      setCurrentAssignment(assigned || null);
+    } else {
+      setCurrentAssignment(null);
+    }
+
+    setShowAssignDropdown(false);
+  };
+
+  // Verificar se atendente pode responder
+  const canSendMessage = userType === 'admin' ||
+    (atendenteInfo && currentAssignment?.id === atendenteInfo.id) ||
+    !currentAssignment; // Pode responder se não tiver atribuído (auto-atribui)
 
   // Render message bubble
   const renderMessage = (msg: SDRMessage) => {
@@ -569,7 +625,59 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                 <p className="text-[11px] text-zinc-400">{formatPhoneNumber(selectedChat.phone) || 'online'}</p>
               </div>
             </div>
-            <div className="flex items-center gap-5 text-zinc-400 px-2">
+            <div className="flex items-center gap-3 text-zinc-400 px-2">
+              {/* Botão de Atribuição (só para admin) */}
+              {userType === 'admin' && atendentes.length > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowAssignDropdown(!showAssignDropdown)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border
+                      ${currentAssignment
+                        ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20'
+                        : 'bg-zinc-800/50 text-zinc-400 border-zinc-700/50 hover:bg-zinc-700/50'}`}
+                  >
+                    <UserPlus size={14} />
+                    <span>{currentAssignment ? currentAssignment.nome.split(' ')[0] : 'Atribuir'}</span>
+                    <ChevronDown size={12} />
+                  </button>
+
+                  {showAssignDropdown && (
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-[#1e2a30] border border-zinc-700/50 rounded-xl shadow-xl z-50 overflow-hidden">
+                      <div className="p-2 border-b border-zinc-700/30">
+                        <span className="text-[10px] text-zinc-500 uppercase font-bold">Atribuir a</span>
+                      </div>
+                      <button
+                        onClick={() => handleAssignLead(null)}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-700/30 transition-colors flex items-center gap-2
+                          ${!currentAssignment ? 'text-emerald-400' : 'text-zinc-300'}`}
+                      >
+                        <Users size={14} />
+                        <span>Ninguém (remover)</span>
+                      </button>
+                      {atendentes.filter(a => a.ativo).map(atendente => (
+                        <button
+                          key={atendente.id}
+                          onClick={() => handleAssignLead(atendente.id)}
+                          className={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-700/30 transition-colors flex items-center gap-2
+                            ${currentAssignment?.id === atendente.id ? 'text-emerald-400' : 'text-zinc-300'}`}
+                        >
+                          <div className={`w-2 h-2 rounded-full ${getAgentColor(atendente.nome)}`} />
+                          <span>{atendente.nome}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Badge de atribuição para atendentes */}
+              {userType === 'atendente' && currentAssignment && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 text-indigo-400 rounded-full text-xs font-semibold border border-indigo-500/20">
+                  <UserPlus size={12} />
+                  <span>{currentAssignment.nome.split(' ')[0]}</span>
+                </div>
+              )}
+
               <button
                 onClick={handleToggleAI}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${aiPaused
@@ -643,27 +751,35 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
           </div>
 
           <footer className="p-3 bg-[#1e2a30] border-t border-zinc-800/10 z-10">
-            <form
-              onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
-              className="max-w-4xl mx-auto flex items-center gap-3"
-            >
-              <button type="button" className="text-zinc-400 hover:text-zinc-200 transition-colors p-1.5"><Smile size={22} /></button>
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  placeholder={`Mensagem como ${currentUserName}`}
-                  className="w-full py-2 px-4 bg-[#2a3942] border-none rounded-xl text-sm text-zinc-100 focus:outline-none focus:ring-0"
-                />
+            {!canSendMessage ? (
+              <div className="max-w-4xl mx-auto text-center py-2">
+                <p className="text-amber-500/70 text-sm">
+                  Esta conversa está atribuída a <strong>{currentAssignment?.nome}</strong>. Você não pode responder.
+                </p>
               </div>
-              <button
-                type="submit"
-                className="w-10 h-10 bg-[#00a884] rounded-full flex items-center justify-center text-white hover:bg-[#008f72] shadow-md transition-all active:scale-90 flex-shrink-0"
+            ) : (
+              <form
+                onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+                className="max-w-4xl mx-auto flex items-center gap-3"
               >
-                <Send size={20} />
-              </button>
-            </form>
+                <button type="button" className="text-zinc-400 hover:text-zinc-200 transition-colors p-1.5"><Smile size={22} /></button>
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder={`Mensagem como ${currentUserName}`}
+                    className="w-full py-2 px-4 bg-[#2a3942] border-none rounded-xl text-sm text-zinc-100 focus:outline-none focus:ring-0"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-10 h-10 bg-[#00a884] rounded-full flex items-center justify-center text-white hover:bg-[#008f72] shadow-md transition-all active:scale-90 flex-shrink-0"
+                >
+                  <Send size={20} />
+                </button>
+              </form>
+            )}
           </footer>
         </div>
       ) : (
