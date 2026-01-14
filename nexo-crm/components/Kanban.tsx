@@ -514,8 +514,8 @@ const Kanban: React.FC<KanbanProps> = ({
                           // Preocupação/Segurança (corrigido: era Phone, agora é Shield)
                           if (k.includes('preocupacao') || k.includes('seguranca') || k.includes('roubo') || k.includes('protecao')) return { icon: Shield, color: 'text-rose-400' };
                           if (k.includes('ajuda') || k.includes('problema') || k.includes('desafio')) return { icon: AlertTriangle, color: 'text-amber-400' };
-                          // Documentos - CPF com ícone de olho (dado sensível)
-                          if (k.includes('cpf') || k.includes('cnpj') || k.includes('documento')) return { icon: Eye, color: 'text-zinc-400' };
+                          // Documentos - CPF mascarado, ícone de documento
+                          if (k.includes('cpf') || k.includes('cnpj') || k.includes('documento')) return { icon: FileText, color: 'text-zinc-400' };
                           if (k.includes('customer') || k.includes('cliente')) return { icon: Hash, color: 'text-zinc-500' };
                           // Jurídico
                           if (k.includes('processo') || k.includes('direito') || k.includes('justiça')) return { icon: Scale, color: 'text-indigo-400' };
