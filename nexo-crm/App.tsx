@@ -64,13 +64,8 @@ const AppContent: React.FC = () => {
             ]);
           }
 
-          // Fetch Leads with simple retry
-          let fetchedLeads: Lead[] = [];
-          for (let i = 0; i < 3; i++) {
-            fetchedLeads = await leadsService.fetchLeads(effectiveUserId);
-            if (fetchedLeads.length > 0) break;
-            if (i < 2) await new Promise(r => setTimeout(r, 1000));
-          }
+          // Fetch Leads
+          const fetchedLeads = await leadsService.fetchLeads(effectiveUserId);
           setLeads(fetchedLeads);
           console.log('App: Fetched leads count:', fetchedLeads.length);
 
@@ -92,7 +87,7 @@ const AppContent: React.FC = () => {
             .single();
 
           if (profileData && !profileError) {
-            let loggedName = user?.user_metadata?.full_name || user?.email?.split('@')[0];
+            let loggedName = user?.user_metadata?.full_name || (user?.email ? user.email.split('@')[0] : 'Usuário');
 
             if (effectiveUserId !== user?.id) {
               const { data: atendente } = await supabase

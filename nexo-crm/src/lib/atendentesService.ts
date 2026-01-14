@@ -55,6 +55,7 @@ export const atendentesService = {
             const maxRetries = isAtendenteMetadata ? 5 : 2;
 
             for (let i = 0; i < maxRetries; i++) {
+                console.log(`[${requestId}] DB Query: Fetching atendente for ${targetUserId} (Attempt ${i + 1})...`);
                 const { data, error: qError } = await supabase
                     .from('atendentes')
                     .select('*')
@@ -62,6 +63,7 @@ export const atendentesService = {
                     .eq('ativo', true)
                     .maybeSingle();
 
+                console.log(`[${requestId}] DB Query result:`, { hasData: !!data, hasError: !!qError });
                 atendente = data;
                 error = qError;
 

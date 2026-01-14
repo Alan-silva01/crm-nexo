@@ -64,43 +64,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         let initialized = false;
 
         const initializeAuth = async (currSession: Session | null) => {
-            if (initialized && currSession?.user?.id === user?.id) return;
+            if (initialized && currSession?.user?.id === user?.id) {
+                if (currSession?.user && loading) setLoading(false);
+                return;
+            }
             initialized = true;
 
             try {
+                // Failsafe: se demorar mais de 10s pra inicializar, libera o app anyway
+                const timer = setTimeout(() => {
+                    if (isMounted && loading) {
+                        console.warn('AuthProvider: Initialization took too long, forcing loading(false)');
+                        setLoading(false);
+                    }
+                }, 10000);
+
                 if (currSession?.user) {
                     setSession(currSession);
                     setUser(currSession.user);
 
-                    // Se temos admin_id no metadata (novos atendentes), podemos usar direto!
                     const metaAdminId = currSession.user.user_metadata?.admin_id;
                     const isAtendente = currSession.user.user_metadata?.is_atendente;
 
                     if (isAtendente && metaAdminId) {
-                        console.log('AuthProvider: Using admin_id from metadata');
+                        console.log('AuthProvider: Using admin_id from metadata:', metaAdminId);
                         setUserType('atendente');
                         setEffectiveUserId(metaAdminId);
                     }
 
-                    // Tentar determinar o tipo de usuário com algumas retentativas
-                    let info = null;
-                    for (let i = 0; i < 3; i++) {
-                        info = await fetchUserType(currSession.user.id);
-                        if (info) break;
-                        if (isAtendente && !metaAdminId) {
-                            console.warn(`AuthProvider: Retry ${i + 1} finding atendente record...`);
-                            await new Promise(r => setTimeout(r, 1000));
-                        } else {
-                            break;
-                        }
-                    }
-
-                    // Se falhou e é marcados como atendente, mas não temos ID, não libera o loading
-                    if (isAtendente && !effectiveUserId && !info) {
-                        console.error('AuthProvider: Failed to determine attendant admin_id.');
-                        // Poderíamos redirecionar ou mostrar erro, mas por enquanto vamos forçar loading false
-                        // para o App lidar com o estado vazio, mas avisando o dev.
-                    }
+                    // Tentar determinar o tipo de usuário
+                    await fetchUserType(currSession.user.id);
                 } else {
                     setSession(null);
                     setUser(null);
@@ -108,9 +101,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     setEffectiveUserId(null);
                     setAtendenteInfo(null);
                 }
+                clearTimeout(timer);
             } catch (e) {
-                console.error('Auth initialization error:', e);
+                console.error('AuthProvider initialization error:', e);
             } finally {
+                console.log('AuthProvider: initialization finished, setting loading false');
                 if (isMounted) setLoading(false);
             }
         };
