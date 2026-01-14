@@ -47,8 +47,9 @@ const AppContent: React.FC = () => {
       const fetchData = async () => {
         const rid = Math.random().toString(36).substring(7);
         console.log(`[${rid}] App fetchData starting for ${effectiveUserId}...`);
+
+        // Fetch columns
         try {
-          // Fetch columns
           console.log(`[${rid}] Fetching columns...`);
           const { data: cols, error: colsError } = await supabase
             .from('kanban_columns')
@@ -70,14 +71,24 @@ const AppContent: React.FC = () => {
               { id: '4', name: 'Venda Concluída', position: 3 }
             ]);
           }
+        } catch (e) {
+          console.error(`[${rid}] CRITICAL: Columns fetch crashed:`, e);
+        }
 
-          // Fetch Leads
+        // Fetch Leads
+        try {
           console.log(`[${rid}] Fetching leads...`);
           const fetchedLeads = await leadsService.fetchLeads(effectiveUserId);
+          console.log(`[${rid}] fetchLeads returned:`, fetchedLeads);
           setLeads(fetchedLeads);
           console.log(`[${rid}] App: Fetched leads count: ${fetchedLeads.length}`);
+        } catch (e) {
+          console.error(`[${rid}] CRITICAL: Leads fetch crashed:`, e);
+          setLeads([]);
+        }
 
-          // Fetch History
+        // Fetch History
+        try {
           console.log(`[${rid}] Fetching history...`);
           const history = await leadsService.fetchAllHistory(effectiveUserId);
           const grouped = history.reduce((acc: Record<string, LeadColumnHistory[]>, item) => {
@@ -88,8 +99,12 @@ const AppContent: React.FC = () => {
           setLeadsHistory(grouped);
           setNotifications(history.slice(0, 5));
           console.log(`[${rid}] Fetched ${history.length} history items.`);
+        } catch (e) {
+          console.error(`[${rid}] CRITICAL: History fetch crashed:`, e);
+        }
 
-          // Fetch Profile
+        // Fetch Profile
+        try {
           console.log(`[${rid}] Fetching profile...`);
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
@@ -118,10 +133,10 @@ const AppContent: React.FC = () => {
             console.error(`[${rid}] App: Error fetching profile:`, profileError);
           }
         } catch (e) {
-          console.error(`[${rid}] App: Error in fetchData loop:`, e);
-        } finally {
-          console.log(`[${rid}] App fetchData completed.`);
+          console.error(`[${rid}] CRITICAL: Profile fetch crashed:`, e);
         }
+
+        console.log(`[${rid}] App fetchData completed.`);
       };
 
       fetchData();
