@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
 
             // 2. Buscar do banco para garantir que está atualizado
+            // Se o cache já nos deu o que precisávamos, o banco é para sincronia
             const info = await atendentesService.getUserTypeInfo(userId);
             if (info) {
                 console.log('Fetched user type from DB:', info.type);
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
         } catch (e) {
             console.error('Error in fetchUserType:', e);
-            // Se falhou e já temos algo no cache ou estado, não sobescreve com 'admin'
+            // Se o metadado diz que é atendente mas falhou tudo, não deixa carregar como admin
             return null;
         }
         return null;
@@ -63,13 +64,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         let initialized = false;
 
         const initializeAuth = async (currSession: Session | null) => {
-            if (initialized) return;
+            if (initialized && currSession?.user?.id === user?.id) return;
             initialized = true;
 
             try {
                 if (currSession?.user) {
                     setSession(currSession);
                     setUser(currSession.user);
+
+                    // Se temos admin_id no metadata (novos atendentes), podemos usar direto!
+                    const metaAdminId = currSession.user.user_metadata?.admin_id;
+                    const isAtendente = currSession.user.user_metadata?.is_atendente;
+
+                    if (isAtendente && metaAdminId) {
+                        console.log('AuthProvider: Using admin_id from metadata');
+                        setUserType('atendente');
+                        setEffectiveUserId(metaAdminId);
+                    }
+
                     await fetchUserType(currSession.user.id);
                 } else {
                     setSession(null);
@@ -81,6 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } catch (e) {
                 console.error('Auth initialization error:', e);
             } finally {
+                // Só libera o loading se conseguimos determinar o ID ou se não há usuário
                 if (isMounted) setLoading(false);
             }
         };
@@ -88,21 +101,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Listen for changes
         const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
             if (!isMounted) return;
+            console.log('Auth Event:', event);
 
-            // Se for inicialização ou login, processa
-            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
                 await initializeAuth(newSession);
             } else if (event === 'SIGNED_OUT') {
+                initialized = false;
                 setSession(null);
                 setUser(null);
                 setUserType(null);
                 setEffectiveUserId(null);
                 setAtendenteInfo(null);
                 setLoading(false);
+                // Limpar todos os caches de tipo de usuário
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('auth_user_type_')) localStorage.removeItem(key);
+                });
             }
         });
 
-        // Fallback para getSession se o onAuthStateChange demorar ou não disparar INITIAL_SESSION
+        // Fallback imediato
         supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
             if (isMounted && !initialized) {
                 initializeAuth(initialSession);

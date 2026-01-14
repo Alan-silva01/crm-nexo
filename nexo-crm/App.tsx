@@ -19,7 +19,7 @@ import { leadsService } from './src/lib/leadsService';
 import { supabase } from './src/lib/supabase';
 
 const AppContent: React.FC = () => {
-  const { user, session, loading, signOut, effectiveUserId } = useAuth();
+  const { user, session, loading, signOut, effectiveUserId, userType } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +35,12 @@ const AppContent: React.FC = () => {
 
   // Fetch columns and leads on session change
   useEffect(() => {
+    console.log('App useEffect [session, effectiveUserId]:', {
+      hasSession: !!session,
+      effectiveUserId,
+      userType
+    });
+
     if (session && effectiveUserId) {
       console.log('App: Fetching data for effectiveUserId:', effectiveUserId);
 
@@ -152,7 +158,7 @@ const AppContent: React.FC = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [session?.user?.id]);
+  }, [session?.user?.id, effectiveUserId]);
 
   // Realtime subscription for kanban columns
   useEffect(() => {
@@ -187,7 +193,7 @@ const AppContent: React.FC = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [session?.user?.id]);
+  }, [session?.user?.id, effectiveUserId]);
 
   // Realtime subscription for history
   useEffect(() => {
@@ -251,7 +257,7 @@ const AppContent: React.FC = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [session?.user?.id]);
+  }, [session?.user?.id, effectiveUserId]);
 
   const filteredLeads = useMemo(() => {
     // Force leads to be an array and searchQuery to be a string

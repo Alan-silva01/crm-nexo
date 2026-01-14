@@ -24,19 +24,30 @@ export const atendentesService = {
     async getUserTypeInfo(userId?: string): Promise<UserTypeInfo | null> {
         try {
             let targetUserId = userId;
+            let metadata: any = null;
 
             if (!targetUserId) {
                 const { data: { session } } = await supabase.auth.getSession();
                 targetUserId = session?.user?.id;
+                metadata = session?.user?.user_metadata;
+            } else {
+                // Se o userId foi passado, tentar buscar metadata se for o logado
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user?.id === targetUserId) {
+                    metadata = session.user.user_metadata;
+                }
             }
 
             if (!targetUserId) return null;
 
-            // Busca na tabela atendentes com tentativa de retry simples
+            const isAtendenteMetadata = metadata?.is_atendente === true;
+
+            // Busca na tabela atendentes com tentativa de retry mais agressiva se metadata diz que é atendente
             let atendente = null;
             let error = null;
+            const maxRetries = isAtendenteMetadata ? 5 : 2;
 
-            for (let i = 0; i < 2; i++) {
+            for (let i = 0; i < maxRetries; i++) {
                 const result = await supabase
                     .from('atendentes')
                     .select('*')
@@ -47,14 +58,10 @@ export const atendentesService = {
                 atendente = result.data;
                 error = result.error;
 
-                if (!error) break;
-                // Espera um pouco antes do retry
-                await new Promise(r => setTimeout(r, 500));
-            }
+                if (!error && (atendente || !isAtendenteMetadata)) break;
 
-            if (error) {
-                console.error('Error fetching atendente after retries:', error);
-                throw error; // Não assume que é admin se deu erro de banco
+                console.log(`getUserTypeInfo retry ${i + 1}/${maxRetries}...`);
+                await new Promise(r => setTimeout(r, 500 * (i + 1)));
             }
 
             if (atendente) {
@@ -65,7 +72,15 @@ export const atendentesService = {
                 };
             }
 
-            // Se não encontrou registro, é admin
+            // Se o metadata diz que deve ser atendente mas não achamos no banco após retries
+            if (isAtendenteMetadata) {
+                console.error('User metadata says is_atendente=true but no record found in atendentes table.');
+                // Não assumimos admin aqui, pois isso causaria dados zerados no app.
+                // Lançamos erro para o AuthProvider lidar ou tentar novamente depois.
+                throw new Error('Atendente record not found for user marked as atendente in metadata.');
+            }
+
+            // Se não encontrou registro e não tem flag de atendente, é admin
             return {
                 type: 'admin',
                 effectiveUserId: targetUserId
