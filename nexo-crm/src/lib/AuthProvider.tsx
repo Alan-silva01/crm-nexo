@@ -82,7 +82,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         setEffectiveUserId(metaAdminId);
                     }
 
-                    await fetchUserType(currSession.user.id);
+                    // Tentar determinar o tipo de usuário com algumas retentativas
+                    let info = null;
+                    for (let i = 0; i < 3; i++) {
+                        info = await fetchUserType(currSession.user.id);
+                        if (info) break;
+                        if (isAtendente && !metaAdminId) {
+                            console.warn(`AuthProvider: Retry ${i + 1} finding atendente record...`);
+                            await new Promise(r => setTimeout(r, 1000));
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // Se falhou e é marcados como atendente, mas não temos ID, não libera o loading
+                    if (isAtendente && !effectiveUserId && !info) {
+                        console.error('AuthProvider: Failed to determine attendant admin_id.');
+                        // Poderíamos redirecionar ou mostrar erro, mas por enquanto vamos forçar loading false
+                        // para o App lidar com o estado vazio, mas avisando o dev.
+                    }
                 } else {
                     setSession(null);
                     setUser(null);
@@ -93,7 +111,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } catch (e) {
                 console.error('Auth initialization error:', e);
             } finally {
-                // Só libera o loading se conseguimos determinar o ID ou se não há usuário
                 if (isMounted) setLoading(false);
             }
         };

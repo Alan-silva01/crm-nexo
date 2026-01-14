@@ -22,49 +22,60 @@ export const atendentesService = {
      * @param userId - ID do usuário
      */
     async getUserTypeInfo(userId?: string): Promise<UserTypeInfo | null> {
+        const requestId = Math.random().toString(36).substring(7);
         try {
+            console.log(`[${requestId}] getUserTypeInfo start for:`, userId);
+
             let targetUserId = userId;
             let metadata: any = null;
 
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+
             if (!targetUserId) {
-                const { data: { session } } = await supabase.auth.getSession();
-                targetUserId = session?.user?.id;
-                metadata = session?.user?.user_metadata;
-            } else {
-                // Se o userId foi passado, tentar buscar metadata se for o logado
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user?.id === targetUserId) {
-                    metadata = session.user.user_metadata;
-                }
+                targetUserId = currentSession?.user?.id;
+                metadata = currentSession?.user?.user_metadata;
+            } else if (currentSession?.user?.id === targetUserId) {
+                metadata = currentSession.user.user_metadata;
             }
+
+            console.log(`[${requestId}] Detection context:`, {
+                targetUserId,
+                isLogedUser: currentSession?.user?.id === targetUserId,
+                hasMetadata: !!metadata,
+                isAtendenteMetadata: metadata?.is_atendente === true
+            });
 
             if (!targetUserId) return null;
 
             const isAtendenteMetadata = metadata?.is_atendente === true;
 
-            // Busca na tabela atendentes com tentativa de retry mais agressiva se metadata diz que é atendente
+            // Busca na tabela atendentes com tentativa de retry
             let atendente = null;
             let error = null;
             const maxRetries = isAtendenteMetadata ? 5 : 2;
 
             for (let i = 0; i < maxRetries; i++) {
-                const result = await supabase
+                const { data, error: qError } = await supabase
                     .from('atendentes')
                     .select('*')
                     .eq('user_id', targetUserId)
                     .eq('ativo', true)
                     .maybeSingle();
 
-                atendente = result.data;
-                error = result.error;
+                atendente = data;
+                error = qError;
 
-                if (!error && (atendente || !isAtendenteMetadata)) break;
+                if (!error && (atendente || !isAtendenteMetadata)) {
+                    console.log(`[${requestId}] Found atendente in DB:`, !!atendente);
+                    break;
+                }
 
-                console.log(`getUserTypeInfo retry ${i + 1}/${maxRetries}...`);
+                console.warn(`[${requestId}] getUserTypeInfo retry ${i + 1}/${maxRetries} (Error: ${error?.message}, Data: ${!!atendente})`);
                 await new Promise(r => setTimeout(r, 500 * (i + 1)));
             }
 
             if (atendente) {
+                console.log(`[${requestId}] Returning type: atendente, effectiveId:`, atendente.admin_id);
                 return {
                     type: 'atendente',
                     effectiveUserId: atendente.admin_id,
@@ -72,21 +83,18 @@ export const atendentesService = {
                 };
             }
 
-            // Se o metadata diz que deve ser atendente mas não achamos no banco após retries
             if (isAtendenteMetadata) {
-                console.error('User metadata says is_atendente=true but no record found in atendentes table.');
-                // Não assumimos admin aqui, pois isso causaria dados zerados no app.
-                // Lançamos erro para o AuthProvider lidar ou tentar novamente depois.
-                throw new Error('Atendente record not found for user marked as atendente in metadata.');
+                console.error(`[${requestId}] Fatal: User metadata says is_atendente but DB has no active record.`);
+                throw new Error('Atendente record not found for metadata-marked atendente.');
             }
 
-            // Se não encontrou registro e não tem flag de atendente, é admin
+            console.log(`[${requestId}] Returning type: admin, effectiveId:`, targetUserId);
             return {
                 type: 'admin',
                 effectiveUserId: targetUserId
             };
         } catch (e) {
-            console.error('Critical failure in getUserTypeInfo:', e);
+            console.error(`[${requestId}] Critical failure in getUserTypeInfo:`, e);
             throw e;
         }
     },
