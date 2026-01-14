@@ -393,7 +393,9 @@ const AppContent: React.FC = () => {
   const effectiveColumns = useMemo(() => {
     // If no leads, show default columns
     if (leads.length === 0) {
-      return DEFAULT_COLUMNS;
+      // Se não tem leads, mostra todas as colunas do banco
+      // Se não tem colunas no banco, mostra defaults
+      return columns.length > 0 ? columns : DEFAULT_COLUMNS;
     }
 
     // Get all unique statuses from leads
@@ -403,10 +405,8 @@ const AppContent: React.FC = () => {
         .filter((s): s is string => !!s)
     );
 
-    // Filter DB columns to only those with leads
-    const dbColumnsWithLeads = columns.filter(col =>
-      leadStatuses.has(col.name.trim().toUpperCase())
-    );
+    // Mostrar TODAS as colunas do banco, não apenas as com leads
+    const dbColumns = [...columns];
 
     // Find orphaned statuses (statuses in leads that don't have a matching DB column)
     const dbStatusNames = new Set(columns.map(c => c.name.trim().toUpperCase()));
@@ -420,13 +420,13 @@ const AppContent: React.FC = () => {
     const virtualColumns = uniqueOrphans.map((status, index) => ({
       id: `virtual-${status}`,
       name: status,
-      position: dbColumnsWithLeads.length + index,
+      position: dbColumns.length + index,
       is_virtual: true
     }));
 
-    const result = [...dbColumnsWithLeads, ...virtualColumns].sort((a, b) => a.position - b.position);
+    const result = [...dbColumns, ...virtualColumns].sort((a, b) => a.position - b.position);
 
-    // If no columns have leads, show default columns
+    // Se não tem nenhuma coluna, mostra defaults
     if (result.length === 0) {
       return DEFAULT_COLUMNS;
     }
