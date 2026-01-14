@@ -594,11 +594,26 @@ const Kanban: React.FC<KanbanProps> = ({
                                 {visibleKeys.map(key => {
                                   const config = getIcon(key);
                                   const value = d[key];
-                                  const displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                                  const k = key.toLowerCase();
+
+                                  // Mascarar CPF com asteriscos (***.***.***-**)
+                                  let displayValue: string;
+                                  if (k.includes('cpf')) {
+                                    displayValue = '***.***.***-**';
+                                  } else {
+                                    displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                                  }
+
+                                  // Usar emoji para moto em vez de ícone
+                                  const isMoto = k.includes('moto') || (k.includes('tipo') && k.includes('veiculo') && String(value).toLowerCase().includes('moto'));
 
                                   return (
                                     <div key={key} className="flex items-center gap-2 overflow-hidden">
-                                      <config.icon size={12} className={`${config.color} shrink-0`} />
+                                      {isMoto ? (
+                                        <span className="text-[12px]">🏍️</span>
+                                      ) : (
+                                        <config.icon size={12} className={`${config.color} shrink-0`} />
+                                      )}
                                       <div className="flex flex-col">
                                         <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter opacity-70">{formatLabel(key)}</span>
                                         <span className="text-[10px] text-zinc-800 dark:text-zinc-300 font-bold truncate leading-tight">
