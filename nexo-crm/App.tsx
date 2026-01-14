@@ -66,9 +66,28 @@ const AppContent: React.FC = () => {
     return [];
   });
 
-  const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
+  const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>(() => {
+    try {
+      const cached = localStorage.getItem('nexo_history_cache');
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (e) { }
+    return {};
+  });
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-  const [columns, setColumns] = useState<any[]>([]);
+
+  // Restaurar columns do cache para evitar piscar no Kanban
+  const [columns, setColumns] = useState<any[]>(() => {
+    try {
+      const cached = localStorage.getItem('nexo_columns_cache');
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (e) { }
+    return [];
+  });
+
   const [notifications, setNotifications] = useState<LeadColumnHistory[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -128,8 +147,9 @@ const AppContent: React.FC = () => {
           if (colsError) {
             console.error(`[${rid}] Error fetching columns:`, colsError);
           } else if (cols && cols.length > 0) {
-            console.log(`[${rid}] Fetched ${cols.length} columns.`);
             setColumns(cols);
+            // Salvar no cache para carregamento instantâneo
+            localStorage.setItem('nexo_columns_cache', JSON.stringify(cols));
           } else {
             console.log(`[${rid}] No columns found, setting defaults.`);
             setColumns([
@@ -174,6 +194,8 @@ const AppContent: React.FC = () => {
             return acc;
           }, {});
           setLeadsHistory(grouped);
+          // Salvar history no cache
+          localStorage.setItem('nexo_history_cache', JSON.stringify(grouped));
           setNotifications(history.slice(0, 5));
           console.log(`[${rid}] Fetched ${history.length} history items.`);
         } catch (e) {
