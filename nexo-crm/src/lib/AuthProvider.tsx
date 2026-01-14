@@ -40,35 +40,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     useEffect(() => {
+        let isMounted = true;
+
+        // Safety timeout: never stay in loading for more than 5 seconds
+        const safetyTimeout = setTimeout(() => {
+            if (isMounted && loading) {
+                console.warn('Auth loading timed out, forcing loading false');
+                setLoading(false);
+            }
+        }, 5000);
+
         const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            if (!isMounted) return;
+
             setSession(session);
             setUser(session?.user ?? null);
 
             if (session?.user) {
-                await fetchUserType();
+                try {
+                    await fetchUserType();
+                } catch (e) {
+                    console.error('Initial user type fetch failed:', e);
+                }
             } else {
                 setUserType(null);
                 setEffectiveUserId(null);
                 setAtendenteInfo(null);
             }
 
-            setLoading(false);
+            if (isMounted) setLoading(false);
         });
 
-        // Check initial session
-        const currentSession = supabase.auth.getSession();
-        currentSession.then(async ({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
+        // Check initial session immediately as well
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
+            if (!isMounted) return;
 
-            if (session?.user) {
-                await fetchUserType();
+            if (session) {
+                setSession(session);
+                setUser(session.user);
+                try {
+                    await fetchUserType();
+                } catch (e) {
+                    console.error('Initial session fetch failed:', e);
+                }
             }
-
-            setLoading(false);
+            if (isMounted) setLoading(false);
         });
 
         return () => {
+            isMounted = false;
+            clearTimeout(safetyTimeout);
             authListener?.subscription.unsubscribe();
         };
     }, []);

@@ -19,7 +19,7 @@ import { leadsService } from './src/lib/leadsService';
 import { supabase } from './src/lib/supabase';
 
 const AppContent: React.FC = () => {
-  const { user, session, loading, signOut } = useAuth();
+  const { user, session, loading, signOut, effectiveUserId } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,11 +35,11 @@ const AppContent: React.FC = () => {
 
   // Fetch columns and leads on session change
   useEffect(() => {
-    if (session) {
+    if (session && effectiveUserId) {
       supabase
         .from('kanban_columns')
         .select('*')
-        .eq('user_id', session.user.id)
+        .eq('user_id', effectiveUserId)
         .order('position')
         .then(({ data, error }) => {
           if (!error && data && data.length > 0) {
@@ -74,38 +74,40 @@ const AppContent: React.FC = () => {
 
       // Fetch user profile (do admin se for atendente)
       const fetchProfile = async () => {
-        // Verificar se é atendente
-        const { data: atendente } = await supabase
-          .from('atendentes')
-          .select('admin_id, nome')
-          .eq('user_id', session.user.id)
-          .eq('ativo', true)
-          .maybeSingle();
-
-        // Se for atendente, buscar profile do admin
-        const profileUserId = atendente?.admin_id || session.user.id;
-
+        // Buscar profile do admin (que é o effectiveUserId)
         const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', profileUserId)
+          .eq('id', effectiveUserId)
           .single();
 
         if (profileData) {
           // Adicionar nome do usuário logado ao profile (para exibir abaixo do company_name)
+          // Se for atendente, o name vem do metadata ou podemos buscar na tabela atendentes
+          let loggedName = user?.user_metadata?.full_name || user?.email?.split('@')[0];
+
+          if (effectiveUserId !== user?.id) {
+            const { data: atendente } = await supabase
+              .from('atendentes')
+              .select('nome')
+              .eq('user_id', user?.id)
+              .maybeSingle();
+            if (atendente) loggedName = atendente.nome;
+          }
+
           setProfile({
             ...profileData,
-            logged_user_name: atendente?.nome || session.user.user_metadata?.full_name || session.user.email?.split('@')[0]
+            logged_user_name: loggedName
           });
         }
       };
       fetchProfile();
     }
-  }, [session]);
+  }, [session, effectiveUserId]);
 
   // Realtime subscription for leads
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!effectiveUserId) return;
 
     const channel = supabase
       .channel('leads-realtime')
@@ -115,7 +117,7 @@ const AppContent: React.FC = () => {
           event: '*',
           schema: 'public',
           table: 'leads',
-          filter: `user_id=eq.${session.user.id}`
+          filter: `user_id=eq.${effectiveUserId}`
         },
         (payload) => {
           console.log('Realtime update:', payload);
@@ -145,7 +147,7 @@ const AppContent: React.FC = () => {
 
   // Realtime subscription for kanban columns
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!effectiveUserId) return;
 
     const channel = supabase
       .channel('columns-realtime')
@@ -155,7 +157,7 @@ const AppContent: React.FC = () => {
           event: '*',
           schema: 'public',
           table: 'kanban_columns',
-          filter: `user_id=eq.${session.user.id}`
+          filter: `user_id=eq.${effectiveUserId}`
         },
         (payload) => {
           console.log('Columns realtime update:', payload);
@@ -180,7 +182,7 @@ const AppContent: React.FC = () => {
 
   // Realtime subscription for history
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!effectiveUserId) return;
 
     const channel = supabase
       .channel('history-realtime')
@@ -190,7 +192,7 @@ const AppContent: React.FC = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'lead_column_history',
-          filter: `user_id=eq.${session.user.id}`
+          filter: `user_id=eq.${effectiveUserId}`
         },
         async (payload) => {
           console.log('History realtime update:', payload);
