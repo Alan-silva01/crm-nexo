@@ -32,7 +32,14 @@ import {
   GitCommit,
   X,
   Check,
-  MoreHorizontal
+  MoreHorizontal,
+  Shield,
+  AlertTriangle,
+  CreditCard,
+  Bike,
+  FileText,
+  Hash,
+  Eye
 } from 'lucide-react';
 import { Lead, LeadColumnHistory, getLeadDisplayName } from '../types';
 import { leadsService } from '../src/lib/leadsService';
@@ -490,20 +497,36 @@ const Kanban: React.FC<KanbanProps> = ({
                         const hasValue = (val: any) => val !== null && val !== undefined && String(val).trim() !== '';
 
                         // Campos para pular (já estão no cabeçalho ou são reservados)
-                        const skipFields = ['nome', 'name', 'email', 'whatsapp', 'phone', 'empresa', 'company_name', 'id', 'observacoes', 'observação', 'status_venda', 'agendamentos', 'consultas'];
+                        const skipFields = ['nome', 'name', 'email', 'whatsapp', 'phone', 'empresa', 'company_name', 'id', 'observacoes', 'observação', 'status_venda', 'agendamentos', 'consultas', 'customer_id'];
 
                         // Mapeamento de ícones por palavra-chave
                         const getIcon = (key: string) => {
                           const k = key.toLowerCase();
+                          // Veículos
+                          if (k.includes('moto') || k.includes('bike')) return { icon: Bike, color: 'text-orange-400' };
                           if (k.includes('veiculo') || k.includes('carro') || k.includes('modelo')) return { icon: Car, color: 'text-amber-400' };
                           if (k.includes('placa')) return { icon: MoreHorizontal, color: 'text-zinc-400' };
+                          // Localização
                           if (k.includes('cidade') || k.includes('bairro') || k.includes('endereco') || k.includes('local')) return { icon: MapPin, color: 'text-emerald-400' };
-                          if (k.includes('usuario') || k.includes('tipo') || k.includes('genero') || k.includes('uso') || k.includes('area')) return { icon: Users, color: 'text-blue-400' };
-                          if (k.includes('preocupacao') || k.includes('ajuda') || k.includes('problema') || k.includes('desafio')) return { icon: Phone, color: 'text-rose-400' };
+                          // Usuário/Tipo
+                          if (k.includes('usuario') || k.includes('genero') || k.includes('uso') || k.includes('area')) return { icon: Users, color: 'text-blue-400' };
+                          if (k.includes('tipo') && !k.includes('veiculo')) return { icon: Users, color: 'text-blue-400' };
+                          // Preocupação/Segurança (corrigido: era Phone, agora é Shield)
+                          if (k.includes('preocupacao') || k.includes('seguranca') || k.includes('roubo') || k.includes('protecao')) return { icon: Shield, color: 'text-rose-400' };
+                          if (k.includes('ajuda') || k.includes('problema') || k.includes('desafio')) return { icon: AlertTriangle, color: 'text-amber-400' };
+                          // Documentos - CPF com ícone de olho (dado sensível)
+                          if (k.includes('cpf') || k.includes('cnpj') || k.includes('documento')) return { icon: Eye, color: 'text-zinc-400' };
+                          if (k.includes('customer') || k.includes('cliente')) return { icon: Hash, color: 'text-zinc-500' };
+                          // Jurídico
                           if (k.includes('processo') || k.includes('direito') || k.includes('justiça')) return { icon: Scale, color: 'text-indigo-400' };
+                          // Saúde
                           if (k.includes('clinica') || k.includes('medico') || k.includes('saude') || k.includes('paciente')) return { icon: Stethoscope, color: 'text-emerald-400' };
+                          // Vendas/Compras
                           if (k.includes('loja') || k.includes('venda') || k.includes('produto') || k.includes('compra')) return { icon: ShoppingBag, color: 'text-amber-400' };
-                          if (k.includes('faturamento') || k.includes('valor') || k.includes('preco') || k.includes('preço')) return { icon: DollarSign, color: 'text-emerald-400' };
+                          // Financeiro
+                          if (k.includes('mensalidade') || k.includes('faturamento') || k.includes('valor') || k.includes('preco') || k.includes('preço')) return { icon: DollarSign, color: 'text-emerald-400' };
+                          // Pagamento
+                          if (k.includes('pagamento') || k.includes('cartao') || k.includes('pix')) return { icon: CreditCard, color: 'text-violet-400' };
                           return { icon: Layout, color: 'text-indigo-400' };
                         };
 
