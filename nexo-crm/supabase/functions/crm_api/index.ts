@@ -3,7 +3,17 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseServiceRole);
+
+// Lista de URLs permitidas para o proxy (whitelist)
+const ALLOWED_PROXY_DOMAINS = [
+    'n8n.',
+    'evolution',
+    'webhook.site',
+    'hooks.zapier.com',
+    'make.com'
+];
 
 serve(async (req) => {
     const url = new URL(req.url);
@@ -16,21 +26,10 @@ serve(async (req) => {
 
     const method = req.method;
 
-    console.log(`${method} ${url.pathname} -> normalized to ${pathname}`);
-
-    // Helper to parse JSON body
-    const json = async () => {
-        try {
-            return await req.json();
-        } catch {
-            return {};
-        }
-    };
-
     // CORS Headers
     const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
         'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
     };
 
@@ -47,7 +46,41 @@ serve(async (req) => {
         });
     };
 
-    // Proxy Webhook Route
+    // ===========================================
+    // 🔒 VALIDAÇÃO DE AUTENTICAÇÃO (SEGURANÇA)
+    // ===========================================
+    const authHeader = req.headers.get('Authorization') || req.headers.get('apikey');
+    const xApiKey = req.headers.get('x-api-key');
+
+    // Verificar se tem algum tipo de autenticação
+    const hasAuth = authHeader?.includes('Bearer') ||
+        authHeader === supabaseAnonKey ||
+        authHeader === supabaseServiceRole ||
+        xApiKey === supabaseAnonKey ||
+        xApiKey === supabaseServiceRole;
+
+    // Rotas que NÃO precisam de autenticação (públicas)
+    const publicRoutes = ['/health', '/'];
+    const isPublicRoute = publicRoutes.includes(pathname);
+
+    if (!isPublicRoute && !hasAuth) {
+        console.warn(`Unauthorized request to ${pathname}`);
+        return jsonResponse({
+            error: "Unauthorized",
+            message: "Missing or invalid API key. Use 'Authorization: Bearer <key>' or 'apikey' header."
+        }, 401);
+    }
+
+    // Helper to parse JSON body
+    const json = async () => {
+        try {
+            return await req.json();
+        } catch {
+            return {};
+        }
+    };
+
+    // Proxy Webhook Route (with SSRF protection)
     if (pathname === "/proxy-webhook" && method === "POST") {
         const body = await json();
         const { targetUrl, data } = body;
@@ -56,7 +89,30 @@ serve(async (req) => {
             return jsonResponse({ error: "targetUrl is required" }, 400);
         }
 
-        console.log(`Proxying request to: ${targetUrl}`);
+        // 🔒 PROTEÇÃO CONTRA SSRF: Validar URL contra whitelist
+        try {
+            const urlObj = new URL(targetUrl);
+            const isAllowed = ALLOWED_PROXY_DOMAINS.some(domain =>
+                urlObj.hostname.includes(domain)
+            );
+
+            // Bloquear URLs internas/localhost
+            const isInternal = urlObj.hostname === 'localhost' ||
+                urlObj.hostname === '127.0.0.1' ||
+                urlObj.hostname.startsWith('192.168.') ||
+                urlObj.hostname.startsWith('10.') ||
+                urlObj.hostname.includes('.internal');
+
+            if (!isAllowed || isInternal) {
+                console.warn(`Blocked proxy request to unauthorized URL: ${targetUrl}`);
+                return jsonResponse({
+                    error: "URL not allowed",
+                    message: "Target URL is not in the allowed list"
+                }, 403);
+            }
+        } catch (e) {
+            return jsonResponse({ error: "Invalid URL format" }, 400);
+        }
 
         try {
             const response = await fetch(targetUrl, {
@@ -67,10 +123,7 @@ serve(async (req) => {
                 body: JSON.stringify(data)
             });
 
-            // We don't necessarily need to read the response if it's no-cors style, 
-            // but for a proxy it's better to show if it worked.
             const responseText = await response.text();
-            console.log(`Target response: ${response.status} ${responseText}`);
 
             return jsonResponse({
                 success: response.ok,
