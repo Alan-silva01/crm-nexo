@@ -23,7 +23,20 @@ const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [leads, setLeads] = useState<Lead[]>([]);
+
+  // Restaurar leads do cache para evitar flash de tela vazia
+  const [leads, setLeads] = useState<Lead[]>(() => {
+    try {
+      const cached = localStorage.getItem('nexo_leads_cache');
+      if (cached) {
+        const data = JSON.parse(cached);
+        console.log('App: Restored leads from cache:', data.length);
+        return data;
+      }
+    } catch (e) { }
+    return [];
+  });
+
   const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [columns, setColumns] = useState<any[]>([]);
@@ -101,10 +114,12 @@ const AppContent: React.FC = () => {
           const fetchedLeads = await leadsService.fetchLeads(effectiveUserId);
           console.log(`[${rid}] fetchLeads returned:`, fetchedLeads);
           setLeads(fetchedLeads);
+          // Salvar no cache para evitar flash na próxima vez
+          localStorage.setItem('nexo_leads_cache', JSON.stringify(fetchedLeads));
           console.log(`[${rid}] App: Fetched leads count: ${fetchedLeads.length}`);
         } catch (e) {
           console.error(`[${rid}] CRITICAL: Leads fetch crashed:`, e);
-          setLeads([]);
+          // Não limpar leads se já tiver do cache
         }
 
         // Fetch History
