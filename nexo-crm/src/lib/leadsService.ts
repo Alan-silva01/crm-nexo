@@ -5,26 +5,40 @@ import { atendentesService } from './atendentesService';
 export const leadsService = {
     async fetchLeads(effectiveUserId?: string): Promise<Lead[]> {
         let targetId = effectiveUserId;
+        const requestId = Math.random().toString(36).substring(7);
+
+        console.log(`[${requestId}] fetchLeads start for:`, targetId);
 
         if (!targetId) {
+            console.log(`[${requestId}] targetId is null, checking userTypeInfo...`);
             const userTypeInfo = await atendentesService.getUserTypeInfo();
             targetId = userTypeInfo?.effectiveUserId;
+            console.log(`[${requestId}] resolved targetId:`, targetId);
         }
 
         if (!targetId) {
-            console.error('No effective user ID for fetchLeads');
+            console.error(`[${requestId}] No effective user ID for fetchLeads`);
             return [];
         }
 
-        // Usar targetId para filtrar leads
+        console.log(`[${requestId}] Executing Supabase query for leads...`);
+        const startTime = Date.now();
+
         const { data, error } = await supabase
             .from('leads')
             .select('*')
             .eq('user_id', targetId)
             .order('created_at', { ascending: false });
 
+        const duration = Date.now() - startTime;
+        console.log(`[${requestId}] Supabase query finished in ${duration}ms. Result:`, {
+            count: data?.length || 0,
+            hasError: !!error,
+            error: error?.message
+        });
+
         if (error) {
-            console.error('Error fetching leads:', error);
+            console.error(`[${requestId}] Error fetching leads:`, error);
             return [];
         }
 

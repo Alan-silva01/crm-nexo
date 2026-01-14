@@ -45,17 +45,24 @@ const AppContent: React.FC = () => {
       console.log('App: Fetching data for effectiveUserId:', effectiveUserId);
 
       const fetchData = async () => {
+        const rid = Math.random().toString(36).substring(7);
+        console.log(`[${rid}] App fetchData starting for ${effectiveUserId}...`);
         try {
           // Fetch columns
+          console.log(`[${rid}] Fetching columns...`);
           const { data: cols, error: colsError } = await supabase
             .from('kanban_columns')
             .select('*')
             .eq('user_id', effectiveUserId)
             .order('position');
 
-          if (!colsError && cols && cols.length > 0) {
+          if (colsError) {
+            console.error(`[${rid}] Error fetching columns:`, colsError);
+          } else if (cols && cols.length > 0) {
+            console.log(`[${rid}] Fetched ${cols.length} columns.`);
             setColumns(cols);
-          } else if (!colsError) {
+          } else {
+            console.log(`[${rid}] No columns found, setting defaults.`);
             setColumns([
               { id: '1', name: 'Novos Leads', position: 0 },
               { id: '2', name: 'Em Atendimento', position: 1 },
@@ -65,11 +72,13 @@ const AppContent: React.FC = () => {
           }
 
           // Fetch Leads
+          console.log(`[${rid}] Fetching leads...`);
           const fetchedLeads = await leadsService.fetchLeads(effectiveUserId);
           setLeads(fetchedLeads);
-          console.log('App: Fetched leads count:', fetchedLeads.length);
+          console.log(`[${rid}] App: Fetched leads count: ${fetchedLeads.length}`);
 
           // Fetch History
+          console.log(`[${rid}] Fetching history...`);
           const history = await leadsService.fetchAllHistory(effectiveUserId);
           const grouped = history.reduce((acc: Record<string, LeadColumnHistory[]>, item) => {
             if (!acc[item.lead_id]) acc[item.lead_id] = [];
@@ -78,8 +87,10 @@ const AppContent: React.FC = () => {
           }, {});
           setLeadsHistory(grouped);
           setNotifications(history.slice(0, 5));
+          console.log(`[${rid}] Fetched ${history.length} history items.`);
 
           // Fetch Profile
+          console.log(`[${rid}] Fetching profile...`);
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
@@ -102,12 +113,14 @@ const AppContent: React.FC = () => {
               ...profileData,
               logged_user_name: loggedName
             });
-            console.log('App: Profile loaded:', profileData.company_name);
+            console.log(`[${rid}] App: Profile loaded: ${profileData.company_name}`);
           } else if (profileError) {
-            console.error('App: Error fetching profile:', profileError);
+            console.error(`[${rid}] App: Error fetching profile:`, profileError);
           }
         } catch (e) {
-          console.error('App: Error in fetchData loop:', e);
+          console.error(`[${rid}] App: Error in fetchData loop:`, e);
+        } finally {
+          console.log(`[${rid}] App fetchData completed.`);
         }
       };
 
