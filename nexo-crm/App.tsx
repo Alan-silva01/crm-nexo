@@ -484,11 +484,11 @@ const AppContent: React.FC = () => {
           <div className="flex items-center gap-6 flex-1">
             {profile?.company_name && (
               <div className="flex flex-col pr-6 border-r border-zinc-800/50">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 whitespace-nowrap">
+                <span className="text-sm font-black uppercase tracking-wider text-indigo-500 whitespace-nowrap">
                   {profile.company_name}
                 </span>
                 {profile.logged_user_name && (
-                  <span className="text-[9px] text-zinc-500 font-medium">
+                  <span className="text-[11px] text-zinc-400 font-medium">
                     {profile.logged_user_name}
                   </span>
                 )}
