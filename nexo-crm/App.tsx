@@ -18,6 +18,35 @@ import { ThemeProvider, useTheme } from './src/lib/ThemeContext';
 import { leadsService } from './src/lib/leadsService';
 import { supabase } from './src/lib/supabase';
 
+// Função para remover dados sensíveis antes de salvar no cache
+// O app continua mostrando tudo (vem do banco), só o cache fica sem dados sensíveis
+const sanitizeForCache = (leads: Lead[]) => {
+  return leads.map(lead => {
+    const sanitized = { ...lead };
+    // Mascarar telefone (manter só últimos 4 dígitos)
+    if (sanitized.phone) {
+      const digits = sanitized.phone.replace(/\D/g, '');
+      sanitized.phone = digits.length > 4 ? `****${digits.slice(-4)}` : sanitized.phone;
+    }
+    // Remover dados sensíveis do campo 'dados'
+    if (sanitized.dados && typeof sanitized.dados === 'object') {
+      const dadosCopy = { ...sanitized.dados } as Record<string, any>;
+      // Remover CPF, CNPJ e outros dados sensíveis
+      delete dadosCopy.cpf;
+      delete dadosCopy.cnpj;
+      delete dadosCopy.rg;
+      delete dadosCopy.customer_id;
+      // Mascarar whatsapp se existir
+      if (dadosCopy.whatsapp) {
+        const digits = String(dadosCopy.whatsapp).replace(/\D/g, '');
+        dadosCopy.whatsapp = digits.length > 4 ? `****${digits.slice(-4)}` : dadosCopy.whatsapp;
+      }
+      sanitized.dados = dadosCopy;
+    }
+    return sanitized;
+  });
+};
+
 const AppContent: React.FC = () => {
   const { user, session, loading, signOut, effectiveUserId, userType } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -127,8 +156,8 @@ const AppContent: React.FC = () => {
           const fetchedLeads = await leadsService.fetchLeads(effectiveUserId);
           console.log(`[${rid}] fetchLeads returned:`, fetchedLeads);
           setLeads(fetchedLeads);
-          // Salvar no cache para evitar flash na próxima vez
-          localStorage.setItem('nexo_leads_cache', JSON.stringify(fetchedLeads));
+          // Salvar no cache SEM dados sensíveis (CPF, telefone completo)
+          localStorage.setItem('nexo_leads_cache', JSON.stringify(sanitizeForCache(fetchedLeads)));
           console.log(`[${rid}] App: Fetched leads count: ${fetchedLeads.length}`);
         } catch (e) {
           console.error(`[${rid}] CRITICAL: Leads fetch crashed:`, e);
