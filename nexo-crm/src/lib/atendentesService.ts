@@ -97,56 +97,37 @@ export const atendentesService = {
     },
 
     /**
-     * Cria um novo atendente
-     * Cria usuário no Auth e registro na tabela atendentes
+     * Cria um novo atendente via Edge Function
      */
     async createAtendente(nome: string, email: string, senha: string): Promise<{ success: boolean; error?: string }> {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { success: false, error: 'Não autenticado' };
 
-        // Verificar limite
-        const [atendentes, maxAtendentes] = await Promise.all([
-            this.listAtendentes(),
-            this.getMaxAtendentes()
-        ]);
-
-        if (atendentes.length >= maxAtendentes) {
-            return { success: false, error: `Limite de ${maxAtendentes} atendentes atingido` };
-        }
-
-        // Criar usuário no Auth via Admin API (precisa de Edge Function)
-        // Por enquanto, vamos usar signUp normal e depois vincular
-        const { data: newUser, error: authError } = await supabase.auth.admin.createUser({
-            email,
-            password: senha,
-            email_confirm: true,
-            user_metadata: { full_name: nome, is_atendente: true }
-        });
-
-        if (authError || !newUser.user) {
-            console.error('Error creating auth user:', authError);
-            return { success: false, error: authError?.message || 'Erro ao criar usuário' };
-        }
-
-        // Criar registro na tabela atendentes
-        const { error: insertError } = await supabase
-            .from('atendentes')
-            .insert({
-                admin_id: user.id,
-                user_id: newUser.user.id,
-                nome,
-                email,
-                ativo: true
+        try {
+            // Chamar Edge Function que usa Service Role Key
+            const { data, error } = await supabase.functions.invoke('create-atendente', {
+                body: {
+                    nome,
+                    email,
+                    senha,
+                    admin_id: user.id
+                }
             });
 
-        if (insertError) {
-            console.error('Error inserting atendente:', insertError);
-            // Tentar deletar o usuário criado no Auth
-            await supabase.auth.admin.deleteUser(newUser.user.id);
-            return { success: false, error: insertError.message };
-        }
+            if (error) {
+                console.error('Error calling create-atendente function:', error);
+                return { success: false, error: error.message };
+            }
 
-        return { success: true };
+            if (data?.error) {
+                return { success: false, error: data.error };
+            }
+
+            return { success: true };
+        } catch (e: any) {
+            console.error('Error creating atendente:', e);
+            return { success: false, error: e.message || 'Erro desconhecido' };
+        }
     },
 
     /**
