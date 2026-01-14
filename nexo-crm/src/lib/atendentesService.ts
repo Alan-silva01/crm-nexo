@@ -21,33 +21,18 @@ export const atendentesService = {
      * Detecta se o usuário é admin ou atendente.
      * @param userId - ID do usuário
      */
-    async getUserTypeInfo(userId?: string): Promise<UserTypeInfo | null> {
+    async getUserTypeInfo(userId?: string, userMetadata?: any): Promise<UserTypeInfo | null> {
         const requestId = Math.random().toString(36).substring(7);
         try {
             console.log(`[${requestId}] getUserTypeInfo start for:`, userId);
 
-            let targetUserId = userId;
-            let metadata: any = null;
-
-            const { data: { session: currentSession } } = await supabase.auth.getSession();
-
-            if (!targetUserId) {
-                targetUserId = currentSession?.user?.id;
-                metadata = currentSession?.user?.user_metadata;
-            } else if (currentSession?.user?.id === targetUserId) {
-                metadata = currentSession.user.user_metadata;
+            if (!userId) {
+                console.error(`[${requestId}] No userId provided to getUserTypeInfo`);
+                return null;
             }
 
-            console.log(`[${requestId}] Detection context:`, {
-                targetUserId,
-                isLogedUser: currentSession?.user?.id === targetUserId,
-                hasMetadata: !!metadata,
-                isAtendenteMetadata: metadata?.is_atendente === true
-            });
-
-            if (!targetUserId) return null;
-
-            const isAtendenteMetadata = metadata?.is_atendente === true;
+            const targetUserId = userId;
+            const isAtendenteMetadata = userMetadata?.is_atendente === true;
 
             // Busca na tabela atendentes com tentativa de retry
             let atendente = null;

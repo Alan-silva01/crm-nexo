@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [effectiveUserId, setEffectiveUserId] = useState<string | null>(null);
     const [atendenteInfo, setAtendenteInfo] = useState<Atendente | null>(null);
 
-    const fetchUserType = async (userId: string) => {
+    const fetchUserType = async (userId: string, metadata?: any) => {
         try {
             console.log('Fetching user type for:', userId);
 
@@ -38,11 +38,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUserType(info.type);
                 setEffectiveUserId(info.effectiveUserId);
                 setAtendenteInfo(info.atendenteInfo || null);
+                // Mesmo com cache, vamos atualizar no background
             }
 
             // 2. Buscar do banco para garantir que está atualizado
-            // Se o cache já nos deu o que precisávamos, o banco é para sincronia
-            const info = await atendentesService.getUserTypeInfo(userId);
+            const info = await atendentesService.getUserTypeInfo(userId, metadata);
             if (info) {
                 console.log('Fetched user type from DB:', info.type);
                 setUserType(info.type);
@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     }
 
                     // Tentar determinar o tipo de usuário
-                    await fetchUserType(currSession.user.id);
+                    await fetchUserType(currSession.user.id, currSession.user.user_metadata);
                 } else {
                     setSession(null);
                     setUser(null);
@@ -148,7 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signIn = async (email: string, password: string) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (!error && data.session) {
-            await fetchUserType(data.session.user.id);
+            await fetchUserType(data.session.user.id, data.session.user.user_metadata);
         }
         return { data, error };
     };
@@ -177,7 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const refreshUserType = async () => {
         if (user) {
-            await fetchUserType(user.id);
+            await fetchUserType(user.id, user.user_metadata);
         }
     };
 
