@@ -7,6 +7,40 @@ function extractNumbers(phone: string | null): string {
     return phone.replace(/\D/g, '');
 }
 
+/**
+ * Busca o chat_table_name e webhook_url do perfil correto:
+ * - Se for atendente: busca do perfil do admin
+ * - Se for admin: busca do próprio perfil
+ */
+async function getEffectiveProfileData(): Promise<{ chat_table_name: string | null; webhook_url: string | null } | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    // Primeiro, verificar se é atendente
+    const { data: atendente } = await supabase
+        .from('atendentes')
+        .select('admin_id')
+        .eq('user_id', user.id)
+        .eq('ativo', true)
+        .maybeSingle();
+
+    // Se for atendente, buscar profile do admin
+    const profileUserId = atendente?.admin_id || user.id;
+
+    const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('chat_table_name, webhook_url')
+        .eq('id', profileUserId)
+        .single();
+
+    if (error || !profile) {
+        console.error('Error fetching effective profile:', error);
+        return null;
+    }
+
+    return profile;
+}
+
 export const chatsSdrService = {
     async fetchChatsByPhone(phone: string, limit: number = 50, offset: number = 0): Promise<{ messages: SDRMessage[], hasMore: boolean }> {
         if (!phone) return { messages: [], hasMore: false };
@@ -17,15 +51,11 @@ export const chatsSdrService = {
             return { messages: [], hasMore: false };
         }
 
-        // 1. Buscar nome da tabela de chats do usuário
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('chat_table_name')
-            .eq('id', user.id)
-            .single();
+        // 1. Buscar nome da tabela de chats (do admin, se for atendente)
+        const profile = await getEffectiveProfileData();
 
-        if (profileError || !profile?.chat_table_name) {
-            console.error('Chat table not found for user:', profileError);
+        if (!profile?.chat_table_name) {
+            console.error('Chat table not found for user');
             return { messages: [], hasMore: false };
         }
 
@@ -77,15 +107,11 @@ export const chatsSdrService = {
             return null;
         }
 
-        // Buscar tabela de chats E webhook do usuário
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('chat_table_name, webhook_url')
-            .eq('id', user.id)
-            .single();
+        // Buscar tabela de chats E webhook (do admin, se for atendente)
+        const profile = await getEffectiveProfileData();
 
         if (!profile?.chat_table_name) {
-            console.error('Chat table not configured for user');
+            console.error('Chat table not configured');
             return null;
         }
 
@@ -179,12 +205,8 @@ export const chatsSdrService = {
             return;
         }
 
-        // Buscar tabela de chats E webhook do usuário
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('chat_table_name, webhook_url')
-            .eq('id', user.id)
-            .single();
+        // Buscar tabela de chats E webhook (do admin, se for atendente)
+        const profile = await getEffectiveProfileData();
 
         const userWebhookUrl = profile?.webhook_url;
         const chatTableName = profile?.chat_table_name || 'chats_sdr';

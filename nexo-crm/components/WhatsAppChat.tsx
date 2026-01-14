@@ -92,6 +92,7 @@ const getAgentColor = (name: string | undefined | null) => {
 
 const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selectedChatId, onSelectChat }) => {
   const [inputText, setInputText] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [sdrMessages, setSdrMessages] = useState<SDRMessage[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -175,14 +176,25 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
       const cacheKey = phoneNumbers || selectedChat.phone;
 
-      // 0. Buscar nome da tabela de chats do usuário
+      // 0. Buscar nome da tabela de chats (do admin, se for atendente)
       const { data: { user } } = await supabase.auth.getUser();
       let chatTableName = 'chats_sdr'; // fallback
       if (user) {
+        // Verificar se é atendente
+        const { data: atendente } = await supabase
+          .from('atendentes')
+          .select('admin_id')
+          .eq('user_id', user.id)
+          .eq('ativo', true)
+          .maybeSingle();
+
+        // Se for atendente, buscar profile do admin
+        const profileUserId = atendente?.admin_id || user.id;
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('chat_table_name')
-          .eq('id', user.id)
+          .eq('id', profileUserId)
           .single();
         if (profile?.chat_table_name) {
           chatTableName = profile.chat_table_name;
@@ -579,12 +591,21 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
             <input
               type="text"
               placeholder="Buscar ou começar nova conversa"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-[#1e1e1e] border-none rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
             />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {leads.map(chat => (
+          {leads.filter(chat => {
+            const name = getLeadDisplayName(chat).toLowerCase();
+            const phone = (chat.phone || '').replace(/\D/g, '');
+            const search = searchTerm.toLowerCase();
+            const searchClean = search.replace(/\D/g, '');
+
+            return name.includes(search) || (searchClean && phone.includes(searchClean));
+          }).map(chat => (
             <button
               key={chat.id}
               onClick={() => setSelectedChatId(chat.id)}
@@ -629,7 +650,9 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                   <div className="flex items-center gap-1 mt-1">
                     <UserPlus size={10} className="text-indigo-400" />
                     <span className="text-[9px] text-indigo-400 font-medium">
-                      Atribuído a {assignmentsMap[chat.id]?.nome.split(' ')[0]}
+                      {assignmentsMap[chat.id]?.id === atendenteInfo?.id
+                        ? 'Atribuído a você'
+                        : `Atribuído a ${assignmentsMap[chat.id]?.nome.split(' ')[0]}`}
                     </span>
                   </div>
                 )}
@@ -665,7 +688,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                         : 'bg-zinc-800/50 text-zinc-400 border-zinc-700/50 hover:bg-zinc-700/50'}`}
                   >
                     <UserPlus size={14} />
-                    <span>{currentAssignment ? currentAssignment.nome.split(' ')[0] : 'Atribuir'}</span>
+                    <span>{currentAssignment ? (currentAssignment.id === atendenteInfo?.id ? 'Você' : currentAssignment.nome.split(' ')[0]) : 'Atribuir'}</span>
                     <ChevronDown size={12} />
                   </button>
 
@@ -702,7 +725,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               {userType === 'atendente' && currentAssignment && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 text-indigo-400 rounded-full text-xs font-semibold border border-indigo-500/20">
                   <UserPlus size={12} />
-                  <span>{currentAssignment.nome.split(' ')[0]}</span>
+                  <span>{currentAssignment.id === atendenteInfo?.id ? 'Você' : currentAssignment.nome.split(' ')[0]}</span>
                 </div>
               )}
 
