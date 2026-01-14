@@ -19,7 +19,7 @@ export interface UserTypeInfo {
 export const atendentesService = {
     /**
      * Detecta se o usuário é admin ou atendente.
-     * @param userId - ID do usuário (opcional, busca o logado se não informado)
+     * @param userId - ID do usuário
      */
     async getUserTypeInfo(userId?: string): Promise<UserTypeInfo | null> {
         try {
@@ -32,15 +32,32 @@ export const atendentesService = {
 
             if (!targetUserId) return null;
 
-            // Busca na tabela atendentes
-            const { data: atendente, error } = await supabase
-                .from('atendentes')
-                .select('*')
-                .eq('user_id', targetUserId)
-                .eq('ativo', true)
-                .maybeSingle();
+            // Busca na tabela atendentes com tentativa de retry simples
+            let atendente = null;
+            let error = null;
 
-            if (atendente && !error) {
+            for (let i = 0; i < 2; i++) {
+                const result = await supabase
+                    .from('atendentes')
+                    .select('*')
+                    .eq('user_id', targetUserId)
+                    .eq('ativo', true)
+                    .maybeSingle();
+
+                atendente = result.data;
+                error = result.error;
+
+                if (!error) break;
+                // Espera um pouco antes do retry
+                await new Promise(r => setTimeout(r, 500));
+            }
+
+            if (error) {
+                console.error('Error fetching atendente after retries:', error);
+                throw error; // Não assume que é admin se deu erro de banco
+            }
+
+            if (atendente) {
                 return {
                     type: 'atendente',
                     effectiveUserId: atendente.admin_id,
@@ -48,14 +65,14 @@ export const atendentesService = {
                 };
             }
 
-            // Se não é atendente, é admin
+            // Se não encontrou registro, é admin
             return {
                 type: 'admin',
                 effectiveUserId: targetUserId
             };
         } catch (e) {
-            console.error('Error in getUserTypeInfo:', e);
-            return null;
+            console.error('Critical failure in getUserTypeInfo:', e);
+            throw e;
         }
     },
 

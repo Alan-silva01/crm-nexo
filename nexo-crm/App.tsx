@@ -36,16 +36,20 @@ const AppContent: React.FC = () => {
   // Fetch columns and leads on session change
   useEffect(() => {
     if (session && effectiveUserId) {
-      supabase
-        .from('kanban_columns')
-        .select('*')
-        .eq('user_id', effectiveUserId)
-        .order('position')
-        .then(({ data, error }) => {
-          if (!error && data && data.length > 0) {
-            setColumns(data);
-          } else if (!error) {
-            // Default columns if none exist
+      console.log('App: Fetching data for effectiveUserId:', effectiveUserId);
+
+      const fetchData = async () => {
+        try {
+          // Fetch columns
+          const { data: cols, error: colsError } = await supabase
+            .from('kanban_columns')
+            .select('*')
+            .eq('user_id', effectiveUserId)
+            .order('position');
+
+          if (!colsError && cols && cols.length > 0) {
+            setColumns(cols);
+          } else if (!colsError) {
             setColumns([
               { id: '1', name: 'Novos Leads', position: 0 },
               { id: '2', name: 'Em Atendimento', position: 1 },
@@ -53,55 +57,60 @@ const AppContent: React.FC = () => {
               { id: '4', name: 'Venda Concluída', position: 3 }
             ]);
           }
-        });
 
-      leadsService.fetchLeads(effectiveUserId).then(data => {
-        setLeads(data);
-      });
-
-      // Fetch initial history cache
-      leadsService.fetchAllHistory(effectiveUserId).then(history => {
-        const grouped = history.reduce((acc: Record<string, LeadColumnHistory[]>, item) => {
-          if (!acc[item.lead_id]) acc[item.lead_id] = [];
-          acc[item.lead_id].push(item);
-          return acc;
-        }, {});
-        setLeadsHistory(grouped);
-
-        // Take latest 5 for notifications
-        setNotifications(history.slice(0, 5));
-      });
-
-      // Fetch user profile (do admin se for atendente)
-      const fetchProfile = async () => {
-        // Buscar profile do admin (que é o effectiveUserId)
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', effectiveUserId)
-          .single();
-
-        if (profileData) {
-          // Adicionar nome do usuário logado ao profile (para exibir abaixo do company_name)
-          // Se for atendente, o name vem do metadata ou podemos buscar na tabela atendentes
-          let loggedName = user?.user_metadata?.full_name || user?.email?.split('@')[0];
-
-          if (effectiveUserId !== user?.id) {
-            const { data: atendente } = await supabase
-              .from('atendentes')
-              .select('nome')
-              .eq('user_id', user?.id)
-              .maybeSingle();
-            if (atendente) loggedName = atendente.nome;
+          // Fetch Leads with simple retry
+          let fetchedLeads: Lead[] = [];
+          for (let i = 0; i < 3; i++) {
+            fetchedLeads = await leadsService.fetchLeads(effectiveUserId);
+            if (fetchedLeads.length > 0) break;
+            if (i < 2) await new Promise(r => setTimeout(r, 1000));
           }
+          setLeads(fetchedLeads);
+          console.log('App: Fetched leads count:', fetchedLeads.length);
 
-          setProfile({
-            ...profileData,
-            logged_user_name: loggedName
-          });
+          // Fetch History
+          const history = await leadsService.fetchAllHistory(effectiveUserId);
+          const grouped = history.reduce((acc: Record<string, LeadColumnHistory[]>, item) => {
+            if (!acc[item.lead_id]) acc[item.lead_id] = [];
+            acc[item.lead_id].push(item);
+            return acc;
+          }, {});
+          setLeadsHistory(grouped);
+          setNotifications(history.slice(0, 5));
+
+          // Fetch Profile
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', effectiveUserId)
+            .single();
+
+          if (profileData && !profileError) {
+            let loggedName = user?.user_metadata?.full_name || user?.email?.split('@')[0];
+
+            if (effectiveUserId !== user?.id) {
+              const { data: atendente } = await supabase
+                .from('atendentes')
+                .select('nome')
+                .eq('user_id', user?.id)
+                .maybeSingle();
+              if (atendente) loggedName = atendente.nome;
+            }
+
+            setProfile({
+              ...profileData,
+              logged_user_name: loggedName
+            });
+            console.log('App: Profile loaded:', profileData.company_name);
+          } else if (profileError) {
+            console.error('App: Error fetching profile:', profileError);
+          }
+        } catch (e) {
+          console.error('App: Error in fetchData loop:', e);
         }
       };
-      fetchProfile();
+
+      fetchData();
     }
   }, [session, effectiveUserId]);
 

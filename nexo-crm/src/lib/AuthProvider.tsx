@@ -28,75 +28,89 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const fetchUserType = async (userId: string) => {
         try {
-            const info = await atendentesService.getUserTypeInfo(userId);
-            if (info) {
+            console.log('Fetching user type for:', userId);
+
+            // 1. Tentar pegar do cache primeiro para resposta instantânea
+            const cached = localStorage.getItem(`auth_user_type_${userId}`);
+            if (cached) {
+                const info = JSON.parse(cached);
+                console.log('Using cached user type:', info.type);
                 setUserType(info.type);
                 setEffectiveUserId(info.effectiveUserId);
                 setAtendenteInfo(info.atendenteInfo || null);
             }
+
+            // 2. Buscar do banco para garantir que está atualizado
+            const info = await atendentesService.getUserTypeInfo(userId);
+            if (info) {
+                console.log('Fetched user type from DB:', info.type);
+                setUserType(info.type);
+                setEffectiveUserId(info.effectiveUserId);
+                setAtendenteInfo(info.atendenteInfo || null);
+                localStorage.setItem(`auth_user_type_${userId}`, JSON.stringify(info));
+                return info;
+            }
         } catch (e) {
-            console.error('Error fetching user type in AuthProvider:', e);
-            // Default to admin on error to prevent total lock
-            setUserType('admin');
-            setEffectiveUserId(userId);
+            console.error('Error in fetchUserType:', e);
+            // Se falhou e já temos algo no cache ou estado, não sobescreve com 'admin'
+            return null;
         }
+        return null;
     };
 
     useEffect(() => {
         let isMounted = true;
+        let initialized = false;
 
-        // Safety timeout: never stay in loading for more than 5 seconds
-        const safetyTimeout = setTimeout(() => {
-            if (isMounted && loading) {
-                console.warn('Auth loading timed out, forcing loading false');
+        const initializeAuth = async (currSession: Session | null) => {
+            if (initialized) return;
+            initialized = true;
+
+            try {
+                if (currSession?.user) {
+                    setSession(currSession);
+                    setUser(currSession.user);
+                    await fetchUserType(currSession.user.id);
+                } else {
+                    setSession(null);
+                    setUser(null);
+                    setUserType(null);
+                    setEffectiveUserId(null);
+                    setAtendenteInfo(null);
+                }
+            } catch (e) {
+                console.error('Auth initialization error:', e);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        // Listen for changes
+        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+            if (!isMounted) return;
+
+            // Se for inicialização ou login, processa
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                await initializeAuth(newSession);
+            } else if (event === 'SIGNED_OUT') {
+                setSession(null);
+                setUser(null);
+                setUserType(null);
+                setEffectiveUserId(null);
+                setAtendenteInfo(null);
                 setLoading(false);
             }
-        }, 5000);
-
-        const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            if (!isMounted) return;
-
-            setSession(session);
-            setUser(session?.user ?? null);
-
-            if (session?.user) {
-                try {
-                    await fetchUserType(session.user.id);
-                } catch (e) {
-                    console.error('Initial user type fetch failed:', e);
-                }
-            } else {
-                setUserType(null);
-                setEffectiveUserId(null);
-                setAtendenteInfo(null);
-            }
-
-            if (isMounted) setLoading(false);
         });
 
-        // Check initial session immediately as well
-        supabase.auth.getSession().then(async ({ data: { session } }) => {
-            if (!isMounted) return;
-
-            if (session) {
-                setSession(session);
-                setUser(session.user);
-                try {
-                    await fetchUserType(session.user.id);
-                } catch (e) {
-                    console.error('Initial session fetch failed:', e);
-                }
-            } else {
-                setUserType(null);
-                setEffectiveUserId(null);
-                setAtendenteInfo(null);
+        // Fallback para getSession se o onAuthStateChange demorar ou não disparar INITIAL_SESSION
+        supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+            if (isMounted && !initialized) {
+                initializeAuth(initialSession);
             }
-            if (isMounted) setLoading(false);
         });
 
         return () => {
             isMounted = false;
-            clearTimeout(safetyTimeout);
             authListener?.subscription.unsubscribe();
         };
     }, []);
