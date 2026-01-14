@@ -60,16 +60,27 @@ export const atendentesService = {
     },
 
     /**
-     * Lista todos os atendentes do admin logado
+     * Lista todos os atendentes do admin (funciona para admin e atendente)
      */
     async listAtendentes(): Promise<Atendente[]> {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return [];
 
+        // Verificar se é atendente para pegar o admin_id correto
+        const { data: atendente } = await supabase
+            .from('atendentes')
+            .select('admin_id')
+            .eq('user_id', user.id)
+            .eq('ativo', true)
+            .maybeSingle();
+
+        // Se for atendente, usar admin_id do atendente; senão, usar user.id (é admin)
+        const adminId = atendente?.admin_id || user.id;
+
         const { data, error } = await supabase
             .from('atendentes')
             .select('*')
-            .eq('admin_id', user.id)
+            .eq('admin_id', adminId)
             .order('created_at', { ascending: false });
 
         if (error) {

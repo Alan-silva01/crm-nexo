@@ -115,9 +115,9 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const setSelectedChatId = onSelectChat;
   const selectedChat = leads.find(l => l.id === selectedChatId) || leads[0];
 
-  // Carregar lista de atendentes (apenas para admin)
+  // Carregar lista de atendentes (para admin e atendentes verem as atribuições)
   useEffect(() => {
-    if (userType === 'admin') {
+    if (userType) {
       atendentesService.listAtendentes().then(setAtendentes);
     }
   }, [userType]);
