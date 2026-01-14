@@ -524,14 +524,44 @@ const Kanban: React.FC<KanbanProps> = ({
                         const hasConsultas = d.consultas && typeof d.consultas === 'object' && Object.keys(d.consultas).length > 0;
                         const hasAgendamentos = d.agendamentos && typeof d.agendamentos === 'object' && Object.keys(d.agendamentos).length > 0;
 
+                        // Lógica inteligente para consultas
+                        let consultaStatus: 'futura' | 'passada' | 'multiplas' | null = null;
+                        let proximaConsultaData: Date | null = null;
+
+                        if (hasConsultas) {
+                          const consultas = Object.values(d.consultas) as any[];
+                          const now = new Date();
+
+                          if (consultas.length > 1) {
+                            consultaStatus = 'multiplas';
+                          } else if (consultas.length === 1) {
+                            const consulta = consultas[0];
+                            if (consulta.dataHora) {
+                              const dataConsulta = new Date(consulta.dataHora);
+                              proximaConsultaData = dataConsulta;
+                              consultaStatus = dataConsulta > now ? 'futura' : 'passada';
+                            }
+                          }
+                        }
+
                         if (visibleKeys.length === 0 && !obs && !statusVenda && !hasConsultas) return null;
 
                         return (
                           <div className="bg-zinc-50 dark:bg-zinc-900/40 rounded-2xl p-4 border border-zinc-100 dark:border-zinc-800/30 mb-4 space-y-3 shadow-inner dark:shadow-none">
-                            {hasConsultas && (
+                            {consultaStatus === 'futura' && proximaConsultaData && (
+                              <div className="flex flex-col gap-1 mb-2">
+                                <span className="text-[10px] px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg font-black uppercase tracking-widest border border-blue-500/20 shadow-sm inline-block w-fit">
+                                  📅 Tem consulta marcada
+                                </span>
+                                <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-medium ml-1">
+                                  {proximaConsultaData.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} às {proximaConsultaData.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            )}
+                            {(consultaStatus === 'passada' || consultaStatus === 'multiplas') && (
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="text-[10px] px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg font-black uppercase tracking-widest border border-emerald-500/20 shadow-sm">
-                                  Já fez consultas conosco
+                                  ✅ Já fez consultas conosco
                                 </span>
                               </div>
                             )}
