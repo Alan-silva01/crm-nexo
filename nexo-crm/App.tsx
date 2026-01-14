@@ -51,11 +51,24 @@ const AppContent: React.FC = () => {
         // Fetch columns
         try {
           console.log(`[${rid}] Fetching columns...`);
-          const { data: cols, error: colsError } = await supabase
+
+          // Add timeout to prevent infinite hang
+          const columnsPromise = supabase
             .from('kanban_columns')
             .select('*')
             .eq('user_id', effectiveUserId)
             .order('position');
+
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Columns query timeout')), 5000)
+          );
+
+          const { data: cols, error: colsError } = await Promise.race([
+            columnsPromise,
+            timeoutPromise
+          ]) as any;
+
+          console.log(`[${rid}] Columns query completed. Data:`, cols, 'Error:', colsError);
 
           if (colsError) {
             console.error(`[${rid}] Error fetching columns:`, colsError);
@@ -73,6 +86,13 @@ const AppContent: React.FC = () => {
           }
         } catch (e) {
           console.error(`[${rid}] CRITICAL: Columns fetch crashed:`, e);
+          // Set defaults even on error
+          setColumns([
+            { id: '1', name: 'Novos Leads', position: 0 },
+            { id: '2', name: 'Em Atendimento', position: 1 },
+            { id: '3', name: 'Negociação', position: 2 },
+            { id: '4', name: 'Venda Concluída', position: 3 }
+          ]);
         }
 
         // Fetch Leads
