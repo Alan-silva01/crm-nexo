@@ -264,7 +264,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `leads_nexo_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `leads_nero_${new Date().toISOString().split('T')[0]}.csv`);
     link.click();
   };
 

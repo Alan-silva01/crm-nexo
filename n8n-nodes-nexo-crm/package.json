@@ -1,24 +1,24 @@
 {
-    "name": "n8n-nodes-nexo-crm",
-    "version": "1.1.4",
-    "description": "n8n Community Nodes para o Nexo CRM - Gerencie leads e colunas do Kanban",
+    "name": "n8n-nodes-nero-crm",
+    "version": "1.0.0",
+    "description": "n8n Community Nodes para o Nero CRM - Gerencie leads e colunas do Kanban",
     "keywords": [
         "n8n-community-node-package",
         "n8n",
-        "nexo",
+        "nero",
         "crm",
         "leads",
         "kanban"
     ],
     "license": "MIT",
-    "homepage": "https://github.com/alan-silva01/n8n-nodes-nexo-crm",
+    "homepage": "https://github.com/alan-silva01/n8n-nodes-nero-crm",
     "author": {
         "name": "Alan Silva",
         "email": "alan@gmail.com"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/alan-silva01/n8n-nodes-nexo-crm.git"
+        "url": "https://github.com/alan-silva01/n8n-nodes-nero-crm.git"
     },
     "main": "index.js",
     "scripts": {
@@ -35,10 +35,10 @@
     "n8n": {
         "n8nNodesApiVersion": 1,
         "credentials": [
-            "dist/credentials/NexoCrmApi.credentials.js"
+            "dist/credentials/NeroCrmApi.credentials.js"
         ],
         "nodes": [
-            "dist/nodes/NexoCrm/NexoCrm.node.js"
+            "dist/nodes/NeroCrm/NeroCrm.node.js"
         ]
     },
     "devDependencies": {

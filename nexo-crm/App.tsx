@@ -56,7 +56,7 @@ const AppContent: React.FC = () => {
   // Restaurar leads do cache para evitar flash de tela vazia
   const [leads, setLeads] = useState<Lead[]>(() => {
     try {
-      const cached = localStorage.getItem('nexo_leads_cache');
+      const cached = localStorage.getItem('nero_leads_cache');
       if (cached) {
         const data = JSON.parse(cached);
         console.log('App: Restored leads from cache:', data.length);
@@ -68,7 +68,7 @@ const AppContent: React.FC = () => {
 
   const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>(() => {
     try {
-      const cached = localStorage.getItem('nexo_history_cache');
+      const cached = localStorage.getItem('nero_history_cache');
       if (cached) {
         return JSON.parse(cached);
       }
@@ -80,7 +80,7 @@ const AppContent: React.FC = () => {
   // Restaurar columns do cache para evitar piscar no Kanban
   const [columns, setColumns] = useState<any[]>(() => {
     try {
-      const cached = localStorage.getItem('nexo_columns_cache');
+      const cached = localStorage.getItem('nero_columns_cache');
       if (cached) {
         return JSON.parse(cached);
       }
@@ -95,7 +95,7 @@ const AppContent: React.FC = () => {
   // Restaurar profile do cache para evitar delay no nome da empresa
   const [profile, setProfile] = useState<any>(() => {
     try {
-      const cached = localStorage.getItem('nexo_profile_cache');
+      const cached = localStorage.getItem('nero_profile_cache');
       if (cached) {
         const data = JSON.parse(cached);
         console.log('App: Restored profile from cache:', data.company_name);
@@ -149,7 +149,7 @@ const AppContent: React.FC = () => {
           } else if (cols && cols.length > 0) {
             setColumns(cols);
             // Salvar no cache para carregamento instantâneo
-            localStorage.setItem('nexo_columns_cache', JSON.stringify(cols));
+            localStorage.setItem('nero_columns_cache', JSON.stringify(cols));
           } else {
             console.log(`[${rid}] No columns found, setting defaults.`);
             setColumns([
@@ -177,7 +177,7 @@ const AppContent: React.FC = () => {
           console.log(`[${rid}] fetchLeads returned:`, fetchedLeads);
           setLeads(fetchedLeads);
           // Salvar no cache SEM dados sensíveis (CPF, telefone completo)
-          localStorage.setItem('nexo_leads_cache', JSON.stringify(sanitizeForCache(fetchedLeads)));
+          localStorage.setItem('nero_leads_cache', JSON.stringify(sanitizeForCache(fetchedLeads)));
           console.log(`[${rid}] App: Fetched leads count: ${fetchedLeads.length}`);
         } catch (e) {
           console.error(`[${rid}] CRITICAL: Leads fetch crashed:`, e);
@@ -195,7 +195,7 @@ const AppContent: React.FC = () => {
           }, {});
           setLeadsHistory(grouped);
           // Salvar history no cache
-          localStorage.setItem('nexo_history_cache', JSON.stringify(grouped));
+          localStorage.setItem('nero_history_cache', JSON.stringify(grouped));
           setNotifications(history.slice(0, 5));
           console.log(`[${rid}] Fetched ${history.length} history items.`);
         } catch (e) {
@@ -228,7 +228,7 @@ const AppContent: React.FC = () => {
               logged_user_name: loggedName
             });
             // Salvar no cache para evitar delay na próxima vez
-            localStorage.setItem('nexo_profile_cache', JSON.stringify({
+            localStorage.setItem('nero_profile_cache', JSON.stringify({
               ...profileData,
               logged_user_name: loggedName
             }));

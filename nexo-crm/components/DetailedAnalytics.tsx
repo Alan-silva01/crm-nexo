@@ -271,7 +271,7 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
               <ArrowUpRight size={20} className="text-indigo-400" />
             </div>
             <h3 className="text-[13px] font-bold text-zinc-400 uppercase tracking-widest">
-              Análise de Oportunidade Nexo
+              Análise de Oportunidade Nero
             </h3>
           </div>
 

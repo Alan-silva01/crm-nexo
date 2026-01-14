@@ -11,7 +11,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [theme, setTheme] = useState<Theme>(() => {
-        const saved = localStorage.getItem('nexo-theme');
+        const saved = localStorage.getItem('nero-theme');
         return (saved as Theme) || 'dark';
     });
 
@@ -19,7 +19,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(theme);
-        localStorage.setItem('nexo-theme', theme);
+        localStorage.setItem('nero-theme', theme);
     }, [theme]);
 
     const toggleTheme = () => {

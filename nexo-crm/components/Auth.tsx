@@ -77,7 +77,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         if (error) {
           console.error('Signup error:', error);
           if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
-            showModal('warning', 'E-mail já Cadastrado', 'Este endereço de e-mail já está vinculado a uma conta Nexo. Tente recuperar sua senha.');
+            showModal('warning', 'E-mail já Cadastrado', 'Este endereço de e-mail já está vinculado a uma conta Nero. Tente recuperar sua senha.');
           } else {
             showModal('error', 'Erro no Cadastro', error.message || 'Não foi possível criar sua conta. Tente novamente.');
           }
@@ -118,7 +118,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
   const renderTitle = () => {
     switch (mode) {
-      case 'login': return { main: 'Bem-vindo ao Nexo', sub: 'Entre na sua conta para gerenciar seus leads.' };
+      case 'login': return { main: 'Bem-vindo ao Nero', sub: 'Entre na sua conta para gerenciar seus leads.' };
       case 'register': return { main: 'Criar nova conta', sub: 'Comece a escalar suas vendas hoje mesmo.' };
       case 'recover': return { main: 'Recuperar senha', sub: 'Enviaremos um link de recuperação para o seu e-mail.' };
     }
@@ -173,7 +173,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                     type="text"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="Ex: Nexo Soluções"
+                    placeholder="Ex: Nero Soluções"
                     className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-zinc-700"
                   />
                 </div>
@@ -235,7 +235,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                 </div>
               ) : (
                 <>
-                  <span>{mode === 'login' ? 'Entrar no Nexo' : mode === 'register' ? 'Criar Minha Conta' : 'Enviar Link de Acesso'}</span>
+                  <span>{mode === 'login' ? 'Entrar no Nero' : mode === 'register' ? 'Criar Minha Conta' : 'Enviar Link de Acesso'}</span>
                   <ArrowRight size={18} />
                 </>
               )}
@@ -260,7 +260,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         </div>
 
         <p className="text-center text-[11px] text-zinc-600 mt-8 uppercase tracking-widest font-semibold">
-          Nexo CRM &copy; {new Date().getFullYear()} - Segurança de Dados de Ponta a Ponta
+          Nero CRM &copy; {new Date().getFullYear()} - Segurança de Dados de Ponta a Ponta
         </p>
       </div>
 

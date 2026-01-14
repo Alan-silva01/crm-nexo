@@ -119,7 +119,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   useEffect(() => {
     if (effectiveUserId) {
       // Restaurar do cache primeiro
-      const cached = localStorage.getItem(`nexo_atendentes_${effectiveUserId}`);
+      const cached = localStorage.getItem(`nero_atendentes_${effectiveUserId}`);
       if (cached) {
         try {
           setAtendentes(JSON.parse(cached));
@@ -129,7 +129,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       // Buscar do banco e atualizar cache
       atendentesService.listAtendentes(effectiveUserId).then(data => {
         setAtendentes(data);
-        localStorage.setItem(`nexo_atendentes_${effectiveUserId}`, JSON.stringify(data));
+        localStorage.setItem(`nero_atendentes_${effectiveUserId}`, JSON.stringify(data));
       });
     }
   }, [effectiveUserId]);
