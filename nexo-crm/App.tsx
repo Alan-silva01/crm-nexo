@@ -55,12 +55,12 @@ const AppContent: React.FC = () => {
           }
         });
 
-      leadsService.fetchLeads().then(data => {
+      leadsService.fetchLeads(effectiveUserId).then(data => {
         setLeads(data);
       });
 
       // Fetch initial history cache
-      leadsService.fetchAllHistory().then(history => {
+      leadsService.fetchAllHistory(effectiveUserId).then(history => {
         const grouped = history.reduce((acc: Record<string, LeadColumnHistory[]>, item) => {
           if (!acc[item.lead_id]) acc[item.lead_id] = [];
           acc[item.lead_id].push(item);

@@ -3,31 +3,24 @@ import { Lead } from '../../types';
 import { atendentesService } from './atendentesService';
 
 export const leadsService = {
-    async fetchLeads(): Promise<Lead[]> {
-        // Pegar usuário atual primeiro
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            console.error('No authenticated user');
+    async fetchLeads(effectiveUserId?: string): Promise<Lead[]> {
+        let targetId = effectiveUserId;
+
+        if (!targetId) {
+            const userTypeInfo = await atendentesService.getUserTypeInfo();
+            targetId = userTypeInfo?.effectiveUserId;
+        }
+
+        if (!targetId) {
+            console.error('No effective user ID for fetchLeads');
             return [];
         }
 
-        // Tentar detectar tipo de usuário (com fallback seguro)
-        let effectiveUserId = user.id; // Fallback: usar ID do próprio usuário
-
-        try {
-            const userTypeInfo = await atendentesService.getUserTypeInfo();
-            if (userTypeInfo) {
-                effectiveUserId = userTypeInfo.effectiveUserId;
-            }
-        } catch (e) {
-            console.log('getUserTypeInfo failed, using user.id as fallback');
-        }
-
-        // Usar effectiveUserId para filtrar leads
+        // Usar targetId para filtrar leads
         const { data, error } = await supabase
             .from('leads')
             .select('*')
-            .eq('user_id', effectiveUserId)
+            .eq('user_id', targetId)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -153,9 +146,15 @@ export const leadsService = {
         return data;
     },
 
-    async fetchAllHistory(): Promise<any[]> {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return [];
+    async fetchAllHistory(effectiveUserId?: string): Promise<any[]> {
+        let targetId = effectiveUserId;
+
+        if (!targetId) {
+            const { data: { session } } = await supabase.auth.getSession();
+            targetId = session?.user?.id;
+        }
+
+        if (!targetId) return [];
 
         const { data, error } = await supabase
             .from('lead_column_history')
@@ -165,7 +164,7 @@ export const leadsService = {
                 from_column:kanban_columns!from_column_id(name),
                 to_column:kanban_columns!to_column_id(name)
             `)
-            .eq('user_id', user.id)
+            .eq('user_id', targetId)
             .order('moved_at', { ascending: false });
 
         if (error) {

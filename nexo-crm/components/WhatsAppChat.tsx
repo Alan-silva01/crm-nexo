@@ -106,7 +106,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const MESSAGE_PAGE_SIZE = 50;
 
   // Atendentes
-  const { userType, atendenteInfo } = useAuth();
+  const { userType, atendenteInfo, effectiveUserId } = useAuth();
   const [atendentes, setAtendentes] = useState<Atendente[]>([]);
   const [showAssignDropdown, setShowAssignDropdown] = useState(false);
   const [currentAssignment, setCurrentAssignment] = useState<Atendente | null>(null);
@@ -117,10 +117,10 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
   // Carregar lista de atendentes (para admin e atendentes verem as atribuições)
   useEffect(() => {
-    if (userType) {
-      atendentesService.listAtendentes().then(setAtendentes);
+    if (effectiveUserId) {
+      atendentesService.listAtendentes(effectiveUserId).then(setAtendentes);
     }
-  }, [userType]);
+  }, [effectiveUserId]);
 
   // Carregar todas as atribuições dos leads
   useEffect(() => {

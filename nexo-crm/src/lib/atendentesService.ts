@@ -18,40 +18,40 @@ export interface UserTypeInfo {
 
 export const atendentesService = {
     /**
-     * Detecta se o usuário logado é admin ou atendente
-     * Retorna o effectiveUserId (sempre o admin_id para filtrar dados)
+     * Detecta se o usuário é admin ou atendente.
+     * @param userId - ID do usuário (opcional, busca o logado se não informado)
      */
-    async getUserTypeInfo(): Promise<UserTypeInfo | null> {
+    async getUserTypeInfo(userId?: string): Promise<UserTypeInfo | null> {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return null;
+            let targetUserId = userId;
 
-            // Tenta verificar se é atendente (pode falhar se tabela não existir)
-            try {
-                const { data: atendente, error } = await supabase
-                    .from('atendentes')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .eq('ativo', true)
-                    .single();
-
-                // Se encontrou e não deu erro, é atendente
-                if (atendente && !error) {
-                    return {
-                        type: 'atendente',
-                        effectiveUserId: atendente.admin_id,
-                        atendenteInfo: atendente as Atendente
-                    };
-                }
-            } catch (e) {
-                // Tabela não existe ou erro de RLS - ignora e trata como admin
-                console.log('Atendentes table check skipped:', e);
+            if (!targetUserId) {
+                const { data: { session } } = await supabase.auth.getSession();
+                targetUserId = session?.user?.id;
             }
 
-            // Se não é atendente (ou tabela não existe), é admin
+            if (!targetUserId) return null;
+
+            // Busca na tabela atendentes
+            const { data: atendente, error } = await supabase
+                .from('atendentes')
+                .select('*')
+                .eq('user_id', targetUserId)
+                .eq('ativo', true)
+                .maybeSingle();
+
+            if (atendente && !error) {
+                return {
+                    type: 'atendente',
+                    effectiveUserId: atendente.admin_id,
+                    atendenteInfo: atendente as Atendente
+                };
+            }
+
+            // Se não é atendente, é admin
             return {
                 type: 'admin',
-                effectiveUserId: user.id
+                effectiveUserId: targetUserId
             };
         } catch (e) {
             console.error('Error in getUserTypeInfo:', e);
@@ -59,28 +59,28 @@ export const atendentesService = {
         }
     },
 
-    /**
-     * Lista todos os atendentes do admin (funciona para admin e atendente)
-     */
-    async listAtendentes(): Promise<Atendente[]> {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return [];
+    async listAtendentes(adminId?: string): Promise<Atendente[]> {
+        let targetAdminId = adminId;
 
-        // Verificar se é atendente para pegar o admin_id correto
-        const { data: atendente } = await supabase
-            .from('atendentes')
-            .select('admin_id')
-            .eq('user_id', user.id)
-            .eq('ativo', true)
-            .maybeSingle();
+        if (!targetAdminId) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) return [];
 
-        // Se for atendente, usar admin_id do atendente; senão, usar user.id (é admin)
-        const adminId = atendente?.admin_id || user.id;
+            // Verificar se é atendente para pegar o admin_id correto
+            const { data: atendente } = await supabase
+                .from('atendentes')
+                .select('admin_id')
+                .eq('user_id', session.user.id)
+                .eq('ativo', true)
+                .maybeSingle();
+
+            targetAdminId = atendente?.admin_id || session.user.id;
+        }
 
         const { data, error } = await supabase
             .from('atendentes')
             .select('*')
-            .eq('admin_id', adminId)
+            .eq('admin_id', targetAdminId)
             .order('created_at', { ascending: false });
 
         if (error) {

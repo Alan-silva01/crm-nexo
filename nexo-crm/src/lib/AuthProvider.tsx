@@ -26,16 +26,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [effectiveUserId, setEffectiveUserId] = useState<string | null>(null);
     const [atendenteInfo, setAtendenteInfo] = useState<Atendente | null>(null);
 
-    const fetchUserType = async () => {
-        const info = await atendentesService.getUserTypeInfo();
-        if (info) {
-            setUserType(info.type);
-            setEffectiveUserId(info.effectiveUserId);
-            setAtendenteInfo(info.atendenteInfo || null);
-        } else {
-            setUserType(null);
-            setEffectiveUserId(null);
-            setAtendenteInfo(null);
+    const fetchUserType = async (userId: string) => {
+        try {
+            const info = await atendentesService.getUserTypeInfo(userId);
+            if (info) {
+                setUserType(info.type);
+                setEffectiveUserId(info.effectiveUserId);
+                setAtendenteInfo(info.atendenteInfo || null);
+            }
+        } catch (e) {
+            console.error('Error fetching user type in AuthProvider:', e);
+            // Default to admin on error to prevent total lock
+            setUserType('admin');
+            setEffectiveUserId(userId);
         }
     };
 
@@ -58,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             if (session?.user) {
                 try {
-                    await fetchUserType();
+                    await fetchUserType(session.user.id);
                 } catch (e) {
                     console.error('Initial user type fetch failed:', e);
                 }
@@ -79,10 +82,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setSession(session);
                 setUser(session.user);
                 try {
-                    await fetchUserType();
+                    await fetchUserType(session.user.id);
                 } catch (e) {
                     console.error('Initial session fetch failed:', e);
                 }
+            } else {
+                setUserType(null);
+                setEffectiveUserId(null);
+                setAtendenteInfo(null);
             }
             if (isMounted) setLoading(false);
         });
@@ -97,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signIn = async (email: string, password: string) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (!error && data.session) {
-            await fetchUserType();
+            await fetchUserType(data.session.user.id);
         }
         return { data, error };
     };
@@ -125,7 +132,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const refreshUserType = async () => {
-        await fetchUserType();
+        if (user) {
+            await fetchUserType(user.id);
+        }
     };
 
     return (
