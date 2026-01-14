@@ -83,6 +83,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     setSession(currSession);
                     setUser(currSession.user);
 
+                    // RESTAURAR DO CACHE IMEDIATAMENTE para todos os usuários
+                    const cached = localStorage.getItem(`auth_user_type_${currSession.user.id}`);
+                    if (cached) {
+                        try {
+                            const cachedInfo = JSON.parse(cached);
+                            console.log('AuthProvider: Restoring from cache:', cachedInfo.type, cachedInfo.effectiveUserId);
+                            setUserType(cachedInfo.type);
+                            setEffectiveUserId(cachedInfo.effectiveUserId);
+                            setAtendenteInfo(cachedInfo.atendenteInfo || null);
+                            setLoading(false); // Liberar imediatamente com dados do cache
+                        } catch (e) {
+                            console.error('AuthProvider: Error parsing cached user type:', e);
+                        }
+                    }
+
                     const metaAdminId = currSession.user.user_metadata?.admin_id;
                     const isAtendente = currSession.user.user_metadata?.is_atendente;
 
@@ -90,12 +105,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         console.log('AuthProvider: User is an atendente based on metadata. Admin ID:', metaAdminId);
                         setUserType('atendente');
                         setEffectiveUserId(metaAdminId);
-                        // Se já temos o ID do metadado, já podemos liberar o Loading!
-                        // Deixa o fetchUserType rodar no background para atualizar o cache e o atendenteInfo.
                         console.log('AuthProvider: Setting loading(false) early due to atendente metadata.');
                         setLoading(false);
-                    } else {
-                        console.log('AuthProvider: No atendente metadata found or incomplete.');
+                    } else if (!cached) {
+                        // Só loga se não tinha cache
+                        console.log('AuthProvider: No atendente metadata and no cache found.');
                     }
 
                     // Tentar determinar o tipo de usuário (pode rodar em paralelo se já liberamos loading)
