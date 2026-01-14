@@ -72,15 +72,34 @@ const AppContent: React.FC = () => {
         setNotifications(history.slice(0, 5));
       });
 
-      // Fetch user profile
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
-        .then(({ data }) => {
-          if (data) setProfile(data);
-        });
+      // Fetch user profile (do admin se for atendente)
+      const fetchProfile = async () => {
+        // Verificar se é atendente
+        const { data: atendente } = await supabase
+          .from('atendentes')
+          .select('admin_id, nome')
+          .eq('user_id', session.user.id)
+          .eq('ativo', true)
+          .maybeSingle();
+
+        // Se for atendente, buscar profile do admin
+        const profileUserId = atendente?.admin_id || session.user.id;
+
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', profileUserId)
+          .single();
+
+        if (profileData) {
+          // Adicionar nome do usuário logado ao profile (para exibir abaixo do company_name)
+          setProfile({
+            ...profileData,
+            logged_user_name: atendente?.nome || session.user.user_metadata?.full_name || session.user.email?.split('@')[0]
+          });
+        }
+      };
+      fetchProfile();
     }
   }, [session]);
 
@@ -464,10 +483,15 @@ const AppContent: React.FC = () => {
         <header className="h-16 border-b border-zinc-800/50 flex items-center justify-between px-8 bg-zinc-900/20 z-40">
           <div className="flex items-center gap-6 flex-1">
             {profile?.company_name && (
-              <div className="flex items-center gap-2 pr-6 border-r border-zinc-800/50">
+              <div className="flex flex-col pr-6 border-r border-zinc-800/50">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 whitespace-nowrap">
                   {profile.company_name}
                 </span>
+                {profile.logged_user_name && (
+                  <span className="text-[9px] text-zinc-500 font-medium">
+                    {profile.logged_user_name}
+                  </span>
+                )}
               </div>
             )}
             <div className="relative flex-1 max-w-sm">
