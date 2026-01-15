@@ -361,6 +361,15 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       setCurrentAssignment(atendenteInfo);
     }
 
+    // Auto-pausar IA ao enviar mensagem (se ainda não estiver pausada)
+    if (!aiPaused) {
+      setAiPaused(true);
+      // Enviar notificação de pausa para o webhook (não bloqueia o envio da mensagem)
+      chatsSdrService.toggleAI(selectedChat.phone, 'pausar').catch(err => {
+        console.error('Error auto-pausing AI:', err);
+      });
+    }
+
     // Optimistic Update
     const tempId = -Date.now();
     const optimisticMessage: SDRMessage = {
