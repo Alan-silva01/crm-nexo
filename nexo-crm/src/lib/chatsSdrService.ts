@@ -143,10 +143,15 @@ export const chatsSdrService = {
             try {
                 console.log('Sending to User Webhook via Proxy for:', finalSessionId, 'URL:', userWebhookUrl);
 
+                // Get session for auth token
+                const { data: { session } } = await supabase.auth.getSession();
+                const authToken = session?.access_token;
+
                 const response = await fetch(proxyUrl, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
                     },
                     body: JSON.stringify({
                         targetUrl: userWebhookUrl,
@@ -254,10 +259,15 @@ export const chatsSdrService = {
             try {
                 console.log(`Sending ${evento} to User Webhook via Proxy for:`, sessionId, 'URL:', userWebhookUrl);
 
+                // Get session for auth token
+                const { data: { session } } = await supabase.auth.getSession();
+                const authToken = session?.access_token;
+
                 const response = await fetch(proxyUrl, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
                     },
                     body: JSON.stringify({
                         targetUrl: userWebhookUrl,
