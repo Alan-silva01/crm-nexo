@@ -78,7 +78,6 @@ function AppContent() {
                   <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-[var(--text-main)] to-[var(--text-muted)] bg-clip-text text-transparent">
                     NERO
                   </h1>
-                  <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest leading-none">Mobile PWA</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">

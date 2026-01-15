@@ -104,7 +104,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectLead, selectedLeadId
                                 <div key={`story-${lead.id}`} className="flex flex-col items-center gap-2 flex-shrink-0">
                                     <div className="w-16 h-16 rounded-full p-1 border-2 border-indigo-500 flex items-center justify-center bg-[var(--bg-card)]">
                                         <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-indigo-700">
-                                            {!lead.avatar || lead.avatar.trim() === "" ? (
+                                            {!lead.avatar || lead.avatar.trim() === "" || lead.avatar.includes('picsum.photos') ? (
                                                 <div className="w-full h-full flex items-center justify-center text-white font-black text-xl">
                                                     {getLeadDisplayName(lead).charAt(0).toUpperCase()}
                                                 </div>
@@ -159,7 +159,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectLead, selectedLeadId
                             >
                                 <div className="relative">
                                     <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 border-[var(--border-base)] bg-[var(--bg-main)]">
-                                        {!lead.avatar || lead.avatar.trim() === "" ? (
+                                        {!lead.avatar || lead.avatar.trim() === "" || lead.avatar.includes('picsum.photos') ? (
                                             <div className={cn(
                                                 "w-full h-full flex items-center justify-center text-xl font-black transition-colors",
                                                 selectedLeadId === lead.id ? "bg-white/10 text-white" : "bg-gradient-to-br from-indigo-500 to-indigo-700 text-white"

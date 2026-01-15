@@ -42,7 +42,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
         const { data } = await supabase.from('profiles').select('company_name').eq('id', effectiveUserId).single();
         if (data?.company_name) {
             const tableName = data.company_name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-            setChatTableName(`chat_${tableName}`);
+            setChatTableName(`chats_${tableName}`);
         }
     };
 
@@ -121,9 +121,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
                     </button>
 
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full p-0.5 border-2 border-indigo-500 bg-[var(--bg-main)]">
+                        <div className="w-16 h-16 rounded-full p-1 border-2 border-indigo-500/30 bg-[var(--bg-card)] flex-shrink-0">
                             <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg">
-                                {!lead.avatar || lead.avatar.trim() === "" ? (
+                                {!lead.avatar || lead.avatar.trim() === "" || lead.avatar.includes('picsum.photos') ? (
                                     <div className="text-white font-black text-xl uppercase">
                                         {getLeadDisplayName(lead).charAt(0).toUpperCase()}
                                     </div>
