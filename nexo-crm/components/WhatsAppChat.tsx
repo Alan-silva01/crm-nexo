@@ -189,36 +189,23 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const cacheKey = phoneNumbers || selectedChat.phone;
 
       // 0. Buscar nome da tabela de chats usando função RPC (bypassa RLS)
+      // O chatsSdrService já lida com retry robusto internamente
       const { data: { user } } = await supabase.auth.getUser();
       let chatTableName = 'chats_sdr'; // fallback
 
       if (user) {
-        // Retry logic para lidar com falhas transientes no refresh
-        let retries = 3;
-        let success = false;
+        // Tentar buscar uma vez - o serviço tem retry interno completo
+        try {
+          const { data: profileData, error: rpcError } = await supabase.rpc('get_effective_profile');
 
-        while (retries > 0 && !success) {
-          try {
-            const { data: profileData, error: rpcError } = await supabase.rpc('get_effective_profile');
-
-            if (!rpcError && profileData && profileData.length > 0) {
-              chatTableName = profileData[0].chat_table_name || 'chats_sdr';
-              success = true;
-              console.log('WhatsApp: Got chat table:', chatTableName);
-            } else {
-              console.warn(`RPC attempt ${4 - retries}/3 failed:`, rpcError?.message);
-              retries--;
-              if (retries > 0) await new Promise(r => setTimeout(r, 500)); // wait 500ms before retry
-            }
-          } catch (e) {
-            console.error(`RPC exception attempt ${4 - retries}/3:`, e);
-            retries--;
-            if (retries > 0) await new Promise(r => setTimeout(r, 500));
+          if (!rpcError && profileData && profileData.length > 0) {
+            chatTableName = profileData[0].chat_table_name || 'chats_sdr';
+            console.log('WhatsApp: Got chat table:', chatTableName);
+          } else {
+            console.warn('WhatsApp: RPC failed, will use chatsSdrService fallback:', rpcError?.message);
           }
-        }
-
-        if (!success) {
-          console.warn('All RPC retries failed, using fallback table');
+        } catch (e) {
+          console.error('WhatsApp: RPC exception:', e);
         }
       }
 
@@ -238,7 +225,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const actualAiStatus = await chatsSdrService.getAIStatus(selectedChat.phone);
       if (isMounted) setAiPaused(actualAiStatus);
 
-      // 3. Buscar mensagens do banco (primeiras 50)
+      // 3. Buscar mensagens do banco (primeiras 50) - chatsSdrService tem retry robusto interno
       const { messages, hasMore } = await chatsSdrService.fetchChatsByPhone(selectedChat.phone, MESSAGE_PAGE_SIZE, 0);
 
       const processedMessages: SDRMessage[] = [];

@@ -12,17 +12,67 @@ function extractNumbers(phone: string | null): string {
  * - Se for atendente: busca do perfil do admin
  * - Se for admin: busca do próprio perfil
  * Uses SECURITY DEFINER function to bypass RLS issues
+ * Implements robust retry with exponential backoff for post-refresh stability
  */
 async function getEffectiveProfileData(): Promise<{ chat_table_name: string | null; webhook_url: string | null } | null> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    // Aguardar sessão estar disponível com retry
+    let user = null;
+    let sessionRetries = 5;
 
-    // Use the SECURITY DEFINER function that handles attendant/admin logic
-    const { data, error } = await supabase.rpc('get_effective_profile');
+    while (!user && sessionRetries > 0) {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser) {
+            user = authUser;
+            break;
+        }
+        sessionRetries--;
+        if (sessionRetries > 0) {
+            console.log(`[getEffectiveProfileData] Waiting for auth session... (${5 - sessionRetries}/5)`);
+            await new Promise(r => setTimeout(r, 300));
+        }
+    }
 
-    if (error || !data || data.length === 0) {
-        console.error('Error fetching effective profile via RPC:', error);
-        // Fallback to direct query
+    if (!user) {
+        console.error('[getEffectiveProfileData] No authenticated user after retries');
+        return null;
+    }
+
+    // Retry robusto para a função RPC com backoff exponencial
+    let retries = 5;
+    let delay = 200; // Start with 200ms
+
+    while (retries > 0) {
+        try {
+            const { data, error } = await supabase.rpc('get_effective_profile');
+
+            if (!error && data && data.length > 0) {
+                console.log('[getEffectiveProfileData] Success! Table:', data[0].chat_table_name);
+                return {
+                    chat_table_name: data[0].chat_table_name,
+                    webhook_url: data[0].webhook_url
+                };
+            }
+
+            if (error) {
+                console.warn(`[getEffectiveProfileData] RPC attempt ${6 - retries}/5 failed:`, error.message);
+            } else {
+                console.warn(`[getEffectiveProfileData] RPC returned empty data, attempt ${6 - retries}/5`);
+            }
+        } catch (e) {
+            console.error(`[getEffectiveProfileData] Exception on attempt ${6 - retries}/5:`, e);
+        }
+
+        retries--;
+        if (retries > 0) {
+            await new Promise(r => setTimeout(r, delay));
+            delay = Math.min(delay * 1.5, 2000); // Exponential backoff, max 2s
+        }
+    }
+
+    // Fallback: Direct query se todos os retries falharam
+    console.warn('[getEffectiveProfileData] All RPC retries failed, trying direct query...');
+
+    try {
         const { data: atendente } = await supabase
             .from('atendentes')
             .select('admin_id')
@@ -38,18 +88,17 @@ async function getEffectiveProfileData(): Promise<{ chat_table_name: string | nu
             .eq('id', profileUserId)
             .single();
 
-        if (profileError || !profile) {
-            console.error('Fallback profile query also failed:', profileError);
-            return null;
+        if (!profileError && profile) {
+            console.log('[getEffectiveProfileData] Fallback query succeeded! Table:', profile.chat_table_name);
+            return profile;
         }
 
-        return profile;
+        console.error('[getEffectiveProfileData] Fallback query failed:', profileError?.message);
+    } catch (e) {
+        console.error('[getEffectiveProfileData] Fallback query exception:', e);
     }
 
-    return {
-        chat_table_name: data[0].chat_table_name,
-        webhook_url: data[0].webhook_url
-    };
+    return null;
 }
 
 export const chatsSdrService = {
