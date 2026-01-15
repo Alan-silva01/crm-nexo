@@ -23,11 +23,7 @@ import { supabase } from './src/lib/supabase';
 const sanitizeForCache = (leads: Lead[]) => {
   return leads.map(lead => {
     const sanitized = { ...lead };
-    // Mascarar telefone (manter só últimos 4 dígitos)
-    if (sanitized.phone) {
-      const digits = sanitized.phone.replace(/\D/g, '');
-      sanitized.phone = digits.length > 4 ? `****${digits.slice(-4)}` : sanitized.phone;
-    }
+    // NÃO mascarar telefone - é necessário para exibição correta no refresh
     // Remover dados sensíveis do campo 'dados'
     if (sanitized.dados && typeof sanitized.dados === 'object') {
       const dadosCopy = { ...sanitized.dados } as Record<string, any>;
@@ -36,11 +32,6 @@ const sanitizeForCache = (leads: Lead[]) => {
       delete dadosCopy.cnpj;
       delete dadosCopy.rg;
       delete dadosCopy.customer_id;
-      // Mascarar whatsapp se existir
-      if (dadosCopy.whatsapp) {
-        const digits = String(dadosCopy.whatsapp).replace(/\D/g, '');
-        dadosCopy.whatsapp = digits.length > 4 ? `****${digits.slice(-4)}` : dadosCopy.whatsapp;
-      }
       sanitized.dados = dadosCopy;
     }
     return sanitized;
