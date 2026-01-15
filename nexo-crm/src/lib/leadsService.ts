@@ -4,24 +4,77 @@ import { atendentesService } from './atendentesService';
 
 export const leadsService = {
     async fetchLeads(effectiveUserId?: string): Promise<Lead[]> {
-        let targetId = effectiveUserId;
         const requestId = Math.random().toString(36).substring(7);
+        console.log(`[${requestId}] fetchLeads start`);
 
-        console.log(`[${requestId}] fetchLeads start for:`, targetId);
+        // Aguardar sessão estabilizar primeiro
+        let sessionRetries = 5;
+        let user = null;
 
-        if (!targetId) {
-            console.log(`[${requestId}] targetId is null, checking userTypeInfo...`);
-            const userTypeInfo = await atendentesService.getUserTypeInfo();
-            targetId = userTypeInfo?.effectiveUserId;
-            console.log(`[${requestId}] resolved targetId:`, targetId);
+        while (!user && sessionRetries > 0) {
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            if (authUser) {
+                user = authUser;
+                break;
+            }
+            sessionRetries--;
+            if (sessionRetries > 0) {
+                console.log(`[${requestId}] Waiting for auth session... (${5 - sessionRetries}/5)`);
+                await new Promise(r => setTimeout(r, 300));
+            }
         }
 
-        if (!targetId) {
-            console.error(`[${requestId}] No effective user ID for fetchLeads`);
+        if (!user) {
+            console.error(`[${requestId}] No authenticated user after retries`);
             return [];
         }
 
-        console.log(`[${requestId}] Executing Supabase query for leads...`);
+        // ABORDAGEM 1: Usar função RPC SECURITY DEFINER (mais robusta)
+        // Isso bypassa completamente o RLS e resolve o problema de race condition
+        let rpcRetries = 3;
+        let delay = 200;
+
+        while (rpcRetries > 0) {
+            try {
+                console.log(`[${requestId}] Calling fetch_leads_for_user RPC...`);
+                const { data: rpcData, error: rpcError } = await supabase.rpc('fetch_leads_for_user');
+
+                if (!rpcError && rpcData && rpcData.length >= 0) {
+                    console.log(`[${requestId}] RPC Success! Leads count:`, rpcData.length);
+                    return rpcData as Lead[];
+                }
+
+                if (rpcError) {
+                    console.warn(`[${requestId}] RPC attempt ${4 - rpcRetries}/3 failed:`, rpcError.message);
+                }
+            } catch (e) {
+                console.error(`[${requestId}] RPC exception attempt ${4 - rpcRetries}/3:`, e);
+            }
+
+            rpcRetries--;
+            if (rpcRetries > 0) {
+                await new Promise(r => setTimeout(r, delay));
+                delay = Math.min(delay * 1.5, 1500);
+            }
+        }
+
+        // ABORDAGEM 2: Fallback para query direta (se RPC falhar)
+        console.log(`[${requestId}] RPC failed, trying direct query with effectiveUserId...`);
+
+        let targetId = effectiveUserId;
+        if (!targetId) {
+            console.log(`[${requestId}] No effectiveUserId provided, checking userTypeInfo...`);
+            const userTypeInfo = await atendentesService.getUserTypeInfo(user.id, user.user_metadata);
+            targetId = userTypeInfo?.effectiveUserId;
+            console.log(`[${requestId}] Resolved targetId:`, targetId);
+        }
+
+        if (!targetId) {
+            console.error(`[${requestId}] No effective user ID available`);
+            return [];
+        }
+
+        console.log(`[${requestId}] Executing direct Supabase query...`);
         const startTime = Date.now();
 
         const { data, error } = await supabase
@@ -31,7 +84,7 @@ export const leadsService = {
             .order('created_at', { ascending: false });
 
         const duration = Date.now() - startTime;
-        console.log(`[${requestId}] Supabase query finished in ${duration}ms. Result:`, {
+        console.log(`[${requestId}] Direct query finished in ${duration}ms. Result:`, {
             count: data?.length || 0,
             hasError: !!error,
             error: error?.message
