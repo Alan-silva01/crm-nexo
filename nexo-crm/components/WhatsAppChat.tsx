@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Phone, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare, Bot, User, Pause, Play, UserPlus, ChevronDown, Users } from 'lucide-react';
+import { Search, Phone, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare, Bot, User, Pause, Play, UserPlus, ChevronDown, Users, LogOut } from 'lucide-react';
 import { Lead, SDRMessage, getLeadDisplayName } from '../types';
 import LetterAvatar from './LetterAvatar';
 import { chatsSdrService } from '../src/lib/chatsSdrService';
@@ -106,7 +106,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const MESSAGE_PAGE_SIZE = 50;
 
   // Atendentes
-  const { userType, atendenteInfo, effectiveUserId } = useAuth();
+  const { userType, atendenteInfo, effectiveUserId, signOut } = useAuth();
   const [atendentes, setAtendentes] = useState<Atendente[]>([]);
   const [showAssignDropdown, setShowAssignDropdown] = useState(false);
   const [currentAssignment, setCurrentAssignment] = useState<Atendente | null>(null);
@@ -788,6 +788,16 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                     <span>IA Ativa</span>
                   </>
                 )}
+              </button>
+
+              {/* Logout button */}
+              <button
+                onClick={signOut}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
+                title="Sair da conta"
+              >
+                <LogOut size={12} />
+                <span>Sair</span>
               </button>
             </div>
           </header>
