@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, getLeadDisplayName } from '../lib/supabase';
 import type { Lead } from '../lib/supabase';
 import { useAuth } from '../lib/AuthProvider';
 import { Search, RefreshCw, MessageSquare } from 'lucide-react';
@@ -47,10 +47,12 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectLead, selectedLeadId
         return () => { supabase.removeChannel(channel); };
     }, [effectiveUserId]);
 
-    const filteredLeads = leads.filter(lead =>
-        lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.phone.includes(searchTerm)
-    );
+    const filteredLeads = leads.filter(lead => {
+        const displayName = getLeadDisplayName(lead).toLowerCase();
+        const phone = lead.phone.toLowerCase();
+        const search = searchTerm.toLowerCase();
+        return displayName.includes(search) || phone.includes(search);
+    });
 
     if (loading) {
         return (
@@ -104,7 +106,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectLead, selectedLeadId
                                         <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-indigo-700">
                                             {!lead.avatar || lead.avatar.trim() === "" ? (
                                                 <div className="w-full h-full flex items-center justify-center text-white font-black text-xl">
-                                                    {lead.name.charAt(0).toUpperCase()}
+                                                    {getLeadDisplayName(lead).charAt(0).toUpperCase()}
                                                 </div>
                                             ) : (
                                                 <img
@@ -119,7 +121,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectLead, selectedLeadId
                                             )}
                                         </div>
                                     </div>
-                                    <span className="text-[10px] font-bold text-[var(--text-main)] uppercase truncate w-16 text-center">{lead.name.split(' ')[0]}</span>
+                                    <span className="text-[10px] font-bold text-[var(--text-main)] uppercase truncate w-16 text-center">{getLeadDisplayName(lead).split(' ')[0]}</span>
                                 </div>
                             ))}
                         </div>
@@ -162,7 +164,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectLead, selectedLeadId
                                                 "w-full h-full flex items-center justify-center text-xl font-black transition-colors",
                                                 selectedLeadId === lead.id ? "bg-white/10 text-white" : "bg-gradient-to-br from-indigo-500 to-indigo-700 text-white"
                                             )}>
-                                                {lead.name.charAt(0).toUpperCase()}
+                                                {getLeadDisplayName(lead).charAt(0).toUpperCase()}
                                             </div>
                                         ) : (
                                             <img
@@ -188,7 +190,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectLead, selectedLeadId
                                         <h4 className={cn(
                                             "font-black text-base truncate tracking-tight transition-colors",
                                             selectedLeadId === lead.id ? "text-white" : "text-[var(--text-main)]"
-                                        )}>{lead.name}</h4>
+                                        )}>{getLeadDisplayName(lead)}</h4>
                                         <span className={cn(
                                             "text-[10px] font-black uppercase tracking-widest",
                                             selectedLeadId === lead.id ? "text-white/60" : "text-zinc-500"

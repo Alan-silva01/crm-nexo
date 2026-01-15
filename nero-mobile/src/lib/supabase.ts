@@ -28,6 +28,20 @@ export interface Lead {
     ai_paused?: boolean;
 }
 
+/**
+ * Returns the display name for a lead, prioritizing dados.nome over name
+ */
+export const getLeadDisplayName = (lead: Lead): string => {
+    // Priority: dados.nome > name
+    if (lead.dados && typeof lead.dados === 'object') {
+        const dadosNome = (lead.dados as Record<string, any>)['nome'];
+        if (dadosNome && typeof dadosNome === 'string' && dadosNome.trim()) {
+            return dadosNome.trim();
+        }
+    }
+    return lead.name || 'Sem Nome';
+};
+
 export interface Message {
     id: string;
     content: string;

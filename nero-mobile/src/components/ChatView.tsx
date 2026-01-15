@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, getLeadDisplayName } from '../lib/supabase';
 import type { Lead, Message, KanbanColumn } from '../lib/supabase';
 import { useAuth } from '../lib/AuthProvider';
 import { ChevronLeft, Send, CheckCircle2, X } from 'lucide-react';
@@ -125,7 +125,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
                             <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg">
                                 {!lead.avatar || lead.avatar.trim() === "" ? (
                                     <div className="text-white font-black text-xl uppercase">
-                                        {lead.name.charAt(0).toUpperCase()}
+                                        {getLeadDisplayName(lead).charAt(0).toUpperCase()}
                                     </div>
                                 ) : (
                                     <img
@@ -134,14 +134,14 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
                                         alt=""
                                         onError={(e) => {
                                             (e.target as HTMLImageElement).onerror = null;
-                                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name)}&background=6366f1&color=fff`;
+                                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(getLeadDisplayName(lead))}&background=6366f1&color=fff`;
                                         }}
                                     />
                                 )}
                             </div>
                         </div>
                         <div className="min-w-0">
-                            <h4 className="font-black text-[var(--text-main)] truncate text-base leading-tight tracking-tight">{lead.name}</h4>
+                            <h4 className="font-black text-[var(--text-main)] truncate text-base leading-tight tracking-tight">{getLeadDisplayName(lead)}</h4>
                             <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">
                                     {lead.assigned_to ? 'Atribuído' : 'Sem Atendente'}
