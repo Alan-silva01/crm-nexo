@@ -483,13 +483,16 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     const newStatus = !aiPaused;
     setAiPaused(newStatus);
 
-    await chatsSdrService.toggleAI(selectedChat.phone, newStatus ? 'pausar' : 'ativar');
-
-    // Atualizar lista de leads para sincronizar sidebar
+    // Atualização otimista - instantânea na UI
     const updatedLeads = leads.map(lead =>
       lead.id === selectedChat.id ? { ...lead, ai_paused: newStatus } : lead
     );
     onLeadsUpdate(updatedLeads);
+
+    // Enviar para o servidor (em background)
+    chatsSdrService.toggleAI(selectedChat.phone, newStatus ? 'pausar' : 'ativar').catch(err => {
+      console.error('Error toggling AI:', err);
+    });
   };
 
   const handleAssignLead = async (atendenteId: string | null) => {
