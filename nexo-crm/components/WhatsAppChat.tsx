@@ -188,28 +188,17 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
       const cacheKey = phoneNumbers || selectedChat.phone;
 
-      // 0. Buscar nome da tabela de chats (do admin, se for atendente)
+      // 0. Buscar nome da tabela de chats usando função RPC (bypassa RLS)
       const { data: { user } } = await supabase.auth.getUser();
       let chatTableName = 'chats_sdr'; // fallback
       if (user) {
-        // Verificar se é atendente
-        const { data: atendente } = await supabase
-          .from('atendentes')
-          .select('admin_id')
-          .eq('user_id', user.id)
-          .eq('ativo', true)
-          .maybeSingle();
+        // Usar a função RPC que já lida com admin/atendente
+        const { data: profileData, error: rpcError } = await supabase.rpc('get_effective_profile');
 
-        // Se for atendente, buscar profile do admin
-        const profileUserId = atendente?.admin_id || user.id;
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('chat_table_name')
-          .eq('id', profileUserId)
-          .single();
-        if (profile?.chat_table_name) {
-          chatTableName = profile.chat_table_name;
+        if (!rpcError && profileData && profileData.length > 0) {
+          chatTableName = profileData[0].chat_table_name || 'chats_sdr';
+        } else {
+          console.warn('RPC get_effective_profile failed, using fallback:', rpcError);
         }
       }
 
