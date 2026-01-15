@@ -11,34 +11,45 @@ function extractNumbers(phone: string | null): string {
  * Busca o chat_table_name e webhook_url do perfil correto:
  * - Se for atendente: busca do perfil do admin
  * - Se for admin: busca do próprio perfil
+ * Uses SECURITY DEFINER function to bypass RLS issues
  */
 async function getEffectiveProfileData(): Promise<{ chat_table_name: string | null; webhook_url: string | null } | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    // Primeiro, verificar se é atendente
-    const { data: atendente } = await supabase
-        .from('atendentes')
-        .select('admin_id')
-        .eq('user_id', user.id)
-        .eq('ativo', true)
-        .maybeSingle();
+    // Use the SECURITY DEFINER function that handles attendant/admin logic
+    const { data, error } = await supabase.rpc('get_effective_profile');
 
-    // Se for atendente, buscar profile do admin
-    const profileUserId = atendente?.admin_id || user.id;
+    if (error || !data || data.length === 0) {
+        console.error('Error fetching effective profile via RPC:', error);
+        // Fallback to direct query
+        const { data: atendente } = await supabase
+            .from('atendentes')
+            .select('admin_id')
+            .eq('user_id', user.id)
+            .eq('ativo', true)
+            .maybeSingle();
 
-    const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('chat_table_name, webhook_url')
-        .eq('id', profileUserId)
-        .single();
+        const profileUserId = atendente?.admin_id || user.id;
 
-    if (error || !profile) {
-        console.error('Error fetching effective profile:', error);
-        return null;
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('chat_table_name, webhook_url')
+            .eq('id', profileUserId)
+            .single();
+
+        if (profileError || !profile) {
+            console.error('Fallback profile query also failed:', profileError);
+            return null;
+        }
+
+        return profile;
     }
 
-    return profile;
+    return {
+        chat_table_name: data[0].chat_table_name,
+        webhook_url: data[0].webhook_url
+    };
 }
 
 export const chatsSdrService = {
