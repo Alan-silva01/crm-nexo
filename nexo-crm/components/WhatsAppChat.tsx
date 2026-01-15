@@ -191,14 +191,34 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       // 0. Buscar nome da tabela de chats usando função RPC (bypassa RLS)
       const { data: { user } } = await supabase.auth.getUser();
       let chatTableName = 'chats_sdr'; // fallback
-      if (user) {
-        // Usar a função RPC que já lida com admin/atendente
-        const { data: profileData, error: rpcError } = await supabase.rpc('get_effective_profile');
 
-        if (!rpcError && profileData && profileData.length > 0) {
-          chatTableName = profileData[0].chat_table_name || 'chats_sdr';
-        } else {
-          console.warn('RPC get_effective_profile failed, using fallback:', rpcError);
+      if (user) {
+        // Retry logic para lidar com falhas transientes no refresh
+        let retries = 3;
+        let success = false;
+
+        while (retries > 0 && !success) {
+          try {
+            const { data: profileData, error: rpcError } = await supabase.rpc('get_effective_profile');
+
+            if (!rpcError && profileData && profileData.length > 0) {
+              chatTableName = profileData[0].chat_table_name || 'chats_sdr';
+              success = true;
+              console.log('WhatsApp: Got chat table:', chatTableName);
+            } else {
+              console.warn(`RPC attempt ${4 - retries}/3 failed:`, rpcError?.message);
+              retries--;
+              if (retries > 0) await new Promise(r => setTimeout(r, 500)); // wait 500ms before retry
+            }
+          } catch (e) {
+            console.error(`RPC exception attempt ${4 - retries}/3:`, e);
+            retries--;
+            if (retries > 0) await new Promise(r => setTimeout(r, 500));
+          }
+        }
+
+        if (!success) {
+          console.warn('All RPC retries failed, using fallback table');
         }
       }
 
