@@ -21,20 +21,6 @@ export const leadsService = {
             return [];
         }
 
-        // Check cache first for instant loading
-        const cacheKey = `nero_leads_${targetId}`;
-        const cachedLeads = localStorage.getItem(cacheKey);
-        let initialData: Lead[] = [];
-
-        if (cachedLeads) {
-            try {
-                initialData = JSON.parse(cachedLeads);
-                console.log(`[${requestId}] Loaded ${initialData.length} leads from cache`);
-            } catch (e) {
-                console.warn(`[${requestId}] Failed to parse cached leads`);
-            }
-        }
-
         console.log(`[${requestId}] Executing Supabase query for leads...`);
         const startTime = Date.now();
 
@@ -53,15 +39,7 @@ export const leadsService = {
 
         if (error) {
             console.error(`[${requestId}] Error fetching leads:`, error);
-            // Return cached data if available
-            return initialData;
-        }
-
-        // Update cache
-        try {
-            localStorage.setItem(cacheKey, JSON.stringify(data));
-        } catch (e) {
-            console.warn(`[${requestId}] Failed to cache leads`);
+            return [];
         }
 
         return data as Lead[];
