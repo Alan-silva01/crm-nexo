@@ -31,14 +31,27 @@ export const atendentesService = {
                 return null;
             }
 
-            // Se tem metadata de atendente com admin_id, usa direto - sem query!
+            // Se tem metadata de atendente com admin_id, busca dados completos do DB
             if (userMetadata?.is_atendente === true && userMetadata?.admin_id) {
-                console.log(`[${requestId}] Using metadata directly - atendente with admin_id:`, userMetadata.admin_id);
-                return {
-                    type: 'atendente' as const,
-                    effectiveUserId: userMetadata.admin_id as string,
-                    atendenteInfo: null // Pode ser preenchido depois se necessário
-                };
+                console.log(`[${requestId}] Metadata indicates atendente, fetching full record from DB...`);
+                // Mesmo com metadata, precisamos buscar o record completo para ter o ID
+                const { data: atendenteFromDb } = await supabase
+                    .from('atendentes')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .eq('ativo', true)
+                    .maybeSingle();
+
+                if (atendenteFromDb) {
+                    console.log(`[${requestId}] Found atendente in DB:`, atendenteFromDb.id);
+                    return {
+                        type: 'atendente' as const,
+                        effectiveUserId: atendenteFromDb.admin_id as string,
+                        atendenteInfo: atendenteFromDb as Atendente
+                    };
+                }
+                // Fallback: usar metadata se DB falhar
+                console.log(`[${requestId}] DB query failed, using metadata only (no atendenteInfo.id)`);
             }
 
             // Query única, sem retry, com timeout de 3 segundos
