@@ -81,6 +81,11 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
             if (selectedAudio) {
                 audioBase64 = await fileToBase64(selectedAudio);
             }
+            const contentTypes = [];
+            if (message.trim()) contentTypes.push('texto');
+            if (selectedImage) contentTypes.push('imagem');
+            if (selectedAudio) contentTypes.push('audio');
+            const enviado = contentTypes.join(' + ');
 
             const payload = {
                 config: {
@@ -90,7 +95,8 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                     intervalo_segundos: parseInt(interval) || 30,
                     data_inicio: startDate,
                     hora_inicio: startTime,
-                    tags_alvo: selectedTags
+                    tags_alvo: selectedTags,
+                    enviado: enviado
                 },
                 total_destinatarios: filteredLeads.length,
                 contatos: formattedContacts
