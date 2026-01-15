@@ -142,6 +142,14 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
                         </div>
                         <div className="min-w-0">
                             <h4 className="font-black text-[var(--text-main)] truncate text-base leading-tight tracking-tight">{getLeadDisplayName(lead)}</h4>
+                            <p className="text-[10px] text-zinc-500 font-medium tracking-tight mb-0.5">
+                                {(() => {
+                                    const p = (lead.phone || '').replace(/\D/g, '').replace(/^55/, '');
+                                    return p.length >= 10
+                                        ? `(${p.slice(0, 2)}) ${p.slice(2, 7)}-${p.slice(7, 11)}`
+                                        : p;
+                                })()}
+                            </p>
                             <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">
                                     {lead.assigned_to ? 'Atribuído' : 'Sem Atendente'}

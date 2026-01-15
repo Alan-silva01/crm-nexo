@@ -648,7 +648,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                   <span className="text-[10px] text-zinc-500 shrink-0">{chat.lastActive || 'Agora'}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <p className="text-[11px] text-zinc-500 truncate pr-4">
+                  <p className="text-[11px] text-zinc-500 truncate pr-4" title={chat.last_message || formatPhoneNumber(chat.phone)}>
                     {chat.last_message || formatPhoneNumber(chat.phone) || 'Clique para conversar'}
                   </p>
                   {chat.unreadCount && chat.unreadCount > 0 && (
