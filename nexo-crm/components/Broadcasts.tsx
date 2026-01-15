@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
-import { Send, Image as ImageIcon, Music, Clock, Calendar as CalendarIcon, AlertCircle } from 'lucide-react';
+import { Send, Image as ImageIcon, Music, Clock, Calendar as CalendarIcon, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { Lead } from '../types';
 
-const Broadcasts: React.FC = () => {
+interface BroadcastsProps {
+    leads: Lead[];
+    profile: any;
+}
+
+const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
     const [message, setMessage] = useState('');
     const [interval, setIntervalValue] = useState('30');
     const [startDate, setStartDate] = useState('');
@@ -9,11 +15,105 @@ const Broadcasts: React.FC = () => {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [selectedAudio, setSelectedAudio] = useState<File | null>(null);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [isSending, setIsSending] = useState(false);
+    const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
     const handleTagToggle = (tag: string) => {
         setSelectedTags(prev =>
             prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
         );
+    };
+
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                const base64String = reader.result as string;
+                resolve(base64String.split(',')[1]);
+            };
+            reader.onerror = error => reject(error);
+        });
+    };
+
+    const handleStartBroadcast = async () => {
+        if (!message.trim()) {
+            alert('Por favor, escreva uma mensagem.');
+            return;
+        }
+
+        if (selectedTags.length === 0) {
+            alert('Por favor, selecione ao menos uma etiqueta.');
+            return;
+        }
+
+        const webhookUrl = profile?.disparos_whebhook;
+        if (!webhookUrl) {
+            alert('Webhook de disparos não configurado no seu perfil.');
+            return;
+        }
+
+        setIsSending(true);
+        setStatus('idle');
+
+        try {
+            const targetLeads = leads.filter(lead =>
+                lead.tags?.some(tag => selectedTags.includes(tag))
+            ).map(l => ({
+                nome: l.name,
+                telefone: l.phone,
+                etiquetas: l.tags
+            }));
+
+            if (targetLeads.length === 0) {
+                alert('Nenhum contato encontrado com as etiquetas selecionadas.');
+                setIsSending(false);
+                return;
+            }
+
+            let imageBase64 = '';
+            let audioBase64 = '';
+
+            if (selectedImage) {
+                imageBase64 = await fileToBase64(selectedImage);
+            }
+            if (selectedAudio) {
+                audioBase64 = await fileToBase64(selectedAudio);
+            }
+
+            const payload = {
+                config: {
+                    mensagem: message,
+                    imagem_base64: imageBase64,
+                    audio_base64: audioBase64,
+                    intervalo_segundos: parseInt(interval) || 30,
+                    data_inicio: startDate,
+                    hora_inicio: startTime,
+                    tags_alvo: selectedTags
+                },
+                total_destinatarios: targetLeads.length,
+                contatos: targetLeads
+            };
+
+            const response = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error('Falha ao enviar para o webhook');
+            }
+
+            setStatus('success');
+        } catch (error) {
+            console.error('Erro ao iniciar disparo:', error);
+            setStatus('error');
+        } finally {
+            setIsSending(false);
+        }
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,13 +135,23 @@ const Broadcasts: React.FC = () => {
                     <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">Disparos em Massa</h1>
                     <p className="text-zinc-500 text-sm">Configure suas campanhas de transmissão para o WhatsApp.</p>
                 </div>
+                {status === 'success' && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                        <CheckCircle2 size={14} />
+                        Disparo enviado com sucesso!
+                    </div>
+                )}
+                {status === 'error' && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                        <AlertCircle size={14} />
+                        Erro ao enviar disparo.
+                    </div>
+                )}
             </header>
 
             <div className="max-w-4xl mx-auto space-y-6">
-                {/* Main Card */}
                 <div className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[2.5rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316]">
                     <div className="space-y-6">
-                        {/* Mensagem */}
                         <div className="space-y-2">
                             <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                                 <Send size={12} className="text-indigo-400" />
@@ -55,7 +165,6 @@ const Broadcasts: React.FC = () => {
                             />
                         </div>
 
-                        {/* Mídia */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
@@ -104,7 +213,6 @@ const Broadcasts: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Filtro por Etiquetas */}
                         <div className="space-y-3 pb-4 border-b border-zinc-800/50">
                             <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                                 <AlertCircle size={12} className="text-indigo-400" />
@@ -127,7 +235,6 @@ const Broadcasts: React.FC = () => {
                             <p className="text-[10px] text-zinc-600">Selecione uma ou mais etiquetas para direcionar o disparo.</p>
                         </div>
 
-                        {/* Configurações de Tempo */}
                         <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
@@ -170,11 +277,23 @@ const Broadcasts: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Action Buttons */}
                         <div className="pt-6 flex gap-4">
-                            <button className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-2">
-                                <Send size={16} />
-                                Iniciar Disparos
+                            <button
+                                onClick={handleStartBroadcast}
+                                disabled={isSending}
+                                className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSending ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        Enviando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send size={16} />
+                                        Iniciar Disparos
+                                    </>
+                                )}
                             </button>
                             <button className="px-8 py-4 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all active:scale-95">
                                 Salvar Rascunho
@@ -183,7 +302,6 @@ const Broadcasts: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Info Card */}
                 <div className="bg-indigo-500/5 border border-indigo-500/20 p-6 rounded-3xl flex gap-4 items-start">
                     <div className="p-2 bg-indigo-500/10 rounded-xl">
                         <AlertCircle size={20} className="text-indigo-400" />

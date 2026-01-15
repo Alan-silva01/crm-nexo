@@ -601,7 +601,7 @@ const AppContent: React.FC = () => {
       case 'analytics':
         return <DetailedAnalytics leads={leads} onAction={handleAnalysisAction} />;
       case 'broadcasts':
-        return <Broadcasts />;
+        return <Broadcasts leads={leads} profile={profile} />;
       case 'ajustes':
         return <Settings user={user} onUpdate={() => {/* User metadata updates are handled by Supabase session listener, but we could add manual refresh here if needed */ }} />;
       default:
