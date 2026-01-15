@@ -575,6 +575,7 @@ const AppContent: React.FC = () => {
               setSelectedChatId(lead.id);
               setActiveTab('chats');
             }}
+            showTags={profile?.disparos}
           />
         );
       case 'calendar':
@@ -601,6 +602,10 @@ const AppContent: React.FC = () => {
       case 'analytics':
         return <DetailedAnalytics leads={leads} onAction={handleAnalysisAction} />;
       case 'broadcasts':
+        if (!profile?.disparos) {
+          setActiveTab('leads');
+          return null;
+        }
         return <Broadcasts leads={leads} profile={profile} />;
       case 'ajustes':
         return <Settings user={user} onUpdate={() => {/* User metadata updates are handled by Supabase session listener, but we could add manual refresh here if needed */ }} />;
@@ -617,6 +622,7 @@ const AppContent: React.FC = () => {
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
         user={user}
+        profile={profile}
       />
       <main className="flex-1 flex flex-col min-w-0 bg-[#0c0c0e] relative">
         <header className="h-16 border-b border-zinc-800/50 flex items-center justify-between px-8 bg-zinc-900/20 z-40">

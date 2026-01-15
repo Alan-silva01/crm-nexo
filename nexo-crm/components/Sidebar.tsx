@@ -22,9 +22,10 @@ interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
   user?: User | null;
+  profile?: any;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed, setIsCollapsed, user }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed, setIsCollapsed, user, profile }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   const effectiveCollapsed = isCollapsed && !isHovered;
 
@@ -34,9 +35,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
     { id: 'leads', icon: Users, label: 'Contatos' },
     { id: 'chats', icon: MessageSquare, label: 'Conversas' },
     { id: 'calendar', icon: Calendar, label: 'Calendário' },
-    { id: 'broadcasts', icon: Send, label: 'Disparos' },
+    { id: 'broadcasts', icon: Send, label: 'Disparos', permission: profile?.disparos },
     { id: 'analytics', icon: BarChart3, label: 'Relatórios' },
-  ];
+  ].filter(item => item.permission !== false);
 
   return (
     <aside
