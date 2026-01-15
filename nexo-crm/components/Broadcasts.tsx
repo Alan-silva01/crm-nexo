@@ -57,22 +57,20 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
         setStatus('idle');
 
         try {
-            const targetLeads = leads.filter(lead =>
+            const filteredLeads = leads.filter(lead =>
                 lead.tags?.some(tag => selectedTags.includes(tag))
-            ).map(l => {
-                // Remove caracteres não numéricos do telefone
-                const cleanedPhone = l.phone.replace(/\D/g, '');
-                return {
-                    nome: l.name,
-                    numero: `${cleanedPhone}@s.whatsapp.net`
-                };
-            });
+            );
 
-            if (targetLeads.length === 0) {
+            if (filteredLeads.length === 0) {
                 alert('Nenhum contato encontrado com as etiquetas selecionadas.');
                 setIsSending(false);
                 return;
             }
+
+            const formattedContacts = filteredLeads.map(l => {
+                const cleanedPhone = l.phone.replace(/\D/g, '');
+                return `nome: ${l.name}\ntelefone: ${cleanedPhone}@s.whatsapp.net`;
+            }).join('\n\n');
 
             let imageBase64 = '';
             let audioBase64 = '';
@@ -94,8 +92,8 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                     hora_inicio: startTime,
                     tags_alvo: selectedTags
                 },
-                total_destinatarios: targetLeads.length,
-                contatos: targetLeads
+                total_destinatarios: filteredLeads.length,
+                contatos: formattedContacts
             };
 
             const response = await fetch(webhookUrl, {
