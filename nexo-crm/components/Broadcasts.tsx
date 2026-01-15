@@ -59,11 +59,14 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
         try {
             const targetLeads = leads.filter(lead =>
                 lead.tags?.some(tag => selectedTags.includes(tag))
-            ).map(l => ({
-                nome: l.name,
-                telefone: l.phone,
-                etiquetas: l.tags
-            }));
+            ).map(l => {
+                // Remove caracteres não numéricos do telefone
+                const cleanedPhone = l.phone.replace(/\D/g, '');
+                return {
+                    nome: l.name,
+                    numero: `${cleanedPhone}@s.whatsapp.net`
+                };
+            });
 
             if (targetLeads.length === 0) {
                 alert('Nenhum contato encontrado com as etiquetas selecionadas.');
