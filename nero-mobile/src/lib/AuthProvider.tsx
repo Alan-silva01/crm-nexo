@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase, Lead, KanbanColumn } from './supabase';
-import { Session, User } from '@supabase/supabase-js';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import { supabase } from './supabase';
+import type { Session, User } from '@supabase/supabase-js';
 
 interface AuthContextProps {
     user: User | null;

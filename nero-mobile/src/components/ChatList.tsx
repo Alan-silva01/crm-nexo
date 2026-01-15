@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { supabase, Lead } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import type { Lead } from '../lib/supabase';
 import { useAuth } from '../lib/AuthProvider';
 
 interface ChatListProps {

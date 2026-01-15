@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { supabase, Lead, Message, KanbanColumn } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import type { Lead, Message, KanbanColumn } from '../lib/supabase';
 import { useAuth } from '../lib/AuthProvider';
 
 interface ChatViewProps {
