@@ -80,8 +80,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }, 10000);
 
                 if (currSession?.user) {
+                    const initStartTime = Date.now();
                     setSession(currSession);
                     setUser(currSession.user);
+
+                    const metaAdminId = currSession.user.user_metadata?.admin_id;
+                    const isAtendente = currSession.user.user_metadata?.is_atendente;
 
                     // RESTAURAR DO CACHE IMEDIATAMENTE para todos os usuários
                     const cached = localStorage.getItem(`auth_user_type_${currSession.user.id}`);
@@ -92,28 +96,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                             setUserType(cachedInfo.type);
                             setEffectiveUserId(cachedInfo.effectiveUserId);
                             setAtendenteInfo(cachedInfo.atendenteInfo || null);
-                            setLoading(false); // Liberar imediatamente com dados do cache
                         } catch (e) {
                             console.error('AuthProvider: Error parsing cached user type:', e);
                         }
                     }
 
-                    const metaAdminId = currSession.user.user_metadata?.admin_id;
-                    const isAtendente = currSession.user.user_metadata?.is_atendente;
-
                     if (isAtendente && metaAdminId) {
                         console.log('AuthProvider: User is an atendente based on metadata. Admin ID:', metaAdminId);
                         setUserType('atendente');
                         setEffectiveUserId(metaAdminId);
-                        console.log('AuthProvider: Setting loading(false) early due to atendente metadata.');
-                        setLoading(false);
                     } else if (!cached) {
-                        // Só loga se não tinha cache
                         console.log('AuthProvider: No atendente metadata and no cache found.');
                     }
 
-                    // Tentar determinar o tipo de usuário (pode rodar em paralelo se já liberamos loading)
+                    // Buscar tipo de usuário do banco
                     await fetchUserType(currSession.user.id, currSession.user.user_metadata);
+
+                    // DELAY MÍNIMO PARA ATENDENTES - garante sessão estabilizada
+                    // Isso resolve o problema de refresh onde auth.uid() demora para estabilizar
+                    const elapsedTime = Date.now() - initStartTime;
+                    const minDelayForAtendente = 1200; // 1.2 segundos
+
+                    if (isAtendente && elapsedTime < minDelayForAtendente) {
+                        const remainingDelay = minDelayForAtendente - elapsedTime;
+                        console.log(`AuthProvider: Atendente detected, waiting ${remainingDelay}ms for session stability...`);
+                        await new Promise(r => setTimeout(r, remainingDelay));
+                    }
+
+                    console.log('AuthProvider: Session fully stabilized, releasing loading...');
                 } else {
                     console.log('AuthProvider: No active session found.');
                     setSession(null);
