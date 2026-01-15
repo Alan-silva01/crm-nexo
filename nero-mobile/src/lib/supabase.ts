@@ -24,7 +24,8 @@ export interface Lead {
     created_at: string;
     updated_at?: string;
     dados?: Record<string, any>;
-    atendente_id?: string;
+    assigned_to?: string;
+    ai_paused?: boolean;
 }
 
 export interface Message {

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Lead, Message, KanbanColumn } from '../lib/supabase';
 import { useAuth } from '../lib/AuthProvider';
-import { ChevronLeft, Send, User, CheckCircle2, MoreVertical, X } from 'lucide-react';
+import { ChevronLeft, Send, CheckCircle2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 
@@ -102,59 +102,105 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
         setShowStatusModal(false);
     };
 
-    return (
-        <div className="flex flex-col h-screen bg-[#0c0c0e] light:bg-[#f8f9fa]">
-            {/* Header */}
-            <header className="px-4 py-3 flex items-center gap-3 border-b border-white/5 light:border-black/5 bg-[#09090b]/90 backdrop-blur-md">
-                <button onClick={onBack} className="p-2 -ml-2 rounded-xl text-zinc-400 hover:text-white transition-colors">
-                    <ChevronLeft size={24} />
-                </button>
+    const toggleAI = async () => {
+        const newStatus = !lead.ai_paused;
+        const { error } = await supabase.from('leads').update({ ai_paused: newStatus }).eq('id', lead.id);
+        if (!error) {
+            lead.ai_paused = newStatus;
+            setMessages(prev => [...prev]); // Force re-render if needed, though state is in lead object
+        }
+    };
 
-                <div className="flex-1 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-zinc-900 light:bg-zinc-200 flex items-center justify-center overflow-hidden border border-white/5 light:border-black/5 shadow-lg">
-                        {lead.avatar ? <img src={lead.avatar} className="w-full h-full object-cover" alt="" /> : <User className="text-zinc-600" size={18} />}
-                    </div>
-                    <div className="min-w-0">
-                        <h4 className="font-bold text-white light:text-black truncate text-sm leading-tight">{lead.name}</h4>
-                        <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">Online</span>
+    return (
+        <div className="flex flex-col h-screen bg-[var(--bg-main)]">
+            {/* Header */}
+            <header className="px-6 py-4 flex items-center justify-between border-b border-[var(--border-base)] bg-[var(--bg-sidebar)]/80 backdrop-blur-xl sticky top-0 z-30">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-2xl bg-[var(--border-base)] text-zinc-400 hover:text-[var(--text-main)] transition-all active:scale-90">
+                        <ChevronLeft size={24} />
+                    </button>
+
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full p-0.5 border-2 border-indigo-500 bg-[var(--bg-main)]">
+                            <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg">
+                                {!lead.avatar || lead.avatar.trim() === "" ? (
+                                    <div className="text-white font-black text-xl uppercase">
+                                        {lead.name.charAt(0).toUpperCase()}
+                                    </div>
+                                ) : (
+                                    <img
+                                        src={lead.avatar}
+                                        className="w-full h-full object-cover"
+                                        alt=""
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).onerror = null;
+                                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name)}&background=6366f1&color=fff`;
+                                        }}
+                                    />
+                                )}
+                            </div>
+                        </div>
+                        <div className="min-w-0">
+                            <h4 className="font-black text-[var(--text-main)] truncate text-base leading-tight tracking-tight">{lead.name}</h4>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">
+                                    {lead.assigned_to ? 'Atribuído' : 'Sem Atendente'}
+                                </span>
+                                <div className="flex items-center gap-1 opacity-60">
+                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Online</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1">
-                    <button onClick={() => setShowStatusModal(true)} className="px-3 py-1.5 rounded-lg bg-indigo-600/10 border border-indigo-600/20 text-indigo-400 text-[10px] font-bold uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={toggleAI}
+                        className={cn(
+                            "px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
+                            lead.ai_paused
+                                ? "bg-red-500/10 border-red-500/20 text-red-500"
+                                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                        )}
+                    >
+                        {lead.ai_paused ? 'IA OFF' : 'IA ON'}
+                    </button>
+                    <button
+                        onClick={() => setShowStatusModal(true)}
+                        className="px-3 py-1.5 rounded-xl bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
+                    >
                         {lead.status}
                     </button>
-                    <button className="p-2 rounded-xl text-zinc-400"><MoreVertical size={20} /></button>
                 </div>
             </header>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+            <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
                 {messages.map((msg, idx) => {
                     const isUser = msg.sender === 'user';
                     return (
                         <motion.div
-                            initial={{ opacity: 0, x: isUser ? 20 : -20 }}
-                            animate={{ opacity: 1, x: 0 }}
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ type: 'spring', damping: 25 }}
                             key={msg.id || idx}
-                            className={cn("flex flex-col max-w-[85%]", isUser ? "self-end items-end" : "self-start items-start")}
+                            className={cn("flex flex-col max-w-[80%]", isUser ? "self-end items-end" : "self-start items-start")}
                         >
                             <div className={cn(
-                                "px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed shadow-lg",
+                                "px-5 py-3.5 text-[14px] leading-relaxed shadow-xl transition-all",
                                 isUser
-                                    ? "bg-indigo-600 text-white rounded-tr-none shadow-indigo-600/10"
-                                    : "bg-zinc-900 light:bg-white text-zinc-200 light:text-black border border-white/5 light:border-black/5 rounded-tl-none"
+                                    ? "bg-indigo-600 text-white rounded-[24px] rounded-tr-none shadow-indigo-600/20"
+                                    : "bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-base)] rounded-[24px] rounded-tl-none shadow-sm"
                             )}>
                                 {msg.content}
                             </div>
-                            <div className="flex items-center gap-1 mt-1 px-1">
-                                <span className="text-[9px] font-medium text-zinc-600 uppercase">
+                            <div className="flex items-center gap-2 mt-2 px-1">
+                                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                                     {new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
-                                {isUser && <CheckCircle2 size={10} className="text-zinc-700" />}
+                                {isUser && <CheckCircle2 size={12} className="text-indigo-500" />}
                             </div>
                         </motion.div>
                     );
@@ -163,17 +209,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
             </div>
 
             {/* Input */}
-            <footer className="p-4 bg-[#09090b]/80 backdrop-blur-md border-t border-white/5 light:border-black/5 safe-area-bottom">
-                <div className="flex items-end gap-2 bg-zinc-900/50 light:bg-white border border-white/5 light:border-black/5 rounded-[24px] p-2 pr-3 group focus-within:ring-2 focus-within:ring-indigo-600/30 transition-all">
+            <footer className="p-6 bg-transparent sticky bottom-0 z-30">
+                <div className="max-w-xl mx-auto flex items-end gap-3 bg-[var(--bg-card)]/90 backdrop-blur-2xl border border-[var(--border-base)] rounded-[32px] p-2 pr-3 group focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all shadow-2xl">
                     <textarea
-                        className="flex-1 bg-transparent border-none focus:ring-0 text-[13px] text-white light:text-black placeholder:text-zinc-600 py-2.5 px-3 max-h-32 min-h-[40px] resize-none overflow-hidden"
+                        className="flex-1 bg-transparent border-none focus:ring-0 text-[14px] text-[var(--text-main)] placeholder:text-zinc-600 py-3.5 px-4 max-h-32 min-h-[40px] resize-none overflow-hidden"
                         value={newMessage}
                         onChange={(e) => {
                             setNewMessage(e.target.value);
                             e.target.style.height = 'auto';
                             e.target.style.height = e.target.scrollHeight + 'px';
                         }}
-                        placeholder="Mensagem..."
+                        placeholder="Escreva sua mensagem..."
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
@@ -184,9 +230,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
                     <button
                         onClick={sendMessage}
                         disabled={!newMessage.trim() || sending}
-                        className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:grayscale transition-all active:scale-95 mb-0.5"
+                        className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-600/30 disabled:opacity-50 disabled:grayscale transition-all active:scale-90 hover:scale-105 mb-0.5"
                     >
-                        {sending ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Send size={18} />}
+                        {sending ? <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div> : <Send size={22} />}
                     </button>
                 </div>
             </footer>
@@ -203,31 +249,34 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
                             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
                         />
                         <motion.div
-                            initial={{ y: '100%' }}
-                            animate={{ y: 0 }}
-                            exit={{ y: '100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="relative w-full max-w-sm bg-[#0c0c0e] border-t border-white/10 rounded-t-[32px] p-8 shadow-2xl"
+                            initial={{ y: '100%', opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: '100%', opacity: 0 }}
+                            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                            className="relative w-full max-w-md bg-[var(--bg-sidebar)]/95 backdrop-blur-2xl border-t border-[var(--border-base)] rounded-t-[48px] px-8 pt-10 pb-12 shadow-2xl z-[101]"
                         >
-                            <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-6" />
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-xl font-bold text-white tracking-tight">Mover Lead</h3>
-                                <button onClick={() => setShowStatusModal(false)} className="p-2 bg-white/5 rounded-full text-zinc-400 hover:text-white"><X size={20} /></button>
+                            <div className="w-16 h-1.5 bg-[var(--border-base)] rounded-full mx-auto mb-10 shadow-inner" />
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h3 className="text-2xl font-black text-[var(--text-main)] tracking-tight">Alterar Status</h3>
+                                    <p className="text-xs font-black text-indigo-500 uppercase tracking-widest leading-none mt-1">Mover lead no funil</p>
+                                </div>
+                                <button onClick={() => setShowStatusModal(false)} className="w-12 h-12 flex items-center justify-center bg-[var(--border-base)] rounded-full text-zinc-400 hover:text-[var(--text-main)] active:scale-90 transition-all"><X size={24} /></button>
                             </div>
-                            <div className="grid grid-cols-1 gap-3 max-h-[40vh] overflow-y-auto pr-2">
+                            <div className="grid grid-cols-1 gap-4 max-h-[50vh] overflow-y-auto no-scrollbar pr-1">
                                 {columns.map((col) => (
                                     <button
                                         key={col.id}
                                         onClick={() => changeStatus(col.name)}
                                         className={cn(
-                                            "flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.98]",
+                                            "flex items-center justify-between p-6 rounded-[32px] border transition-all active:scale-[0.98] animate-slide-up",
                                             lead.status === col.name
-                                                ? "bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-600/20 text-white"
-                                                : "bg-zinc-900/50 border-white/5 text-zinc-400 hover:text-white hover:bg-zinc-900"
+                                                ? "bg-indigo-600 border-indigo-500 shadow-xl shadow-indigo-600/20 text-white"
+                                                : "bg-[var(--bg-card)] border-[var(--border-base)] text-zinc-500 hover:text-[var(--text-main)] hover:bg-[var(--border-base)]"
                                         )}
                                     >
-                                        <span className="text-sm font-bold uppercase tracking-wider">{col.name}</span>
-                                        {lead.status === col.name && <CheckCircle2 size={18} />}
+                                        <span className="text-sm font-black uppercase tracking-widest">{col.name}</span>
+                                        {lead.status === col.name && <CheckCircle2 size={22} />}
                                     </button>
                                 ))}
                             </div>

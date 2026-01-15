@@ -1,49 +1,117 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-nero-bg: #0d0d0d;
+  --color-nero-card: #1a1a1a;
+  --color-nero-sidebar: #161616;
+  --color-nero-indigo: #6366f1;
+}
 
 :root {
-  --bg-main: #0c0c0e;
-  --bg-card: #0c0c0e;
-  --bg-sidebar: #09090b;
-  --border-base: rgba(255, 255, 255, 0.05);
-  --text-main: #f4f4f5;
-  --text-muted: #71717a;
-  --shadow-base: 8px 8px 16px #060607, -8px -8px 16px #121215;
+  --bg-main: #0d0d0d;
+  --bg-card: #1a1a1a;
+  --bg-sidebar: #161616;
+  --border-base: rgba(255, 255, 255, 0.04);
+  --text-main: #ffffff;
+  --text-muted: #a1a1aa;
+  --accent-main: #6366f1;
+  --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
 .light {
-  --bg-main: #f8f9fa;
+  --bg-main: #fcfcfc;
   --bg-card: #ffffff;
   --bg-sidebar: #ffffff;
-  --border-base: #f1f1f4;
-  --text-main: #18181b;
-  --text-muted: #8e8e93;
+  --border-base: rgba(0, 0, 0, 0.06);
+  --text-main: #09090b;
+  --text-muted: #71717a;
+  --accent-main: #4f46e5;
+  --shadow-premium: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-main);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  /* Prevent body scroll, use app containers */
   height: 100vh;
   width: 100vw;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
 }
 
-.light body {
-  background-color: #f8f9fa;
-  color: #18181b;
+/* Base transitions */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
-/* Custom Utilities based on Nero patterns */
-@layer utilities {
-  .nero-glass {
-    @apply bg-opacity-85 backdrop-blur-md border border-white/5;
+/* Custom Utilities */
+@utility nero-glass {
+  background-color: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.light @utility nero-glass {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+@utility glass-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-base);
+  box-shadow: var(--shadow-premium);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
 
-  .light .nero-glass {
-    @apply bg-white/85 border-[#f1f1f4];
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+
+@utility animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@utility animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

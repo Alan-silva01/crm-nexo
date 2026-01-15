@@ -4,7 +4,7 @@ import { Login } from './components/Login';
 import { ChatList } from './components/ChatList';
 import { ChatView } from './components/ChatView';
 import type { Lead } from './lib/supabase';
-import { LogOut, Sun, Moon } from 'lucide-react';
+import { LogOut, Sun, Moon, Home, MessageSquare, Bell, User as UserIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 
@@ -45,16 +45,16 @@ function AppContent() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-var(--bg-main) text-var(--text-main)">
+    <div className="flex flex-col h-screen overflow-hidden bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-500">
       <AnimatePresence mode="wait">
         {selectedLead ? (
           <motion.div
             key="chat-view"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-50 bg-[#0c0c0e] light:bg-white"
+            initial={{ x: '100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '100%', opacity: 0 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className="fixed inset-0 z-50 bg-[var(--bg-main)]"
           >
             <ChatView
               lead={selectedLead}
@@ -64,42 +64,68 @@ function AppContent() {
         ) : (
           <motion.div
             key="chat-list"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
             className="flex flex-col h-full"
           >
-            <header className="px-6 py-4 flex justify-between items-center border-b border-white/5 light:border-black/5 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                  <span className="text-white font-bold">N</span>
+            <header className="px-6 py-5 flex justify-between items-center border-b border-[var(--border-base)] bg-[var(--bg-sidebar)]/80 backdrop-blur-xl sticky top-0 z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                  <span className="text-white font-black text-xl">N</span>
                 </div>
-                <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent light:from-black light:to-zinc-600">
-                  NERO Mobile
-                </h1>
+                <div>
+                  <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-[var(--text-main)] to-[var(--text-muted)] bg-clip-text text-transparent">
+                    NERO
+                  </h1>
+                  <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest leading-none">Mobile PWA</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={toggleTheme}
-                  className="p-2 rounded-xl bg-white/5 light:bg-black/5 text-zinc-400 hover:text-white transition-colors"
+                  className="w-10 h-10 flex items-center justify-center rounded-2xl bg-[var(--border-base)] text-zinc-400 hover:text-[var(--text-main)] transition-all active:scale-90"
                 >
                   {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
                 </button>
                 <button
                   onClick={signOut}
-                  className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                  className="w-10 h-10 flex items-center justify-center rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all active:scale-90"
                 >
                   <LogOut size={20} />
                 </button>
               </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto pb-safe">
+            <main className="flex-1 overflow-y-auto pb-24">
               <ChatList
                 onSelectLead={setSelectedLead}
-                selectedLeadId={selectedLead ? selectedLead.id : undefined}
+                selectedLeadId={undefined}
               />
             </main>
+
+            {/* Bottom Navigation */}
+            <nav className="fixed bottom-0 left-0 right-0 px-6 py-4 bg-[var(--bg-sidebar)]/80 backdrop-blur-xl border-t border-[var(--border-base)] flex justify-between items-center z-20">
+              <button className="flex flex-col items-center gap-1 text-zinc-500 transition-colors">
+                <Home size={22} />
+                <span className="text-[10px] font-bold uppercase tracking-tighter">Início</span>
+              </button>
+              <button className="flex flex-col items-center gap-1 text-indigo-500 transition-colors">
+                <MessageSquare size={22} />
+                <span className="text-[10px] font-bold uppercase tracking-tighter">Mensagens</span>
+              </button>
+              <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 -mt-8 border-4 border-[var(--bg-main)] active:scale-90 transition-transform">
+                <span className="text-xl font-bold">+</span>
+              </div>
+              <button className="flex flex-col items-center gap-1 text-zinc-500 transition-colors">
+                <Bell size={22} />
+                <span className="text-[10px] font-bold uppercase tracking-tighter">Alertas</span>
+              </button>
+              <button className="flex flex-col items-center gap-1 text-zinc-500 transition-colors">
+                <UserIcon size={22} />
+                <span className="text-[10px] font-bold uppercase tracking-tighter">Perfil</span>
+              </button>
+            </nav>
           </motion.div>
         )}
       </AnimatePresence>

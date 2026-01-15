@@ -9,6 +9,7 @@ interface AuthContextProps {
     loading: boolean;
     userType: 'admin' | 'atendente' | null;
     effectiveUserId: string | null;
+    atendenteId: string | null;
     signIn: (email: string, password: string) => Promise<{ error: any }>;
     signOut: () => Promise<void>;
 }
@@ -21,6 +22,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loading, setLoading] = useState(true);
     const [userType, setUserType] = useState<'admin' | 'atendente' | null>(null);
     const [effectiveUserId, setEffectiveUserId] = useState<string | null>(null);
+    const [atendenteId, setAtendenteId] = useState<string | null>(null);
 
     useEffect(() => {
         // Check for existing session
@@ -42,6 +44,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             } else {
                 setUserType(null);
                 setEffectiveUserId(null);
+                setAtendenteId(null);
             }
             setLoading(false);
         });
@@ -56,28 +59,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (metadata?.is_atendente && metadata?.admin_id) {
             setUserType('atendente');
             setEffectiveUserId(metadata.admin_id);
-        } else {
-            // Check profiles table
-            const { data } = await supabase
+            // Optionally fetch the atendente.id from the table if not in metadata
+            // But usually we need it for filtering leads.assigned_to
+        }
+
+        // Always try to fetch from table for most accurate info
+        if (user) {
+            const { data: profileData } = await supabase
                 .from('profiles')
                 .select('id')
                 .eq('id', user.id)
                 .single();
 
-            if (data) {
+            if (profileData) {
                 setUserType('admin');
                 setEffectiveUserId(user.id);
+                setAtendenteId(null);
             } else {
-                // Check atendentes table
                 const { data: atendenteData } = await supabase
                     .from('atendentes')
-                    .select('admin_id')
+                    .select('id, admin_id')
                     .eq('user_id', user.id)
                     .single();
 
                 if (atendenteData) {
                     setUserType('atendente');
                     setEffectiveUserId(atendenteData.admin_id);
+                    setAtendenteId(atendenteData.id);
                 }
             }
         }
@@ -93,7 +101,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, userType, effectiveUserId, signIn, signOut }}>
+        <AuthContext.Provider value={{ user, session, loading, userType, effectiveUserId, atendenteId, signIn, signOut }}>
             {children}
         </AuthContext.Provider>
     );

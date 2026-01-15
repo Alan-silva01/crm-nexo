@@ -189,11 +189,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const signOut = async () => {
-        const { error } = await supabase.auth.signOut();
+        await supabase.auth.signOut();
+        // Clear all caches and reload to ensure a fresh state
+        localStorage.clear();
         setUserType(null);
         setEffectiveUserId(null);
         setAtendenteInfo(null);
-        return { error };
+        window.location.href = '/';
+        return { error: null };
     };
 
     const refreshUserType = async () => {
