@@ -5,6 +5,7 @@ import { useAuth } from '../lib/AuthProvider';
 import { Search, RefreshCw, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
+import { formatPhoneNumber } from '../lib/formatPhone';
 
 interface ChatListProps {
     onSelectLead: (lead: Lead) => void;
@@ -187,10 +188,16 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectLead, selectedLeadId
 
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-1">
-                                        <h4 className={cn(
-                                            "font-black text-base truncate tracking-tight transition-colors",
-                                            selectedLeadId === lead.id ? "text-white" : "text-[var(--text-main)]"
-                                        )}>{getLeadDisplayName(lead)}</h4>
+                                        <div className="flex flex-col">
+                                            <h4 className={cn(
+                                                "font-black text-base truncate tracking-tight transition-colors",
+                                                selectedLeadId === lead.id ? "text-white" : "text-[var(--text-main)]"
+                                            )}>{getLeadDisplayName(lead)}</h4>
+                                            <span className={cn(
+                                                "text-[9px] font-bold tracking-widest transition-colors",
+                                                selectedLeadId === lead.id ? "text-white/60" : "text-indigo-500"
+                                            )}>{formatPhoneNumber(lead.phone)}</span>
+                                        </div>
                                         <span className={cn(
                                             "text-[10px] font-black uppercase tracking-widest",
                                             selectedLeadId === lead.id ? "text-white/60" : "text-zinc-500"

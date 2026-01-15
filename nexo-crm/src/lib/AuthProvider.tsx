@@ -71,13 +71,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             initialized = true;
 
             try {
-                // Failsafe: se demorar mais de 10s pra inicializar, libera o app anyway
+                // Failsafe: se demorar mais de 20s pra inicializar, libera o app anyway
                 const timer = setTimeout(() => {
                     if (isMounted && loading) {
                         console.warn('AuthProvider: Initialization took too long, forcing loading(false)');
                         setLoading(false);
                     }
-                }, 10000);
+                }, 20000);
 
                 if (currSession?.user) {
                     setSession(currSession);

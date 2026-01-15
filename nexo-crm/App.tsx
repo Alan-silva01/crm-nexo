@@ -7,6 +7,7 @@ import LeadsList from './components/LeadsList';
 import CalendarPage from './components/Calendar';
 import WhatsAppChat from './components/WhatsAppChat';
 import DetailedAnalytics from './components/DetailedAnalytics';
+import Broadcasts from './components/Broadcasts';
 import Settings from './components/Settings';
 import UserAvatar from './components/UserAvatar';
 import Auth from './components/Auth';
@@ -106,7 +107,8 @@ const AppContent: React.FC = () => {
       userType
     });
 
-    if (session && effectiveUserId) {
+    // Só busca dados se effectiveUserId está realmente pronto (não vazio/null)
+    if (session && effectiveUserId && effectiveUserId.length > 10) {
       console.log('App: Fetching data for effectiveUserId:', effectiveUserId);
 
       const fetchData = async () => {
@@ -125,7 +127,7 @@ const AppContent: React.FC = () => {
             .order('position');
 
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Columns query timeout')), 5000)
+            setTimeout(() => reject(new Error('Columns query timeout')), 15000)
           );
 
           const { data: cols, error: colsError } = await Promise.race([
@@ -598,6 +600,8 @@ const AppContent: React.FC = () => {
         );
       case 'analytics':
         return <DetailedAnalytics leads={leads} onAction={handleAnalysisAction} />;
+      case 'broadcasts':
+        return <Broadcasts />;
       case 'ajustes':
         return <Settings user={user} onUpdate={() => {/* User metadata updates are handled by Supabase session listener, but we could add manual refresh here if needed */ }} />;
       default:

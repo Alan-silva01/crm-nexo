@@ -5,6 +5,7 @@ import { useAuth } from '../lib/AuthProvider';
 import { ChevronLeft, Send, CheckCircle2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
+import { formatPhoneNumber } from '../lib/formatPhone';
 
 interface ChatViewProps {
     lead: Lead;
@@ -122,7 +123,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
         const { error } = await supabase.from('leads').update({ ai_paused: newStatus }).eq('id', lead.id);
         if (!error) {
             lead.ai_paused = newStatus;
-            setMessages(prev => [...prev]); // Force re-render if needed, though state is in lead object
+            setMessages(prev => [...prev]); // Force re-render if needed
+            // Opcional: Atualizar lista de leads global se houver um prop pra isso
         }
     };
 
@@ -158,12 +160,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
                         <div className="min-w-0">
                             <h4 className="font-black text-[var(--text-main)] truncate text-base leading-tight tracking-tight">{getLeadDisplayName(lead)}</h4>
                             <p className="text-[10px] text-zinc-500 font-medium tracking-tight mb-0.5">
-                                {(() => {
-                                    const p = (lead.phone || '').replace(/\D/g, '').replace(/^55/, '');
-                                    return p.length >= 10
-                                        ? `(${p.slice(0, 2)}) ${p.slice(2, 7)}-${p.slice(7, 11)}`
-                                        : p;
-                                })()}
+                                {formatPhoneNumber(lead.phone)}
                             </p>
                             <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">

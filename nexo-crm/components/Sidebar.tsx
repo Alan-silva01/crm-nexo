@@ -12,7 +12,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Calendar
+  Calendar,
+  Send
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,6 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
     { id: 'leads', icon: Users, label: 'Contatos' },
     { id: 'chats', icon: MessageSquare, label: 'Conversas' },
     { id: 'calendar', icon: Calendar, label: 'Calendário' },
+    { id: 'broadcasts', icon: Send, label: 'Disparos' },
     { id: 'analytics', icon: BarChart3, label: 'Relatórios' },
   ];
 

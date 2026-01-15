@@ -223,7 +223,16 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
       // 2. Buscar estado da IA
       const actualAiStatus = await chatsSdrService.getAIStatus(selectedChat.phone);
-      if (isMounted) setAiPaused(actualAiStatus);
+      if (isMounted) {
+        setAiPaused(actualAiStatus);
+        // Sincronizar com a lista de leads (sidebar)
+        if (selectedChat.ai_paused !== actualAiStatus) {
+          const updatedLeads = leads.map(l =>
+            l.id === selectedChat.id ? { ...l, ai_paused: actualAiStatus } : l
+          );
+          onLeadsUpdate(updatedLeads);
+        }
+      }
 
       // 3. Buscar mensagens do banco (primeiras 50) - chatsSdrService tem retry robusto interno
       const { messages, hasMore } = await chatsSdrService.fetchChatsByPhone(selectedChat.phone, MESSAGE_PAGE_SIZE, 0);

@@ -25,31 +25,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [atendenteId, setAtendenteId] = useState<string | null>(null);
 
     useEffect(() => {
-        // Check for existing session
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        let isMounted = true;
+        const initialize = async (session: Session | null) => {
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
-                determineUserType(session.user);
-            }
-            setLoading(false);
-        });
-
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                determineUserType(session.user);
+                await determineUserType(session.user);
             } else {
                 setUserType(null);
                 setEffectiveUserId(null);
                 setAtendenteId(null);
             }
-            setLoading(false);
+            if (isMounted) setLoading(false);
+        };
+
+        // Failsafe timeout
+        const timer = setTimeout(() => {
+            if (isMounted && loading) {
+                console.warn('[AuthProvider] Initialization timeout, forcing loading(false)');
+                setLoading(false);
+            }
+        }, 15000);
+
+        // Check for existing session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (isMounted) initialize(session);
         });
 
-        return () => subscription.unsubscribe();
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (isMounted) initialize(session);
+        });
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+            subscription.unsubscribe();
+        };
     }, []);
 
     const determineUserType = async (user: User) => {
