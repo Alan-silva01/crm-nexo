@@ -44,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
     >
       <div className={`p-4 mb-4 flex items-center ${effectiveCollapsed ? 'justify-center' : 'gap-3'}`}>
         <img src="/favicon.svg" alt="Nero Logo" className="w-8 h-8 min-w-[32px] rounded-lg shadow-lg shadow-indigo-500/20" />
-        {!effectiveCollapsed && <span className="font-semibold text-lg tracking-tight">nero.</span>}
+        {!effectiveCollapsed && <span className="font-semibold text-lg tracking-tight">NERO.</span>}
       </div>
 
       <button
