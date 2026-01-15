@@ -18,12 +18,14 @@ export function formatPhoneNumber(phone: string | null | undefined): string {
     // Remove tudo que não é número
     let cleaned = phone.replace(/\D/g, '');
 
-    // Remove o prefixo 55 do Brasil se existir no início
-    if (cleaned.startsWith('55') && cleaned.length > 11) {
+    // Se começar com 55, remove (código do Brasil)
+    if (cleaned.startsWith('55')) {
         cleaned = cleaned.substring(2);
     }
 
-    // Se ainda for muito longo (tem mais de 11 dígitos), pega os últimos 11
+    // Se ainda tiver mais de 11 dígitos, pode ser que tenha ficado um 5 extra
+    // (ex: 5599991372552 após remover 55 = 99991372552 que está correto)
+    // Mas se tiver 12+ dígitos, pega os últimos 11
     if (cleaned.length > 11) {
         cleaned = cleaned.slice(-11);
     }
@@ -37,24 +39,21 @@ export function formatPhoneNumber(phone: string | null | undefined): string {
     }
 
     // Se tiver 10 dígitos (sem o 9): DDD (2) + número (8)
-    // Provavelmente é celular sem o 9 - adiciona o 9
     if (cleaned.length === 10) {
         const ddd = cleaned.substring(0, 2);
-        const numero = cleaned.substring(2);
-        // Adiciona o 9 para celulares
-        const firstPart = '9' + numero.substring(0, 4);  // 9 + 4 dígitos
-        const secondPart = numero.substring(4, 8); // 4 dígitos
+        const firstPart = cleaned.substring(2, 6);  // 4 dígitos
+        const secondPart = cleaned.substring(6, 10); // 4 dígitos
         return `(${ddd}) ${firstPart}-${secondPart}`;
     }
 
-    // Se tiver 9 dígitos (só o número sem DDD)
+    // Se tiver 9 dígitos (só o número com 9)
     if (cleaned.length === 9) {
-        const firstPart = cleaned.substring(0, 5);  // 5 dígitos (com o 9)
-        const secondPart = cleaned.substring(5, 9); // 4 dígitos
+        const firstPart = cleaned.substring(0, 5);
+        const secondPart = cleaned.substring(5, 9);
         return `${firstPart}-${secondPart}`;
     }
 
-    // Se tiver 8 dígitos (número fixo sem DDD)
+    // Se tiver 8 dígitos (número fixo)
     if (cleaned.length === 8) {
         const firstPart = cleaned.substring(0, 4);
         const secondPart = cleaned.substring(4, 8);

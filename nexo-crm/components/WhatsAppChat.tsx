@@ -364,6 +364,11 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     // Auto-pausar IA ao enviar mensagem (se ainda não estiver pausada)
     if (!aiPaused) {
       setAiPaused(true);
+      // Atualizar lista de leads para sincronizar sidebar
+      const updatedLeads = leads.map(lead =>
+        lead.id === selectedChat.id ? { ...lead, ai_paused: true } : lead
+      );
+      onLeadsUpdate(updatedLeads);
       // Enviar notificação de pausa para o webhook (não bloqueia o envio da mensagem)
       chatsSdrService.toggleAI(selectedChat.phone, 'pausar').catch(err => {
         console.error('Error auto-pausing AI:', err);
@@ -479,6 +484,12 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     setAiPaused(newStatus);
 
     await chatsSdrService.toggleAI(selectedChat.phone, newStatus ? 'pausar' : 'ativar');
+
+    // Atualizar lista de leads para sincronizar sidebar
+    const updatedLeads = leads.map(lead =>
+      lead.id === selectedChat.id ? { ...lead, ai_paused: newStatus } : lead
+    );
+    onLeadsUpdate(updatedLeads);
   };
 
   const handleAssignLead = async (atendenteId: string | null) => {
