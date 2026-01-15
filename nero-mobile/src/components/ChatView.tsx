@@ -78,9 +78,24 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
     const sendMessage = async () => {
         if (!newMessage.trim() || sending) return;
         setSending(true);
+
+        // Auto-pausar IA ao enviar mensagem
+        if (!lead.ai_paused) {
+            await supabase.from('leads').update({ ai_paused: true }).eq('id', lead.id);
+        }
+
         const { data: profile } = await supabase.from('profiles').select('webhook_url').eq('id', effectiveUserId).single();
         if (profile?.webhook_url) {
             try {
+                // Enviar notificação de pausa da IA junto com a mensagem
+                if (!lead.ai_paused) {
+                    await fetch(profile.webhook_url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ evento: 'pausar_ia', phone: lead.phone, action: 'Pausar IA' }),
+                    });
+                }
+                // Enviar a mensagem
                 await fetch(profile.webhook_url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
