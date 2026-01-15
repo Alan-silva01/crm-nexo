@@ -602,10 +602,12 @@ const AppContent: React.FC = () => {
       case 'analytics':
         return <DetailedAnalytics leads={leads} onAction={handleAnalysisAction} />;
       case 'broadcasts':
-        if (!profile?.disparos) {
+        // Only redirect if profile is loaded AND disparos is explicitly false
+        if (profile && profile.disparos === false) {
           setActiveTab('leads');
           return null;
         }
+        // If profile not loaded yet, show the component (Sidebar already filters)
         return <Broadcasts leads={leads} profile={profile} />;
       case 'ajustes':
         return <Settings user={user} onUpdate={() => {/* User metadata updates are handled by Supabase session listener, but we could add manual refresh here if needed */ }} />;

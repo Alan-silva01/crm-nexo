@@ -37,8 +37,8 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
     };
 
     const handleStartBroadcast = async () => {
-        if (!message.trim()) {
-            alert('Por favor, escreva uma mensagem.');
+        if (!message.trim() && !selectedImage && !selectedAudio) {
+            alert('Por favor, adicione uma mensagem ou mídia para disparar.');
             return;
         }
 
