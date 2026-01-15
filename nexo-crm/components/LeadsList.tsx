@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Search, Filter, MoreHorizontal, Download, UserPlus, Phone, Mail, Users, Database } from 'lucide-react';
+import { Search, Filter, MoreHorizontal, Download, UserPlus, Phone, Mail, Users, Database, Tag, Plus, X } from 'lucide-react';
 import { STATUS_LABELS } from '../constants';
 import { Lead, getLeadDisplayName } from '../types';
+import { leadsService } from '../src/lib/leadsService';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
 import LetterAvatar from './LetterAvatar';
 import ImportContactsModal from './ImportContactsModal';
@@ -144,6 +145,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                 <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50">Contato</th>
                 <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50">Status Estratégico</th>
                 <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50">Informações</th>
+                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50">Etiquetas</th>
                 <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 text-center">Ações</th>
               </tr>
             </thead>
@@ -177,6 +179,54 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                     </div>
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
+                    <div className="flex flex-wrap gap-1.5 max-w-[200px]">
+                      {lead.tags && lead.tags.length > 0 ? (
+                        lead.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-[9px] font-bold text-zinc-300 uppercase tracking-tighter group/tag"
+                          >
+                            {tag}
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const newTags = (lead.tags || []).filter(t => t !== tag);
+                                if (onLeadsUpdate) {
+                                  onLeadsUpdate(filteredLeads.map(l => l.id === lead.id ? { ...l, tags: newTags } : l));
+                                }
+                                await leadsService.updateLead(lead.id, { tags: newTags });
+                              }}
+                              className="text-zinc-500 hover:text-rose-400 opacity-0 group-hover/tag:opacity-100 transition-all"
+                            >
+                              <X size={10} />
+                            </button>
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[10px] text-zinc-600 italic font-medium">Sem etiquetas</span>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const currentTags = lead.tags || [];
+                          const availableTags = ['cliente', 'lead', 'agendado', 'sem interesse', 'importante', 'parceiro'];
+                          const nextTag = availableTags.find(t => !currentTags.includes(t));
+                          if (nextTag) {
+                            const newTags = [...currentTags, nextTag];
+                            if (onLeadsUpdate) {
+                              onLeadsUpdate(filteredLeads.map(l => l.id === lead.id ? { ...l, tags: newTags } : l));
+                            }
+                            leadsService.updateLead(lead.id, { tags: newTags });
+                          }
+                        }}
+                        className="w-6 h-6 rounded-full border border-zinc-800 border-dashed flex items-center justify-center text-zinc-500 hover:text-indigo-400 hover:border-indigo-500/30 transition-all"
+                        title="Adicionar etiqueta"
+                      >
+                        <Plus size={10} />
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-8 py-5 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-1 group-hover:translate-x-0">
                       <button
                         onClick={() => onViewDetails(lead)}
@@ -196,7 +246,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
               ))}
               {filteredLeads.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-8 py-20 text-center">
+                  <td colSpan={5} className="px-8 py-20 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="p-4 bg-zinc-900/50 rounded-full border border-zinc-800 opacity-20">
                         <Users size={32} className="text-zinc-500" />

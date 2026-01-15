@@ -8,6 +8,13 @@ const Broadcasts: React.FC = () => {
     const [startTime, setStartTime] = useState('');
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [selectedAudio, setSelectedAudio] = useState<File | null>(null);
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+    const handleTagToggle = (tag: string) => {
+        setSelectedTags(prev =>
+            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+        );
+    };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -97,8 +104,31 @@ const Broadcasts: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Filtro por Etiquetas */}
+                        <div className="space-y-3 pb-4 border-b border-zinc-800/50">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
+                                <AlertCircle size={12} className="text-indigo-400" />
+                                Filtrar por Etiquetas (Opcional)
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {['cliente', 'lead', 'agendado', 'sem interesse', 'importante', 'parceiro'].map((tag) => (
+                                    <button
+                                        key={tag}
+                                        onClick={() => handleTagToggle(tag)}
+                                        className={`px-4 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all ${selectedTags.includes(tag)
+                                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20'
+                                            : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:border-indigo-500/30'
+                                            }`}
+                                    >
+                                        {tag}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-[10px] text-zinc-600">Selecione uma ou mais etiquetas para direcionar o disparo.</p>
+                        </div>
+
                         {/* Configurações de Tempo */}
-                        <div className="pt-4 border-t border-zinc-800/50 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                                     <Clock size={12} className="text-indigo-400" />
