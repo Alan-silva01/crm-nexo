@@ -54,41 +54,64 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const determineUserType = async (user: User) => {
         const metadata = user.user_metadata;
+        console.log('[AuthProvider] Determining user type for:', user.id, 'metadata:', metadata);
 
-        // Check if atendente
-        if (metadata?.is_atendente && metadata?.admin_id) {
-            setUserType('atendente');
-            setEffectiveUserId(metadata.admin_id);
-            // Optionally fetch the atendente.id from the table if not in metadata
-            // But usually we need it for filtering leads.assigned_to
-        }
-
-        // Always try to fetch from table for most accurate info
-        if (user) {
-            const { data: profileData } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('id', user.id)
+        // FIRST: Check if user is an atendente (from metadata for instant load)
+        if (metadata?.is_atendente === true && metadata?.admin_id) {
+            console.log('[AuthProvider] Found atendente in metadata, admin_id:', metadata.admin_id);
+            // Also fetch the atendente.id from DB for filtering leads
+            const { data: atendenteData } = await supabase
+                .from('atendentes')
+                .select('id, admin_id')
+                .eq('user_id', user.id)
+                .eq('ativo', true)
                 .single();
 
-            if (profileData) {
-                setUserType('admin');
-                setEffectiveUserId(user.id);
-                setAtendenteId(null);
-            } else {
-                const { data: atendenteData } = await supabase
-                    .from('atendentes')
-                    .select('id, admin_id')
-                    .eq('user_id', user.id)
-                    .single();
-
-                if (atendenteData) {
-                    setUserType('atendente');
-                    setEffectiveUserId(atendenteData.admin_id);
-                    setAtendenteId(atendenteData.id);
-                }
+            if (atendenteData) {
+                setUserType('atendente');
+                setEffectiveUserId(atendenteData.admin_id);
+                setAtendenteId(atendenteData.id);
+                console.log('[AuthProvider] Set as atendente, effectiveUserId:', atendenteData.admin_id, 'atendenteId:', atendenteData.id);
+                return;
             }
         }
+
+        // SECOND: Check atendentes table directly (in case metadata is missing)
+        const { data: atendenteData } = await supabase
+            .from('atendentes')
+            .select('id, admin_id')
+            .eq('user_id', user.id)
+            .eq('ativo', true)
+            .single();
+
+        if (atendenteData) {
+            setUserType('atendente');
+            setEffectiveUserId(atendenteData.admin_id);
+            setAtendenteId(atendenteData.id);
+            console.log('[AuthProvider] Set as atendente from DB, effectiveUserId:', atendenteData.admin_id);
+            return;
+        }
+
+        // THIRD: If not atendente, check if admin (has profile)
+        const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', user.id)
+            .single();
+
+        if (profileData) {
+            setUserType('admin');
+            setEffectiveUserId(user.id);
+            setAtendenteId(null);
+            console.log('[AuthProvider] Set as admin, effectiveUserId:', user.id);
+            return;
+        }
+
+        // Fallback: treat as admin (shouldn't happen in normal flow)
+        console.warn('[AuthProvider] No profile or atendente found, defaulting to admin');
+        setUserType('admin');
+        setEffectiveUserId(user.id);
+        setAtendenteId(null);
     };
 
     const signIn = async (email: string, password: string) => {
