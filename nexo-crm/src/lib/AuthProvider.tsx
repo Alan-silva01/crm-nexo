@@ -80,7 +80,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }, 10000);
 
                 if (currSession?.user) {
-                    const initStartTime = Date.now();
                     setSession(currSession);
                     setUser(currSession.user);
 
@@ -96,6 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                             setUserType(cachedInfo.type);
                             setEffectiveUserId(cachedInfo.effectiveUserId);
                             setAtendenteInfo(cachedInfo.atendenteInfo || null);
+                            // Liberar loading imediatamente com dados do cache
+                            setLoading(false);
                         } catch (e) {
                             console.error('AuthProvider: Error parsing cached user type:', e);
                         }
@@ -105,25 +106,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         console.log('AuthProvider: User is an atendente based on metadata. Admin ID:', metaAdminId);
                         setUserType('atendente');
                         setEffectiveUserId(metaAdminId);
+                        // Liberar loading para atendentes com metadata
+                        setLoading(false);
                     } else if (!cached) {
                         console.log('AuthProvider: No atendente metadata and no cache found.');
                     }
 
-                    // Buscar tipo de usuário do banco
+                    // Buscar tipo de usuário do banco (em background se já liberamos loading)
                     await fetchUserType(currSession.user.id, currSession.user.user_metadata);
-
-                    // DELAY MÍNIMO PARA ATENDENTES - garante sessão estabilizada
-                    // Isso resolve o problema de refresh onde auth.uid() demora para estabilizar
-                    const elapsedTime = Date.now() - initStartTime;
-                    const minDelayForAtendente = 1200; // 1.2 segundos
-
-                    if (isAtendente && elapsedTime < minDelayForAtendente) {
-                        const remainingDelay = minDelayForAtendente - elapsedTime;
-                        console.log(`AuthProvider: Atendente detected, waiting ${remainingDelay}ms for session stability...`);
-                        await new Promise(r => setTimeout(r, remainingDelay));
-                    }
-
-                    console.log('AuthProvider: Session fully stabilized, releasing loading...');
                 } else {
                     console.log('AuthProvider: No active session found.');
                     setSession(null);

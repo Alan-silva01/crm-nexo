@@ -5,9 +5,61 @@ import { atendentesService } from './atendentesService';
 export const leadsService = {
     async fetchLeads(effectiveUserId?: string): Promise<Lead[]> {
         const requestId = Math.random().toString(36).substring(7);
-        console.log(`[${requestId}] fetchLeads start`);
+        console.log(`[${requestId}] fetchLeads start. effectiveUserId:`, effectiveUserId);
 
-        // Aguardar sessão estabilizar primeiro
+        // Se temos effectiveUserId, usar diretamente a RPC com parâmetro (bypass completo de auth.uid)
+        if (effectiveUserId) {
+            console.log(`[${requestId}] Using fetch_leads_by_admin_id RPC with admin_id:`, effectiveUserId);
+
+            let rpcRetries = 3;
+            let delay = 200;
+
+            while (rpcRetries > 0) {
+                try {
+                    const { data: rpcData, error: rpcError } = await supabase.rpc('fetch_leads_by_admin_id', {
+                        p_admin_id: effectiveUserId
+                    });
+
+                    if (!rpcError && rpcData && rpcData.length >= 0) {
+                        console.log(`[${requestId}] RPC Success! Leads count:`, rpcData.length);
+                        return rpcData as Lead[];
+                    }
+
+                    if (rpcError) {
+                        console.warn(`[${requestId}] RPC attempt ${4 - rpcRetries}/3 failed:`, rpcError.message);
+                    }
+                } catch (e) {
+                    console.error(`[${requestId}] RPC exception attempt ${4 - rpcRetries}/3:`, e);
+                }
+
+                rpcRetries--;
+                if (rpcRetries > 0) {
+                    await new Promise(r => setTimeout(r, delay));
+                    delay = Math.min(delay * 1.5, 1500);
+                }
+            }
+
+            // Fallback: query direta se RPC falhar
+            console.log(`[${requestId}] RPC failed, trying direct query...`);
+            const { data, error } = await supabase
+                .from('leads')
+                .select('*')
+                .eq('user_id', effectiveUserId)
+                .order('created_at', { ascending: false });
+
+            if (!error && data) {
+                console.log(`[${requestId}] Direct query success! Leads:`, data.length);
+                return data as Lead[];
+            }
+
+            console.error(`[${requestId}] Direct query also failed:`, error?.message);
+            return [];
+        }
+
+        // Se NÃO temos effectiveUserId, descobrir primeiro
+        console.log(`[${requestId}] No effectiveUserId, discovering user type...`);
+
+        // Aguardar sessão estabilizar
         let sessionRetries = 5;
         let user = null;
 
@@ -29,73 +81,19 @@ export const leadsService = {
             return [];
         }
 
-        // ABORDAGEM 1: Usar função RPC SECURITY DEFINER (mais robusta)
-        // Isso bypassa completamente o RLS e resolve o problema de race condition
-        let rpcRetries = 3;
-        let delay = 200;
+        // Descobrir tipo de usuário e effectiveUserId
+        const userTypeInfo = await atendentesService.getUserTypeInfo(user.id, user.user_metadata);
+        const resolvedAdminId = userTypeInfo?.effectiveUserId;
 
-        while (rpcRetries > 0) {
-            try {
-                console.log(`[${requestId}] Calling fetch_leads_for_user RPC...`);
-                const { data: rpcData, error: rpcError } = await supabase.rpc('fetch_leads_for_user');
-
-                if (!rpcError && rpcData && rpcData.length >= 0) {
-                    console.log(`[${requestId}] RPC Success! Leads count:`, rpcData.length);
-                    return rpcData as Lead[];
-                }
-
-                if (rpcError) {
-                    console.warn(`[${requestId}] RPC attempt ${4 - rpcRetries}/3 failed:`, rpcError.message);
-                }
-            } catch (e) {
-                console.error(`[${requestId}] RPC exception attempt ${4 - rpcRetries}/3:`, e);
-            }
-
-            rpcRetries--;
-            if (rpcRetries > 0) {
-                await new Promise(r => setTimeout(r, delay));
-                delay = Math.min(delay * 1.5, 1500);
-            }
-        }
-
-        // ABORDAGEM 2: Fallback para query direta (se RPC falhar)
-        console.log(`[${requestId}] RPC failed, trying direct query with effectiveUserId...`);
-
-        let targetId = effectiveUserId;
-        if (!targetId) {
-            console.log(`[${requestId}] No effectiveUserId provided, checking userTypeInfo...`);
-            const userTypeInfo = await atendentesService.getUserTypeInfo(user.id, user.user_metadata);
-            targetId = userTypeInfo?.effectiveUserId;
-            console.log(`[${requestId}] Resolved targetId:`, targetId);
-        }
-
-        if (!targetId) {
-            console.error(`[${requestId}] No effective user ID available`);
+        if (!resolvedAdminId) {
+            console.error(`[${requestId}] Could not determine admin_id`);
             return [];
         }
 
-        console.log(`[${requestId}] Executing direct Supabase query...`);
-        const startTime = Date.now();
+        console.log(`[${requestId}] Resolved admin_id:`, resolvedAdminId, 'Recursing...');
 
-        const { data, error } = await supabase
-            .from('leads')
-            .select('*')
-            .eq('user_id', targetId)
-            .order('created_at', { ascending: false });
-
-        const duration = Date.now() - startTime;
-        console.log(`[${requestId}] Direct query finished in ${duration}ms. Result:`, {
-            count: data?.length || 0,
-            hasError: !!error,
-            error: error?.message
-        });
-
-        if (error) {
-            console.error(`[${requestId}] Error fetching leads:`, error);
-            return [];
-        }
-
-        return data as Lead[];
+        // Chamar recursivamente com o ID descoberto
+        return this.fetchLeads(resolvedAdminId);
     },
 
     async updateLead(id: string, updates: Partial<Lead>): Promise<boolean> {
