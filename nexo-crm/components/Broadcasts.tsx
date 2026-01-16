@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Image as ImageIcon, Music, Clock, Calendar as CalendarIcon, AlertCircle, Loader2, CheckCircle2, Save, Trash2, FileText } from 'lucide-react';
+import { Send, Image as ImageIcon, Music, Clock, Calendar as CalendarIcon, AlertCircle, Loader2, CheckCircle2, Save, Trash2, FileText, Mic, X } from 'lucide-react';
+import AudioRecorder from './AudioRecorder';
 import { Lead } from '../types';
 import { tagsService, Tag } from '../src/lib/tagsService';
 
@@ -22,6 +23,7 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [showConsentModal, setShowConsentModal] = useState(false);
     const [hasCheckedConsent, setHasCheckedConsent] = useState(false);
+    const [isRecordingAudio, setIsRecordingAudio] = useState(false);
 
     // Draft system
     interface Draft {
@@ -311,8 +313,36 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
                                         <span className="text-xs text-zinc-500 truncate">
                                             {selectedAudio ? selectedAudio.name : 'Selecionar áudio...'}
                                         </span>
+                                        {selectedAudio && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setSelectedAudio(null); }}
+                                                className="ml-auto p-1 hover:bg-zinc-800 rounded-md text-zinc-500 hover:text-rose-500 transition-colors"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
+
+                                {!isRecordingAudio && !selectedAudio && (
+                                    <button
+                                        onClick={() => setIsRecordingAudio(true)}
+                                        className="w-full px-4 py-3 bg-indigo-600/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center gap-3 text-indigo-400 hover:bg-indigo-600/20 transition-all font-bold uppercase tracking-widest text-[10px]"
+                                    >
+                                        <Mic size={14} />
+                                        Gravar Áudio agora
+                                    </button>
+                                )}
+
+                                {isRecordingAudio && (
+                                    <AudioRecorder
+                                        onRecordComplete={(file) => {
+                                            setSelectedAudio(file);
+                                            setIsRecordingAudio(false);
+                                        }}
+                                        onCancel={() => setIsRecordingAudio(false)}
+                                    />
+                                )}
                             </div>
                         </div>
 
