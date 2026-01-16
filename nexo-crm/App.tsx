@@ -59,7 +59,7 @@ const AppContent: React.FC = () => {
     } catch (e) { }
   }, [activeTab]);
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Restaurar leads do cache para evitar flash de tela vazia
