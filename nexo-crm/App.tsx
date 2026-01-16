@@ -62,6 +62,8 @@ const AppContent: React.FC = () => {
 
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
+
 
   // Restaurar leads do cache para evitar flash de tela vazia
   // Nota: O cache é por effectiveUserId, então não podemos restaurar até saber quem é o usuário
@@ -459,15 +461,28 @@ const AppContent: React.FC = () => {
     const safeLeads = Array.isArray(leads) ? leads : [];
     const query = typeof searchQuery === 'string' ? searchQuery.trim() : '';
 
-    if (!query) return safeLeads;
+    // First, filter by selected tags (multi-select)
+    let result = safeLeads;
+    if (selectedTagFilters.length > 0) {
+      result = result.filter(l => {
+        if (!l.tags || l.tags.length === 0) return false;
+        // Lead must have ALL selected tags
+        return selectedTagFilters.every(selectedTag =>
+          l.tags!.some(leadTag => leadTag.toLowerCase() === selectedTag.toLowerCase())
+        );
+      });
+    }
+
+    // Then, apply text search if query exists
+    if (!query) return result;
 
     const lower = query.toLowerCase();
     const queryDigits = query.replace(/\D/g, '');
 
-    // Check if query exactly matches a tag name (for precise tag filtering)
+    // Check if query exactly matches a tag name (for precise tag filtering via search box)
     const isExactTagMatch = tags.some(t => t.name.toLowerCase() === lower);
 
-    return safeLeads.filter(l => {
+    return result.filter(l => {
       // If searching for an exact tag, only match leads that have that tag
       if (isExactTagMatch) {
         return l.tags && l.tags.some(tag => tag.toLowerCase() === lower);
@@ -507,7 +522,8 @@ const AppContent: React.FC = () => {
 
       return false;
     });
-  }, [searchQuery, leads]);
+  }, [searchQuery, leads, selectedTagFilters, tags]);
+
 
   // Default columns to show when there are no leads
   const DEFAULT_COLUMNS = [
@@ -662,8 +678,11 @@ const AppContent: React.FC = () => {
             }}
             showTags={profile?.disparos}
             availableTags={tags}
+            selectedTagFilters={selectedTagFilters}
+            onTagFiltersChange={setSelectedTagFilters}
           />
         );
+
       case 'calendar':
         return (
           <CalendarPage
@@ -679,7 +698,8 @@ const AppContent: React.FC = () => {
       case 'chats':
         return (
           <WhatsAppChat
-            leads={leads}
+            leads={filteredLeads}
+
             onLeadsUpdate={handleLeadsUpdate}
             selectedChatId={selectedChatId}
             onSelectChat={setSelectedChatId}

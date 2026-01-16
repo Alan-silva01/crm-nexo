@@ -16,9 +16,12 @@ interface LeadsListProps {
   onLeadsUpdate?: (leads: Lead[]) => void;
   showTags?: boolean;
   availableTags?: Tag[];
+  selectedTagFilters?: string[];
+  onTagFiltersChange?: (tags: string[]) => void;
 }
 
-const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filteredLeads, onViewDetails, onViewChat, onLeadsUpdate, showTags, availableTags = [] }) => {
+const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filteredLeads, onViewDetails, onViewChat, onLeadsUpdate, showTags, availableTags = [], selectedTagFilters = [], onTagFiltersChange }) => {
+
   const [showLocalSearch, setShowLocalSearch] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
@@ -566,29 +569,48 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                 </div>
 
                 {availableTags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 max-w-sm">
-                    {availableTags.map(tag => (
+                  <div className="flex flex-wrap gap-2 max-w-md items-center">
+                    {availableTags.map(tag => {
+                      const isActive = selectedTagFilters.some(t => t.toLowerCase() === tag.name.toLowerCase());
+                      return (
+                        <button
+                          key={`filter-${tag.id}`}
+                          onClick={() => {
+                            if (!onTagFiltersChange) return;
+                            if (isActive) {
+                              // Remove tag from filters
+                              onTagFiltersChange(selectedTagFilters.filter(t => t.toLowerCase() !== tag.name.toLowerCase()));
+                            } else {
+                              // Add tag to filters
+                              onTagFiltersChange([...selectedTagFilters, tag.name]);
+                            }
+                          }}
+                          style={{
+                            backgroundColor: isActive ? tag.color + '30' : 'transparent',
+                            color: isActive ? tag.color : 'inherit',
+                            borderColor: isActive ? tag.color + '50' : '#27272a'
+                          }}
+                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-tight transition-all hover:bg-zinc-800 flex items-center gap-1.5 ${isActive ? '' : 'text-zinc-500'}`}
+                        >
+                          {isActive && <Check size={10} />}
+                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tag.color }}></div>
+                          {tag.name}
+                        </button>
+                      );
+                    })}
+                    {selectedTagFilters.length > 0 && (
                       <button
-                        key={`filter-${tag.id}`}
-                        onClick={() => {
-                          // Use case-insensitive comparison for toggle
-                          const isActive = searchQuery.toLowerCase() === tag.name.toLowerCase();
-                          const query = isActive ? '' : tag.name;
-                          onSearchChange(query);
-                        }}
-                        style={{
-                          backgroundColor: searchQuery.toLowerCase() === tag.name.toLowerCase() ? tag.color + '30' : 'transparent',
-                          color: searchQuery.toLowerCase() === tag.name.toLowerCase() ? tag.color : 'inherit',
-                          borderColor: searchQuery.toLowerCase() === tag.name.toLowerCase() ? tag.color + '50' : '#27272a'
-                        }}
-                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-tight transition-all hover:bg-zinc-800 flex items-center gap-1.5 ${searchQuery.toLowerCase() === tag.name.toLowerCase() ? '' : 'text-zinc-500'}`}
+                        onClick={() => onTagFiltersChange?.([])}
+                        className="px-2 py-1 rounded-lg border border-red-500/30 text-[10px] font-bold uppercase tracking-tight text-red-400 hover:bg-red-500/10 flex items-center gap-1 transition-all"
+                        title="Limpar todos os filtros de etiqueta"
                       >
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tag.color }}></div>
-                        {tag.name}
+                        <X size={10} />
+                        Limpar
                       </button>
-                    ))}
+                    )}
                   </div>
                 )}
+
               </div>
             )}
             <button
