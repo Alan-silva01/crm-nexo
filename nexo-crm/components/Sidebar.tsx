@@ -27,7 +27,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed, setIsCollapsed, user, profile }) => {
-  const effectiveCollapsed = isCollapsed;
+  const [isHovered, setIsHovered] = React.useState(false);
+  const effectiveCollapsed = isCollapsed && !isHovered;
 
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -42,6 +43,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
 
   return (
     <aside
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className={`${effectiveCollapsed ? 'w-16' : 'w-52'} flex flex-col h-full bg-[#09090b] border-r border-zinc-800/50 transition-all duration-300 relative z-20`}
     >
       <div className={`p-4 mb-4 flex items-center ${effectiveCollapsed ? 'justify-center' : 'gap-3'}`}>
