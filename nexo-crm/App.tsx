@@ -41,7 +41,30 @@ const sanitizeForCache = (leads: Lead[]) => {
 
 const AppContent: React.FC = () => {
   const { user, session, loading, signOut, effectiveUserId, userType } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Persistir activeTab no localStorage para manter navegação após refresh
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const savedTab = localStorage.getItem('nero_active_tab');
+      return savedTab || 'dashboard';
+    } catch (e) { }
+    return 'dashboard';
+  });
+
+  // Salvar activeTab sempre que mudar
+  useEffect(() => {
+    try {
+      localStorage.setItem('nero_active_tab', activeTab);
+    } catch (e) { }
+  }, [activeTab]);
+
+  // Para atendentes, forçar aba de Conversas se estiver em Dashboard após refresh
+  useEffect(() => {
+    if (userType === 'atendente' && activeTab === 'dashboard') {
+      setActiveTab('chats');
+    }
+  }, [userType]);
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
