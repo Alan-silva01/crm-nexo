@@ -613,6 +613,7 @@ const AppContent: React.FC = () => {
             onLeadsUpdate={handleLeadsUpdate}
             selectedChatId={selectedChatId}
             onSelectChat={setSelectedChatId}
+            chatTableName={profile?.chat_table_name}
           />
         );
       case 'analytics':

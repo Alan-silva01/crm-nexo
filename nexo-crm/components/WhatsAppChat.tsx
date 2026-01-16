@@ -14,6 +14,7 @@ interface WhatsAppChatProps {
   onLeadsUpdate: (leads: Lead[]) => void;
   selectedChatId: string | null;
   onSelectChat: (id: string | null) => void;
+  chatTableName?: string; // Passado pelo App para evitar RPC call
 }
 
 // Parse message content to extract quoted reply
@@ -90,7 +91,7 @@ const getAgentColor = (name: string | undefined | null) => {
   return colors[index];
 };
 
-const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selectedChatId, onSelectChat }) => {
+const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selectedChatId, onSelectChat, chatTableName: propChatTableName }) => {
   const [inputText, setInputText] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sdrMessages, setSdrMessages] = useState<SDRMessage[]>([]);
@@ -204,24 +205,25 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       console.log('[WhatsAppChat] cacheKey:', cacheKey);
 
       // Não esperar sessão - se effectiveUserId está disponível, auth está pronta
-      // chatsSdrService já tem retry interno robusto
-      console.log('[WhatsAppChat] Skipping session wait - effectiveUserId available, proceeding...');
+      console.log('[WhatsAppChat] Proceeding with effectiveUserId available');
 
-      // 1. Buscar chat table name via RPC
-      console.log('[WhatsAppChat] Step 1: Calling get_effective_profile RPC...');
-      let chatTableName = 'chats_sdr';
-      try {
-        const { data: profileData, error: rpcError } = await supabase.rpc('get_effective_profile');
-        console.log('[WhatsAppChat] RPC result:', { data: profileData, error: rpcError?.message });
+      // Usar chatTableName passado pelo App.tsx (evita RPC que pode travar)
+      let chatTableName = propChatTableName || 'chats_sdr';
 
-        if (!rpcError && profileData && profileData.length > 0) {
-          chatTableName = profileData[0].chat_table_name || 'chats_sdr';
-          console.log('[WhatsAppChat] ✅ Chat table:', chatTableName);
-        } else {
-          console.warn('[WhatsAppChat] ⚠️ RPC failed or empty, using fallback');
+      if (propChatTableName) {
+        console.log('[WhatsAppChat] ✅ Using chatTableName from props:', chatTableName);
+      } else {
+        // Fallback: buscar via RPC se não foi passado
+        console.log('[WhatsAppChat] No propChatTableName, trying RPC...');
+        try {
+          const { data: profileData, error: rpcError } = await supabase.rpc('get_effective_profile');
+          if (!rpcError && profileData && profileData.length > 0) {
+            chatTableName = profileData[0].chat_table_name || 'chats_sdr';
+            console.log('[WhatsAppChat] ✅ Chat table from RPC:', chatTableName);
+          }
+        } catch (e) {
+          console.error('[WhatsAppChat] RPC failed:', e);
         }
-      } catch (e) {
-        console.error('[WhatsAppChat] ❌ RPC exception:', e);
       }
 
       // 2. Mostrar loading
