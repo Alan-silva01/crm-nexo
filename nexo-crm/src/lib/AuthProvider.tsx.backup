@@ -1,29 +1,18 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from './supabase';
 import { Session, User } from '@supabase/supabase-js';
-import { tenantService, CurrentUserInfo, TenantUser } from './tenantService';
-// Manter import para compatibilidade durante transição
-import { Atendente, convertToLegacyAtendente } from './tenantService';
-
-type UserRole = 'owner' | 'admin' | 'atendente' | 'viewer';
+import { atendentesService, Atendente, UserTypeInfo } from './atendentesService';
 
 interface AuthContextProps {
     user: User | null;
     session: Session | null;
     loading: boolean;
-    // Novos campos (multi-tenant)
-    userInfo: CurrentUserInfo | null;
-    tenantId: string | null;
-    // Campos legados (compatibilidade)
     userType: 'admin' | 'atendente' | null;
-    effectiveUserId: string | null;
-    atendenteInfo: Atendente | null;
-    // Métodos
+    effectiveUserId: string | null; // ID do admin (para filtrar dados)
+    atendenteInfo: Atendente | null; // Info do atendente se for atendente
     signIn: (email: string, password: string) => Promise<{ error: any; data: any }>;
     signUp: (email: string, password: string, name?: string, company_name?: string) => Promise<{ error: any; data: any }>;
     signOut: () => Promise<{ error: any }>;
-    refreshUserInfo: () => Promise<void>;
-    // Alias para compatibilidade
     refreshUserType: () => Promise<void>;
 }
 
@@ -33,73 +22,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-
-    // Novos estados multi-tenant
-    const [userInfo, setUserInfo] = useState<CurrentUserInfo | null>(null);
-
-    // Estados legados (derivados de userInfo para compatibilidade)
     const [userType, setUserType] = useState<'admin' | 'atendente' | null>(null);
     const [effectiveUserId, setEffectiveUserId] = useState<string | null>(null);
     const [atendenteInfo, setAtendenteInfo] = useState<Atendente | null>(null);
 
-    const fetchUserInfo = async (userId: string) => {
+    const fetchUserType = async (userId: string, metadata?: any) => {
         try {
-            console.log('Fetching user info for:', userId);
+            console.log('Fetching user type for:', userId);
 
-            // 1. Tentar pegar do cache primeiro
-            const cached = localStorage.getItem(`auth_tenant_user_${userId}`);
+            // 1. Tentar pegar do cache primeiro para resposta instantânea
+            const cached = localStorage.getItem(`auth_user_type_${userId}`);
             if (cached) {
-                try {
-                    const info = JSON.parse(cached) as CurrentUserInfo;
-                    console.log('Using cached user info:', info.role, info.tenantName);
-                    updateUserState(info);
-                } catch (e) {
-                    console.error('Error parsing cached user info:', e);
-                }
+                const info = JSON.parse(cached);
+                console.log('Using cached user type:', info.type);
+                setUserType(info.type);
+                setEffectiveUserId(info.effectiveUserId);
+                setAtendenteInfo(info.atendenteInfo || null);
+                // Mesmo com cache, vamos atualizar no background
             }
 
             // 2. Buscar do banco para garantir que está atualizado
-            const info = await tenantService.getCurrentUserInfo(userId);
+            const info = await atendentesService.getUserTypeInfo(userId, metadata);
             if (info) {
-                console.log('Fetched user info from DB:', info.role, info.tenantName);
-                updateUserState(info);
-                localStorage.setItem(`auth_tenant_user_${userId}`, JSON.stringify(info));
+                console.log('Fetched user type from DB:', info.type);
+                setUserType(info.type);
+                setEffectiveUserId(info.effectiveUserId);
+                setAtendenteInfo(info.atendenteInfo || null);
+                localStorage.setItem(`auth_user_type_${userId}`, JSON.stringify(info));
                 return info;
             }
         } catch (e) {
-            console.error('Error in fetchUserInfo:', e);
+            console.error('Error in fetchUserType:', e);
+            // Se o metadado diz que é atendente mas falhou tudo, não deixa carregar como admin
+            return null;
         }
         return null;
-    };
-
-    // Atualiza todos os estados (novos e legados)
-    const updateUserState = (info: CurrentUserInfo | null) => {
-        setUserInfo(info);
-
-        if (info) {
-            // Estados novos já vêm do info
-            // Estados legados derivados
-            setUserType(info.isOwnerOrAdmin ? 'admin' : 'atendente');
-            setEffectiveUserId(info.tenantId);
-
-            if (info.isAtendente) {
-                setAtendenteInfo({
-                    id: info.tenantUserId,
-                    admin_id: info.tenantId,
-                    user_id: '', // Não temos mais separado
-                    nome: info.userName,
-                    email: info.userEmail || '',
-                    ativo: true,
-                    created_at: ''
-                });
-            } else {
-                setAtendenteInfo(null);
-            }
-        } else {
-            setUserType(null);
-            setEffectiveUserId(null);
-            setAtendenteInfo(null);
-        }
     };
 
     useEffect(() => {
@@ -114,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             initialized = true;
 
             try {
-                // Failsafe: se demorar mais de 20s, libera o app
+                // Failsafe: se demorar mais de 20s pra inicializar, libera o app anyway
                 const timer = setTimeout(() => {
                     if (isMounted && loading) {
                         console.warn('AuthProvider: Initialization took too long, forcing loading(false)');
@@ -126,37 +83,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     setSession(currSession);
                     setUser(currSession.user);
 
-                    // RESTAURAR DO CACHE IMEDIATAMENTE
-                    const cached = localStorage.getItem(`auth_tenant_user_${currSession.user.id}`);
-                    if (cached) {
-                        try {
-                            const cachedInfo = JSON.parse(cached) as CurrentUserInfo;
-                            console.log('AuthProvider: Restoring from cache:', cachedInfo.role, cachedInfo.tenantName);
-                            updateUserState(cachedInfo);
-                            setLoading(false);
-                        } catch (e) {
-                            console.error('AuthProvider: Error parsing cached user info:', e);
-                        }
-                    }
-
-                    // Verificar metadata do usuário (compatibilidade com atendentes antigos)
                     const metaAdminId = currSession.user.user_metadata?.admin_id;
                     const isAtendente = currSession.user.user_metadata?.is_atendente;
 
-                    if (isAtendente && metaAdminId && !cached) {
-                        console.log('AuthProvider: User is an atendente based on metadata. Tenant ID:', metaAdminId);
-                        setUserType('atendente');
-                        setEffectiveUserId(metaAdminId);
-                        setLoading(false);
+                    // RESTAURAR DO CACHE IMEDIATAMENTE para todos os usuários
+                    const cached = localStorage.getItem(`auth_user_type_${currSession.user.id}`);
+                    if (cached) {
+                        try {
+                            const cachedInfo = JSON.parse(cached);
+                            console.log('AuthProvider: Restoring from cache:', cachedInfo.type, cachedInfo.effectiveUserId);
+                            setUserType(cachedInfo.type);
+                            setEffectiveUserId(cachedInfo.effectiveUserId);
+                            setAtendenteInfo(cachedInfo.atendenteInfo || null);
+                            // Liberar loading imediatamente com dados do cache
+                            setLoading(false);
+                        } catch (e) {
+                            console.error('AuthProvider: Error parsing cached user type:', e);
+                        }
                     }
 
-                    // Buscar info completa do banco (em background se já liberamos loading)
-                    await fetchUserInfo(currSession.user.id);
+                    if (isAtendente && metaAdminId) {
+                        console.log('AuthProvider: User is an atendente based on metadata. Admin ID:', metaAdminId);
+                        setUserType('atendente');
+                        setEffectiveUserId(metaAdminId);
+                        // Liberar loading para atendentes com metadata
+                        setLoading(false);
+                    } else if (!cached) {
+                        console.log('AuthProvider: No atendente metadata and no cache found.');
+                    }
+
+                    // Buscar tipo de usuário do banco (em background se já liberamos loading)
+                    await fetchUserType(currSession.user.id, currSession.user.user_metadata);
                 } else {
                     console.log('AuthProvider: No active session found.');
                     setSession(null);
                     setUser(null);
-                    updateUserState(null);
+                    setUserType(null);
+                    setEffectiveUserId(null);
+                    setAtendenteInfo(null);
                 }
                 clearTimeout(timer);
             } catch (e) {
@@ -178,13 +142,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 initialized = false;
                 setSession(null);
                 setUser(null);
-                updateUserState(null);
+                setUserType(null);
+                setEffectiveUserId(null);
+                setAtendenteInfo(null);
                 setLoading(false);
-                // Limpar todos os caches
+                // Limpar todos os caches de tipo de usuário
                 Object.keys(localStorage).forEach(key => {
-                    if (key.startsWith('auth_tenant_user_') || key.startsWith('auth_user_type_')) {
-                        localStorage.removeItem(key);
-                    }
+                    if (key.startsWith('auth_user_type_')) localStorage.removeItem(key);
                 });
             }
         });
@@ -205,7 +169,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signIn = async (email: string, password: string) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (!error && data.session) {
-            await fetchUserInfo(data.session.user.id);
+            await fetchUserType(data.session.user.id, data.session.user.user_metadata);
         }
         return { data, error };
     };
@@ -227,43 +191,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signOut = async () => {
         console.log('AuthProvider: signOut initiated');
         try {
+            // Limpeza rápida local primeiro para feedback instantâneo
             localStorage.clear();
-            updateUserState(null);
+            setUserType(null);
+            setEffectiveUserId(null);
+            setAtendenteInfo(null);
+
+            // Logout no Supabase (pode falhar se offline, então ignoramos erro)
             await supabase.auth.signOut();
         } catch (e) {
             console.error('AuthProvider: error during signOut, proceeding with local cleanup:', e);
         } finally {
+            // Garantir redirecionamento
             window.location.href = '/';
         }
         return { error: null };
     };
 
-    const refreshUserInfo = async () => {
+    const refreshUserType = async () => {
         if (user) {
-            await fetchUserInfo(user.id);
+            await fetchUserType(user.id, user.user_metadata);
         }
     };
-
-    // Alias para compatibilidade
-    const refreshUserType = refreshUserInfo;
 
     return (
         <AuthContext.Provider value={{
             user,
             session,
             loading,
-            // Novos campos
-            userInfo,
-            tenantId: userInfo?.tenantId || null,
-            // Campos legados
             userType,
             effectiveUserId,
             atendenteInfo,
-            // Métodos
             signIn,
             signUp,
             signOut,
-            refreshUserInfo,
             refreshUserType
         }}>
             {children}

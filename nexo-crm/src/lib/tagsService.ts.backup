@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { tenantService } from './tenantService';
+import { atendentesService } from './atendentesService';
 
 export interface Tag {
     id: string;
@@ -9,7 +9,7 @@ export interface Tag {
     created_at?: string;
 }
 
-const getTagsCacheKey = (tenantId: string) => `nexo_tags_cache_${tenantId}`;
+const getTagsCacheKey = (userId: string) => `nexo_tags_cache_${userId}`;
 
 export const tagsService = {
     async listTags(): Promise<Tag[]> {
@@ -19,13 +19,13 @@ export const tagsService = {
             return [];
         }
 
-        const userInfo = await tenantService.getCurrentUserInfo(session.user.id);
-        const tenantId = userInfo?.tenantId || session.user.id;
+        const userTypeInfo = await atendentesService.getUserTypeInfo(session.user.id, session.user.user_metadata);
+        const effectiveUserId = userTypeInfo?.effectiveUserId || session.user.id;
 
-        console.log('[tagsService] Fetching tags for tenantId:', tenantId, 'role:', userInfo?.role);
+        console.log('[tagsService] Fetching tags for effectiveUserId:', effectiveUserId, 'userType:', userTypeInfo?.type);
 
         // Try to load from cache first (but always fetch fresh data too)
-        const cacheKey = getTagsCacheKey(tenantId);
+        const cacheKey = getTagsCacheKey(effectiveUserId);
         const cached = localStorage.getItem(cacheKey);
         let cachedTags: Tag[] = [];
         if (cached) {
@@ -38,6 +38,7 @@ export const tagsService = {
         }
 
         // Fetch from database - RLS handles the filtering now
+        // Don't filter by user_id explicitly, let RLS do its job
         const { data, error } = await supabase
             .from('tags')
             .select('*')
@@ -66,8 +67,8 @@ export const tagsService = {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.user) return;
 
-            const userInfo = await tenantService.getCurrentUserInfo(session.user.id);
-            const tenantId = userInfo?.tenantId || session.user.id;
+            const userTypeInfo = await atendentesService.getUserTypeInfo(session.user.id, session.user.user_metadata);
+            const effectiveUserId = userTypeInfo?.effectiveUserId || session.user.id;
 
             subscriptionChannel = supabase
                 .channel('tags-changes')
@@ -77,7 +78,7 @@ export const tagsService = {
                         event: '*',
                         schema: 'public',
                         table: 'tags',
-                        filter: `user_id=eq.${tenantId}`
+                        filter: `user_id=eq.${effectiveUserId}`
                     },
                     async () => {
                         const updatedTags = await this.listTags();
@@ -100,13 +101,13 @@ export const tagsService = {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return null;
 
-        // Tags são ligadas ao tenant
-        const userInfo = await tenantService.getCurrentUserInfo(session.user.id);
-        const tenantId = userInfo?.tenantId || session.user.id;
+        // Tags são ligadas ao admin
+        const userTypeInfo = await atendentesService.getUserTypeInfo(session.user.id, session.user.user_metadata);
+        const effectiveUserId = userTypeInfo?.effectiveUserId || session.user.id;
 
         const { data, error } = await supabase
             .from('tags')
-            .insert([{ name, color, user_id: tenantId }])
+            .insert([{ name, color, user_id: effectiveUserId }])
             .select()
             .single();
 
@@ -116,7 +117,7 @@ export const tagsService = {
         }
 
         // Clear cache so it refreshes
-        localStorage.removeItem(getTagsCacheKey(tenantId));
+        localStorage.removeItem(getTagsCacheKey(effectiveUserId));
 
         return data as Tag;
     },

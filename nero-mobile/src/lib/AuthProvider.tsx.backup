@@ -8,8 +8,8 @@ interface AuthContextProps {
     session: Session | null;
     loading: boolean;
     userType: 'admin' | 'atendente' | null;
-    effectiveUserId: string | null;  // tenant_id para novo sistema
-    atendenteId: string | null;  // tenant_users.id para novo sistema
+    effectiveUserId: string | null;
+    atendenteId: string | null;
     signIn: (email: string, password: string) => Promise<{ error: any }>;
     signOut: () => Promise<void>;
 }
@@ -68,27 +68,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const metadata = user.user_metadata;
         console.log('[AuthProvider] Determining user type for:', user.id, 'metadata:', metadata);
 
-        // FIRST: Check metadata for quick atendente detection
+        // FIRST: Check if user is an atendente (from metadata for instant load)
         if (metadata?.is_atendente === true && metadata?.admin_id) {
             console.log('[AuthProvider] Found atendente in metadata, admin_id:', metadata.admin_id);
-
-            // Try new tenant_users table first
-            const { data: tenantUserData } = await supabase
-                .from('tenant_users')
-                .select('id, tenant_id, role')
-                .eq('user_id', user.id)
-                .eq('ativo', true)
-                .single();
-
-            if (tenantUserData && tenantUserData.role === 'atendente') {
-                setUserType('atendente');
-                setEffectiveUserId(tenantUserData.tenant_id);
-                setAtendenteId(tenantUserData.id);
-                console.log('[AuthProvider] Set as atendente (tenant_users), tenantId:', tenantUserData.tenant_id);
-                return;
-            }
-
-            // Fallback to old atendentes table
+            // Also fetch the atendente.id from DB for filtering leads
             const { data: atendenteData } = await supabase
                 .from('atendentes')
                 .select('id, admin_id')
@@ -100,29 +83,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setUserType('atendente');
                 setEffectiveUserId(atendenteData.admin_id);
                 setAtendenteId(atendenteData.id);
-                console.log('[AuthProvider] Set as atendente (legacy), effectiveUserId:', atendenteData.admin_id);
+                console.log('[AuthProvider] Set as atendente, effectiveUserId:', atendenteData.admin_id, 'atendenteId:', atendenteData.id);
                 return;
             }
         }
 
-        // SECOND: Check tenant_users table directly
-        const { data: tenantUserData } = await supabase
-            .from('tenant_users')
-            .select('id, tenant_id, role')
-            .eq('user_id', user.id)
-            .eq('ativo', true)
-            .single();
-
-        if (tenantUserData) {
-            const isAdmin = tenantUserData.role === 'owner' || tenantUserData.role === 'admin';
-            setUserType(isAdmin ? 'admin' : 'atendente');
-            setEffectiveUserId(tenantUserData.tenant_id);
-            setAtendenteId(isAdmin ? null : tenantUserData.id);
-            console.log('[AuthProvider] Set from tenant_users, role:', tenantUserData.role, 'tenantId:', tenantUserData.tenant_id);
-            return;
-        }
-
-        // THIRD: Check old atendentes table
+        // SECOND: Check atendentes table directly (in case metadata is missing)
         const { data: atendenteData } = await supabase
             .from('atendentes')
             .select('id, admin_id')
@@ -138,7 +104,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return;
         }
 
-        // FOURTH: Check if admin (has profile)
+        // THIRD: If not atendente, check if admin (has profile)
         const { data: profileData } = await supabase
             .from('profiles')
             .select('id')
@@ -153,7 +119,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return;
         }
 
-        // Fallback: treat as admin
+        // Fallback: treat as admin (shouldn't happen in normal flow)
         console.warn('[AuthProvider] No profile or atendente found, defaulting to admin');
         setUserType('admin');
         setEffectiveUserId(user.id);

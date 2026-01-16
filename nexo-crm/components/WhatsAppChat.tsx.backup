@@ -7,7 +7,7 @@ import { chatsSdrService } from '../src/lib/chatsSdrService';
 import { supabase } from '../src/lib/supabase';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
 import { useAuth } from '../src/lib/AuthProvider';
-import { tenantService, TenantUser } from '../src/lib/tenantService';
+import { atendentesService, Atendente } from '../src/lib/atendentesService';
 
 interface WhatsAppChatProps {
   leads: Lead[];
@@ -106,58 +106,57 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const isFirstLoad = useRef(true);
   const MESSAGE_PAGE_SIZE = 50;
 
-  // Tenant Users (atendentes)
-  const { userType, atendenteInfo, effectiveUserId, tenantId, userInfo, signOut } = useAuth();
-  const [tenantMembers, setTenantMembers] = useState<TenantUser[]>([]);
+  // Atendentes
+  const { userType, atendenteInfo, effectiveUserId, signOut } = useAuth();
+  const [atendentes, setAtendentes] = useState<Atendente[]>([]);
   const [showAssignDropdown, setShowAssignDropdown] = useState(false);
-  const [currentAssignment, setCurrentAssignment] = useState<TenantUser | null>(null);
-  const [assignmentsMap, setAssignmentsMap] = useState<Record<string, TenantUser | null>>({});
+  const [currentAssignment, setCurrentAssignment] = useState<Atendente | null>(null);
+  const [assignmentsMap, setAssignmentsMap] = useState<Record<string, Atendente | null>>({});
 
   const setSelectedChatId = onSelectChat;
   const selectedChat = leads.find(l => l.id === selectedChatId) || leads[0];
 
-  // Carregar lista de membros do tenant (com cache para evitar delay)
+  // Carregar lista de atendentes (com cache para evitar delay)
   useEffect(() => {
-    if (tenantId || effectiveUserId) {
-      const cacheKey = `nero_tenant_members_${tenantId || effectiveUserId}`;
+    if (effectiveUserId) {
       // Restaurar do cache primeiro
-      const cached = localStorage.getItem(cacheKey);
+      const cached = localStorage.getItem(`nero_atendentes_${effectiveUserId}`);
       if (cached) {
         try {
-          setTenantMembers(JSON.parse(cached));
+          setAtendentes(JSON.parse(cached));
         } catch (e) { }
       }
 
       // Buscar do banco e atualizar cache
-      tenantService.listAtendentes(tenantId || effectiveUserId).then(data => {
-        setTenantMembers(data);
-        localStorage.setItem(cacheKey, JSON.stringify(data));
+      atendentesService.listAtendentes(effectiveUserId).then(data => {
+        setAtendentes(data);
+        localStorage.setItem(`nero_atendentes_${effectiveUserId}`, JSON.stringify(data));
       });
     }
-  }, [tenantId, effectiveUserId]);
+  }, [effectiveUserId]);
 
   // Carregar todas as atribuições dos leads
   useEffect(() => {
     const loadAllAssignments = async () => {
-      const map: Record<string, TenantUser | null> = {};
+      const map: Record<string, Atendente | null> = {};
       for (const lead of leads) {
         if (lead.assigned_to) {
-          const member = tenantMembers.find(m => m.id === lead.assigned_to) || null;
-          map[lead.id] = member;
+          const atendente = atendentes.find(a => a.id === lead.assigned_to) || null;
+          map[lead.id] = atendente;
         }
       }
       setAssignmentsMap(map);
     };
 
-    if (tenantMembers.length > 0) {
+    if (atendentes.length > 0) {
       loadAllAssignments();
     }
-  }, [leads, tenantMembers]);
+  }, [leads, atendentes]);
 
   // Carregar atribuição atual do lead selecionado
   useEffect(() => {
     if (selectedChat?.id) {
-      tenantService.getLeadAssignment(selectedChat.id).then(setCurrentAssignment);
+      atendentesService.getLeadAssignment(selectedChat.id).then(setCurrentAssignment);
     } else {
       setCurrentAssignment(null);
     }
@@ -428,22 +427,9 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     setInputText('');
 
     // Auto-atribuir se for atendente e não tiver atribuição
-    if (userType === 'atendente' && userInfo && !currentAssignment) {
-      await tenantService.assignLeadToMember(selectedChat.id, userInfo.tenantUserId);
-      // Criar objeto TenantUser para atualização local
-      const selfAsMember: TenantUser = {
-        id: userInfo.tenantUserId,
-        tenant_id: userInfo.tenantId,
-        user_id: '',
-        role: userInfo.role,
-        nome: userInfo.userName,
-        email: userInfo.userEmail,
-        ativo: true,
-        permissions: {},
-        created_at: '',
-        updated_at: ''
-      };
-      setCurrentAssignment(selfAsMember);
+    if (userType === 'atendente' && atendenteInfo && !currentAssignment) {
+      await atendentesService.assignLeadToAtendente(selectedChat.id, atendenteInfo.id);
+      setCurrentAssignment(atendenteInfo);
     }
 
     // Auto-pausar IA ao enviar mensagem (se ainda não estiver pausada)
@@ -588,13 +574,13 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     });
   };
 
-  const handleAssignLead = async (memberId: string | null) => {
+  const handleAssignLead = async (atendenteId: string | null) => {
     if (!selectedChat?.id) return;
 
-    await tenantService.assignLeadToMember(selectedChat.id, memberId);
+    await atendentesService.assignLeadToAtendente(selectedChat.id, atendenteId);
 
-    if (memberId) {
-      const assigned = tenantMembers.find(m => m.id === memberId);
+    if (atendenteId) {
+      const assigned = atendentes.find(a => a.id === atendenteId);
       setCurrentAssignment(assigned || null);
     } else {
       setCurrentAssignment(null);
@@ -605,7 +591,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
   // Verificar se atendente pode responder
   const canSendMessage = userType === 'admin' ||
-    (userInfo && currentAssignment?.id === userInfo.tenantUserId) ||
+    (atendenteInfo && currentAssignment?.id === atendenteInfo.id) ||
     !currentAssignment; // Pode responder se não tiver atribuído (auto-atribui)
 
   // Render message bubble
@@ -798,7 +784,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                   <div className="flex items-center gap-1 mt-1">
                     <UserPlus size={10} className="text-indigo-400" />
                     <span className="text-[9px] text-indigo-400 font-medium">
-                      {assignmentsMap[chat.id]?.id === userInfo?.tenantUserId
+                      {assignmentsMap[chat.id]?.id === atendenteInfo?.id
                         ? 'Atribuído a você'
                         : `Atribuído a ${assignmentsMap[chat.id]?.nome.split(' ')[0]}`}
                     </span>
@@ -826,7 +812,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
             </div>
             <div className="flex items-center gap-3 text-zinc-400 px-2">
               {/* Botão de Atribuição (só para admin) */}
-              {userType === 'admin' && tenantMembers.length > 0 && (
+              {userType === 'admin' && atendentes.length > 0 && (
                 <div className="relative">
                   <button
                     onClick={() => setShowAssignDropdown(!showAssignDropdown)}
@@ -836,7 +822,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                         : 'bg-zinc-800/50 text-zinc-400 border-zinc-700/50 hover:bg-zinc-700/50'}`}
                   >
                     <UserPlus size={14} />
-                    <span>{currentAssignment ? (currentAssignment.id === userInfo?.tenantUserId ? 'Você' : currentAssignment.nome.split(' ')[0]) : 'Atribuir'}</span>
+                    <span>{currentAssignment ? (currentAssignment.id === atendenteInfo?.id ? 'Você' : currentAssignment.nome.split(' ')[0]) : 'Atribuir'}</span>
                     <ChevronDown size={12} />
                   </button>
 
@@ -853,15 +839,15 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                         <Users size={14} />
                         <span>Ninguém (remover)</span>
                       </button>
-                      {tenantMembers.filter(m => m.ativo).map(member => (
+                      {atendentes.filter(a => a.ativo).map(atendente => (
                         <button
-                          key={member.id}
-                          onClick={() => handleAssignLead(member.id)}
+                          key={atendente.id}
+                          onClick={() => handleAssignLead(atendente.id)}
                           className={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-700/30 transition-colors flex items-center gap-2
-                            ${currentAssignment?.id === member.id ? 'text-emerald-400' : 'text-zinc-300'}`}
+                            ${currentAssignment?.id === atendente.id ? 'text-emerald-400' : 'text-zinc-300'}`}
                         >
-                          <div className={`w-2 h-2 rounded-full ${getAgentColor(member.nome)}`} />
-                          <span>{member.nome}</span>
+                          <div className={`w-2 h-2 rounded-full ${getAgentColor(atendente.nome)}`} />
+                          <span>{atendente.nome}</span>
                         </button>
                       ))}
                     </div>
@@ -873,7 +859,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               {userType === 'atendente' && currentAssignment && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 text-indigo-400 rounded-full text-xs font-semibold border border-indigo-500/20">
                   <UserPlus size={12} />
-                  <span>{currentAssignment.id === userInfo?.tenantUserId ? 'Você' : currentAssignment.nome.split(' ')[0]}</span>
+                  <span>{currentAssignment.id === atendenteInfo?.id ? 'Você' : currentAssignment.nome.split(' ')[0]}</span>
                 </div>
               )}
 
