@@ -717,7 +717,7 @@ const AppContent: React.FC = () => {
           return null;
         }
         // If profile not loaded yet, show the component (Sidebar already filters)
-        return <Broadcasts leads={leads} profile={profile} />;
+        return <Broadcasts leads={leads} profile={profile} availableTags={tags} />;
       case 'ajustes':
         return <Settings user={user} onUpdate={() => {/* User metadata updates are handled by Supabase session listener, but we could add manual refresh here if needed */ }} />;
       default:

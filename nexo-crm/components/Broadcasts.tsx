@@ -6,9 +6,10 @@ import { tagsService, Tag } from '../src/lib/tagsService';
 interface BroadcastsProps {
     leads: Lead[];
     profile: any;
+    availableTags: Tag[];
 }
 
-const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
+const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }) => {
     const [message, setMessage] = useState('');
     const [interval, setIntervalValue] = useState('30');
     const [startDate, setStartDate] = useState('');
@@ -19,7 +20,6 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [isSending, setIsSending] = useState(false);
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const [availableTags, setAvailableTags] = useState<Tag[]>([]);
     const [showConsentModal, setShowConsentModal] = useState(false);
     const [hasCheckedConsent, setHasCheckedConsent] = useState(false);
 
@@ -39,7 +39,6 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
     const [draftName, setDraftName] = useState('');
 
     useEffect(() => {
-        loadTags();
         loadDrafts();
     }, []);
 
@@ -102,11 +101,6 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
 
     const deleteDraft = (id: string) => {
         saveDrafts(drafts.filter(d => d.id !== id));
-    };
-
-    const loadTags = async () => {
-        const tags = await tagsService.listTags();
-        setAvailableTags(tags);
     };
 
     const handleTagToggle = (tag: string) => {
