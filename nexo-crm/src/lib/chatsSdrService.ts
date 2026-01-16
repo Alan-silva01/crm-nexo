@@ -102,30 +102,36 @@ async function getEffectiveProfileData(): Promise<{ chat_table_name: string | nu
 }
 
 export const chatsSdrService = {
-    async fetchChatsByPhone(phone: string, limit: number = 50, offset: number = 0): Promise<{ messages: SDRMessage[], hasMore: boolean }> {
+    async fetchChatsByPhone(phone: string, limit: number = 50, offset: number = 0, chatTableName?: string): Promise<{ messages: SDRMessage[], hasMore: boolean }> {
         if (!phone) return { messages: [], hasMore: false };
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) {
-            console.error('No authenticated user (session)');
-            return { messages: [], hasMore: false };
+        // Usar chatTableName passado ou buscar via getEffectiveProfileData
+        let tableName = chatTableName;
+
+        if (!tableName) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) {
+                console.error('No authenticated user (session)');
+                return { messages: [], hasMore: false };
+            }
+
+            // Buscar nome da tabela de chats (do admin, se for atendente)
+            const profile = await getEffectiveProfileData();
+            tableName = profile?.chat_table_name;
         }
 
-        // 1. Buscar nome da tabela de chats (do admin, se for atendente)
-        const profile = await getEffectiveProfileData();
-
-        if (!profile?.chat_table_name) {
+        if (!tableName) {
             console.error('Chat table not found for user');
             return { messages: [], hasMore: false };
         }
 
         const phoneNumbers = extractNumbers(phone);
-        console.log('Fetching chats from table:', profile.chat_table_name, 'for phone:', phone, 'limit:', limit, 'offset:', offset);
+        console.log('Fetching chats from table:', tableName, 'for phone:', phone, 'limit:', limit, 'offset:', offset);
 
         // 2. Buscar chats da tabela específica do usuário com paginação
         // Ordenamos por ID descendente para pegar os mais recentes primeiro
         let { data, error, count } = await supabase
-            .from(profile.chat_table_name)
+            .from(tableName)
             .select('*', { count: 'exact' })
             .eq('session_id', phone)
             .order('id', { ascending: false })
@@ -134,7 +140,7 @@ export const chatsSdrService = {
         // Se não encontrar, tenta por números
         if ((!data || data.length === 0) && phoneNumbers) {
             const result = await supabase
-                .from(profile.chat_table_name)
+                .from(tableName)
                 .select('*', { count: 'exact' })
                 .like('session_id', `${phoneNumbers}%`)
                 .order('id', { ascending: false })

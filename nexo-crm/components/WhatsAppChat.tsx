@@ -231,11 +231,11 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         setLoadingMessages(true);
       }
 
-      // 3. Buscar mensagens do banco
+      // 3. Buscar mensagens do banco - passando chatTableName para evitar RPC interno
       console.log('[WhatsAppChat] Step 2: Fetching messages from chatsSdrService...');
-      console.log('[WhatsAppChat] Phone:', selectedChat.phone, 'Limit:', MESSAGE_PAGE_SIZE);
+      console.log('[WhatsAppChat] Phone:', selectedChat.phone, 'Table:', chatTableName, 'Limit:', MESSAGE_PAGE_SIZE);
 
-      const { messages, hasMore } = await chatsSdrService.fetchChatsByPhone(selectedChat.phone, MESSAGE_PAGE_SIZE, 0);
+      const { messages, hasMore } = await chatsSdrService.fetchChatsByPhone(selectedChat.phone, MESSAGE_PAGE_SIZE, 0, chatTableName);
       console.log('[WhatsAppChat] ✅ Messages fetched:', messages.length, 'hasMore:', hasMore);
 
       if (!isMounted) {
