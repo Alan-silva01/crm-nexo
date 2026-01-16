@@ -562,7 +562,9 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                       <button
                         key={`filter-${tag.id}`}
                         onClick={() => {
-                          const query = searchQuery === tag.name ? '' : tag.name;
+                          // Use case-insensitive comparison for toggle
+                          const isActive = searchQuery.toLowerCase() === tag.name.toLowerCase();
+                          const query = isActive ? '' : tag.name;
                           onSearchChange(query);
                         }}
                         style={{
@@ -681,27 +683,29 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                           >
                             <Plus size={10} />
                           </button>
-                          <div className="absolute top-full left-0 mt-2 w-48 bg-[#0c0c0e] border border-zinc-800 rounded-2xl shadow-2xl opacity-0 invisible group-hover/add:opacity-100 group-hover/add:visible transition-all z-50 p-2 space-y-1">
+                          <div className="absolute top-full left-0 mt-2 w-48 bg-[#0c0c0e] border border-zinc-800 rounded-2xl shadow-2xl opacity-0 invisible group-hover/add:opacity-100 group-hover/add:visible transition-all z-50 p-2 max-h-48 overflow-y-auto custom-scrollbar">
                             {availableTags.length === 0 ? (
                               <p className="text-[10px] text-zinc-500 p-3 italic">Não há etiquetas.</p>
                             ) : (
-                              availableTags.map(tag => (
-                                <button
-                                  key={tag.id}
-                                  onClick={async () => {
-                                    const current = lead.tags || [];
-                                    if (!current.includes(tag.name)) {
-                                      const next = [...current, tag.name];
-                                      if (onLeadsUpdate) onLeadsUpdate(filteredLeads.map(l => l.id === lead.id ? { ...l, tags: next } : l));
-                                      await leadsService.updateLead(lead.id, { tags: next });
-                                    }
-                                  }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-zinc-900 rounded-xl text-[10px] font-bold text-zinc-400 hover:text-white transition-all text-left"
-                                >
-                                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }}></div>
-                                  {tag.name}
-                                </button>
-                              ))
+                              <div className="space-y-1">
+                                {availableTags.map(tag => (
+                                  <button
+                                    key={tag.id}
+                                    onClick={async () => {
+                                      const current = lead.tags || [];
+                                      if (!current.includes(tag.name)) {
+                                        const next = [...current, tag.name];
+                                        if (onLeadsUpdate) onLeadsUpdate(filteredLeads.map(l => l.id === lead.id ? { ...l, tags: next } : l));
+                                        await leadsService.updateLead(lead.id, { tags: next });
+                                      }
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-zinc-900 rounded-xl text-[10px] font-bold text-zinc-400 hover:text-white transition-all text-left"
+                                  >
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }}></div>
+                                    {tag.name}
+                                  </button>
+                                ))}
+                              </div>
                             )}
                           </div>
                         </div>
