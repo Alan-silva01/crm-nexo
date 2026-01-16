@@ -437,7 +437,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       setAiPaused(true);
       // Atualizar lista de leads para sincronizar sidebar
       const updatedLeads = leads.map(lead =>
-        lead.id === selectedChat.id ? { ...lead, ai_paused: true } : lead
+        lead.id === selectedChat.id ? { ...lead, ai_paused: true, updated_at: new Date().toISOString() } : lead
       );
       onLeadsUpdate(updatedLeads);
       // Enviar notificação de pausa para o webhook (não bloqueia o envio da mensagem)
@@ -473,6 +473,14 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         setSdrMessages(prev =>
           prev.map(m => m.id === tempId ? sentMessage : m)
         );
+
+        // Atualizar lista de leads localmente para mover para o topo
+        const updatedLeads = leads.map(lead =>
+          lead.id === selectedChat.id
+            ? { ...lead, updated_at: new Date().toISOString(), last_message: messageContent }
+            : lead
+        );
+        onLeadsUpdate(updatedLeads);
 
         // Update cache too
         const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
@@ -556,7 +564,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
     // Atualização otimista - instantânea na UI
     const updatedLeads = leads.map(lead =>
-      lead.id === selectedChat.id ? { ...lead, ai_paused: newStatus } : lead
+      lead.id === selectedChat.id ? { ...lead, ai_paused: newStatus, updated_at: new Date().toISOString() } : lead
     );
     onLeadsUpdate(updatedLeads);
 
