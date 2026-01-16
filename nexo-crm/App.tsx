@@ -18,6 +18,7 @@ import { formatRelativeTime } from './src/lib/formatRelativeTime';
 import { AuthProvider, useAuth } from './src/lib/AuthProvider';
 import { ThemeProvider, useTheme } from './src/lib/ThemeContext';
 import { leadsService } from './src/lib/leadsService';
+import { tagsService, Tag } from './src/lib/tagsService';
 import { supabase } from './src/lib/supabase';
 
 // Função para remover dados sensíveis antes de salvar no cache
@@ -111,6 +112,28 @@ const AppContent: React.FC = () => {
   const [notifications, setNotifications] = useState<LeadColumnHistory[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Tags - centralizadas igual leads e columns
+  const [tags, setTags] = useState<Tag[]>(() => {
+    // Não restaurar do cache na inicialização pois precisamos do effectiveUserId
+    return [];
+  });
+
+  // Restaurar tags do cache quando effectiveUserId estiver disponível
+  useEffect(() => {
+    if (effectiveUserId) {
+      try {
+        const cached = localStorage.getItem(`nexo_tags_cache_${effectiveUserId}`);
+        if (cached) {
+          const data = JSON.parse(cached);
+          console.log('App: Restored tags from user-specific cache:', data.length);
+          setTags(data);
+        }
+      } catch (e) {
+        console.error('App: Error restoring tags cache:', e);
+      }
+    }
+  }, [effectiveUserId]);
 
   // Restaurar profile do cache para evitar delay no nome da empresa
   // Também é user-specific para atendentes verem o profile do admin correto
@@ -273,6 +296,16 @@ const AppContent: React.FC = () => {
           }
         } catch (e) {
           console.error(`[${rid}] CRITICAL: Profile fetch crashed:`, e);
+        }
+
+        // Fetch Tags (centralized like leads and columns)
+        try {
+          console.log(`[${rid}] Fetching tags...`);
+          const fetchedTags = await tagsService.listTags();
+          setTags(fetchedTags);
+          console.log(`[${rid}] App: Fetched tags count: ${fetchedTags.length}`);
+        } catch (e) {
+          console.error(`[${rid}] CRITICAL: Tags fetch crashed:`, e);
         }
 
         console.log(`[${rid}] App fetchData completed.`);
@@ -619,6 +652,7 @@ const AppContent: React.FC = () => {
               setActiveTab('chats');
             }}
             showTags={profile?.disparos}
+            availableTags={tags}
           />
         );
       case 'calendar':
@@ -646,7 +680,7 @@ const AppContent: React.FC = () => {
       case 'analytics':
         return <DetailedAnalytics leads={leads} onAction={handleAnalysisAction} />;
       case 'etiquetas':
-        return <Labels />;
+        return <Labels tags={tags} onTagsUpdate={setTags} />;
       case 'broadcasts':
         // Only redirect if profile is loaded AND disparos is explicitly false
         if (profile && profile.disparos === false) {

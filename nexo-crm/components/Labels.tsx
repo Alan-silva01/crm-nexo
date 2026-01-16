@@ -16,10 +16,14 @@ const PRESET_COLORS = [
     '#14b8a6', // Teal
 ];
 
-const Labels: React.FC = () => {
+interface LabelsProps {
+    tags: Tag[];
+    onTagsUpdate: (tags: Tag[]) => void;
+}
+
+const Labels: React.FC<LabelsProps> = ({ tags, onTagsUpdate }) => {
     const { effectiveUserId, loading: authLoading } = useAuth();
-    const [tags, setTags] = useState<Tag[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
     const [newTagName, setNewTagName] = useState('');
     const [newTagColor, setNewTagColor] = useState(PRESET_COLORS[0]);
@@ -27,19 +31,19 @@ const Labels: React.FC = () => {
     const [editName, setEditName] = useState('');
     const [editColor, setEditColor] = useState('');
 
+    // Reload tags when auth is ready (if not already loaded from parent)
     useEffect(() => {
-        // Only load tags after auth is ready and we have effectiveUserId
-        if (!authLoading && effectiveUserId) {
-            console.log('[Labels] Auth ready, loading tags for:', effectiveUserId);
+        if (!authLoading && effectiveUserId && tags.length === 0) {
+            console.log('[Labels] Tags empty, fetching...');
             loadTags();
         }
-    }, [authLoading, effectiveUserId]);
+    }, [authLoading, effectiveUserId, tags.length]);
 
     const loadTags = async () => {
         setLoading(true);
         const data = await tagsService.listTags();
         console.log('[Labels] Loaded tags:', data.length);
-        setTags(data);
+        onTagsUpdate(data);
         setLoading(false);
     };
 
@@ -49,7 +53,7 @@ const Labels: React.FC = () => {
 
         const tag = await tagsService.createTag(newTagName.trim(), newTagColor);
         if (tag) {
-            setTags(prev => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name)));
+            onTagsUpdate([...tags, tag].sort((a, b) => a.name.localeCompare(b.name)));
             setNewTagName('');
             setIsAdding(false);
         }
@@ -59,7 +63,7 @@ const Labels: React.FC = () => {
         if (!editName.trim()) return;
         const success = await tagsService.updateTag(id, { name: editName.trim(), color: editColor });
         if (success) {
-            setTags(prev => prev.map(t => t.id === id ? { ...t, name: editName.trim(), color: editColor } : t).sort((a, b) => a.name.localeCompare(b.name)));
+            onTagsUpdate(tags.map(t => t.id === id ? { ...t, name: editName.trim(), color: editColor } : t).sort((a, b) => a.name.localeCompare(b.name)));
             setEditingId(null);
         }
     };
@@ -68,7 +72,7 @@ const Labels: React.FC = () => {
         if (confirm('Tem certeza que deseja excluir esta etiqueta? Ela será removida de todos os contatos.')) {
             const success = await tagsService.deleteTag(id);
             if (success) {
-                setTags(prev => prev.filter(t => t.id !== id));
+                onTagsUpdate(tags.filter(t => t.id !== id));
             }
         }
     };

@@ -2,11 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, Download, UserPlus, Users, Database, Tag as TagIcon, Plus, X, Check, Trash2, Loader2, CheckSquare, Square, AlertTriangle, CheckCircle2, Edit2, Eraser } from 'lucide-react';
 import { Lead, getLeadDisplayName } from '../types';
 import { leadsService } from '../src/lib/leadsService';
-import { tagsService, Tag } from '../src/lib/tagsService';
+import { Tag } from '../src/lib/tagsService';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
 import LetterAvatar from './LetterAvatar';
 import ImportContactsModal from './ImportContactsModal';
-import { useAuth } from '../src/lib/AuthProvider';
 
 interface LeadsListProps {
   searchQuery: string;
@@ -16,14 +15,13 @@ interface LeadsListProps {
   onViewChat: (lead: Lead) => void;
   onLeadsUpdate?: (leads: Lead[]) => void;
   showTags?: boolean;
+  availableTags?: Tag[];
 }
 
-const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filteredLeads, onViewDetails, onViewChat, onLeadsUpdate, showTags }) => {
-  const { effectiveUserId, loading: authLoading } = useAuth();
+const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filteredLeads, onViewDetails, onViewChat, onLeadsUpdate, showTags, availableTags = [] }) => {
   const [showLocalSearch, setShowLocalSearch] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
-  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [isApplyingTag, setIsApplyingTag] = useState(false);
 
   // Create/Edit States
@@ -36,22 +34,6 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    // Only load tags after auth is ready
-    if (!authLoading && effectiveUserId) {
-      loadTags();
-      const unsubscribe = tagsService.subscribeToTags((updatedTags) => {
-        setAvailableTags(updatedTags);
-      });
-      return () => unsubscribe();
-    }
-  }, [authLoading, effectiveUserId]);
-
-  const loadTags = async () => {
-    const tags = await tagsService.listTags();
-    setAvailableTags(tags);
-  };
 
   const handleImportComplete = (newLeads: Lead[]) => {
     if (onLeadsUpdate) {
