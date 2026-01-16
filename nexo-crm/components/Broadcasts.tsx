@@ -20,6 +20,8 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
     const [isSending, setIsSending] = useState(false);
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+    const [showConsentModal, setShowConsentModal] = useState(false);
+    const [hasCheckedConsent, setHasCheckedConsent] = useState(false);
 
     // Draft system
     interface Draft {
@@ -139,6 +141,11 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
         const webhookUrl = profile?.disparos_whebhook;
         if (!webhookUrl) {
             alert('Webhook de disparos não configurado no seu perfil.');
+            return;
+        }
+
+        if (!hasCheckedConsent) {
+            setShowConsentModal(true);
             return;
         }
 
@@ -388,10 +395,10 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                                 onClick={handleStartBroadcast}
                                 disabled={isSending || status === 'success'}
                                 className={`flex-1 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:cursor-not-allowed ${status === 'success'
-                                        ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                                        : status === 'error'
-                                            ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20'
-                                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20 disabled:opacity-50'
+                                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                                    : status === 'error'
+                                        ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20'
+                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20 disabled:opacity-50'
                                     }`}
                             >
                                 {isSending ? (
@@ -470,28 +477,17 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                         <h4 className="text-sm font-bold text-amber-400">⚠️ Aviso Importante sobre Disparos</h4>
                         <ul className="text-xs text-zinc-500 leading-relaxed space-y-1 list-disc list-inside">
                             <li><strong>Risco de Bloqueio:</strong> Enviar muitas mensagens pode resultar em bloqueio do número pelo WhatsApp. Use com moderação.</li>
+                            <li><strong>Limite Recomendado:</strong> Não aconselhamos fazer disparos para mais de <strong>100 contatos</strong> simultaneamente com API não oficial.</li>
                             <li><strong>Intervalo entre Mensagens:</strong> O tempo entre cada envio é crucial. Recomendamos no mínimo 30 segundos.</li>
-                            <li><strong>Sem Previsão de Término:</strong> Os disparos iniciam na data e hora configuradas, mas não há como estimar quando terminarão, pois dependem do intervalo entre cada mensagem.</li>
+                            <li><strong>Estabilidade do Número:</strong> Disparos frequentes aumentam o risco de restrições por parte da Meta.</li>
                         </ul>
-                    </div>
-                </div>
-
-                <div className="bg-indigo-500/5 border border-indigo-500/20 p-6 rounded-3xl flex gap-4 items-start">
-                    <div className="p-2 bg-indigo-500/10 rounded-xl">
-                        <AlertCircle size={20} className="text-indigo-400" />
-                    </div>
-                    <div className="space-y-1">
-                        <h4 className="text-sm font-bold text-indigo-400">Dica de Segurança</h4>
-                        <p className="text-xs text-zinc-500 leading-relaxed">
-                            Para evitar banimentos no WhatsApp, recomendamos um intervalo mínimo de 30 segundos entre as mensagens e o uso de variáveis para tornar cada mensagem única.
-                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Modal para Salvar Rascunho */}
+            {/* Modal de Salvar Rascunho */}
             {showDraftModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
                     <div className="bg-[#0c0c0e] border border-zinc-800 rounded-[2rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-200">
                         <h3 className="text-lg font-bold text-white uppercase tracking-widest mb-4">Salvar Rascunho</h3>
                         <p className="text-xs text-zinc-500 mb-4">Dê um nome para identificar este rascunho (ex: "Disparo para Clientes")</p>
@@ -516,6 +512,71 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                             >
                                 <Save size={12} />
                                 Salvar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Termos e Responsabilidade (Consentimento) */}
+            {showConsentModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-[#0c0c0e] border border-zinc-800/50 rounded-[3rem] w-full max-w-lg p-10 shadow-[20px_20px_40px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-300 flex flex-col gap-6">
+                        <div className="flex flex-col items-center text-center gap-4">
+                            <div className="p-4 bg-amber-500/10 rounded-full border border-amber-500/20 text-amber-500">
+                                <AlertCircle size={32} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-white uppercase tracking-[0.15em] mb-2 font-mono">Termos e Condições de Uso</h3>
+                                <p className="text-[11px] text-amber-500/80 font-bold uppercase tracking-widest leading-normal">
+                                    Leia atentamente antes de prosseguir com o disparo em massa
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-6 space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar no-scrollbar text-zinc-400">
+                            <div className="space-y-4 text-xs leading-relaxed italic border-l-2 border-amber-500/20 pl-4">
+                                <p>
+                                    Ao utilizar a ferramenta de disparos em massa, você declara estar ciente de que o uso de APIs não oficiais para envio de mensagens automáticas via WhatsApp (Meta) infringe as diretrizes comerciais da plataforma.
+                                </p>
+                                <p>
+                                    <strong>Risco de Bloqueio Irreversível:</strong> Existe um risco real de restrição ou banimento permanente do seu número de telefone por parte da Meta. Este risco aumenta conforme o volume de mensagens e a frequência dos disparos.
+                                </p>
+                                <p>
+                                    <strong>Isenção de Responsabilidade:</strong> A <strong>NERO CRM</strong> e seus desenvolvedores não se responsabilizam por eventuais bloqueios, perdas de dados ou interrupções de serviço decorrentes do uso desta funcionalidade. O usuário assume total e exclusiva responsabilidade pelos riscos operacionais e estratégicos.
+                                </p>
+                                <p>
+                                    <strong>Melhores Práticas:</strong> Você se compromete a respeitar intervalos mínimos de segurança e a não utilizar a ferramenta para fins ilícitos, spam ou assédio.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 p-4 bg-zinc-900/30 rounded-2xl border border-zinc-800/50 group cursor-pointer" onClick={() => setHasCheckedConsent(!hasCheckedConsent)}>
+                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${hasCheckedConsent ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-zinc-700 bg-zinc-800/50 group-hover:border-zinc-500'}`}>
+                                {hasCheckedConsent && <CheckCircle2 size={16} />}
+                            </div>
+                            <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest select-none">Estou ciente dos riscos e aceito os termos</span>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => { setShowConsentModal(false); setHasCheckedConsent(false); }}
+                                className="flex-1 py-4 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all shadow-inner active:scale-95"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (hasCheckedConsent) {
+                                        setShowConsentModal(false);
+                                        handleStartBroadcast();
+                                    }
+                                }}
+                                disabled={!hasCheckedConsent}
+                                className={`flex-1 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 ${hasCheckedConsent ? 'bg-indigo-600 text-white shadow-indigo-600/30 hover:bg-indigo-500' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'}`}
+                            >
+                                <Send size={14} />
+                                Iniciar Agora
                             </button>
                         </div>
                     </div>
