@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, Download, UserPlus, Users, Database, Tag as TagIcon, Plus, X, Check, Trash2, Loader2, CheckSquare, Square, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Search, Filter, Download, UserPlus, Users, Database, Tag as TagIcon, Plus, X, Check, Trash2, Loader2, CheckSquare, Square, AlertTriangle, CheckCircle2, Edit2, Eraser } from 'lucide-react';
 import { Lead, getLeadDisplayName } from '../types';
 import { leadsService } from '../src/lib/leadsService';
 import { tagsService, Tag } from '../src/lib/tagsService';
@@ -23,10 +23,14 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [isApplyingTag, setIsApplyingTag] = useState(false);
+
+  // Create/Edit States
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
-  const [newLead, setNewLead] = useState({ name: '', phone: '' });
-  const [isCreating, setIsCreating] = useState(false);
-  const [creationSuccess, setCreationSuccess] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [formData, setFormData] = useState({ name: '', phone: '' });
+
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -95,12 +99,13 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
   const handleBulkDelete = async () => {
     if (!confirm(`Tem certeza que deseja excluir ${selectedLeadIds.length} contatos?`)) return;
 
+    setIsDeleting(true);
     try {
       const results = await Promise.all(selectedLeadIds.map(id => leadsService.deleteLead(id)));
       const successCount = results.filter(r => r === true).length;
 
       if (successCount < selectedLeadIds.length) {
-        alert(`Aviso: ${selectedLeadIds.length - successCount} contatos não puderam ser excluídos. Eles podem ter históricos ou mensagens vinculadas.`);
+        alert(`Aviso: ${selectedLeadIds.length - successCount} contatos não puderam ser excluídos.`);
       }
 
       if (onLeadsUpdate) {
@@ -109,84 +114,112 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
       setSelectedLeadIds([]);
     } catch (error) {
       console.error('Error in bulk delete:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleDeleteIndividual = async () => {
     if (!leadToDelete) return;
 
-    console.log('Starting individual delete for lead:', leadToDelete.id);
     setIsDeleting(true);
     try {
       const success = await leadsService.deleteLead(leadToDelete.id);
-      console.log('Delete result:', success);
       if (success) {
         if (onLeadsUpdate) {
-          const newList = filteredLeads.filter(l => l.id !== leadToDelete.id);
-          console.log('Updating parent list. New count:', newList.length);
-          onLeadsUpdate(newList);
+          onLeadsUpdate(filteredLeads.filter(l => l.id !== leadToDelete.id));
         }
         setLeadToDelete(null);
       } else {
-        alert('Não foi possível excluir o contato no banco de dados. Verifique suas permissões.');
+        alert('Não foi possível excluir o contato.');
       }
     } catch (error) {
       console.error('Error deleting lead:', error);
-      alert('Erro técnico ao excluir contato. Verifique o console.');
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleCreateLead = async (e: React.FormEvent) => {
+  const validatePhone = (phone: string) => {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 10 || digits.length > 11) {
+      alert('Número de telefone inválido. Deve conter DDD + número (10 ou 11 dígitos).');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSaveLead = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newLead.name || !newLead.phone) return;
-    if (isCreating || creationSuccess) return;
+    if (!formData.name || !formData.phone) return;
+    if (!validatePhone(formData.phone)) return;
+    if (isProcessing) return;
 
-    console.log('Creating new lead:', newLead);
-    setIsCreating(true);
+    setIsProcessing(true);
     try {
-      const created = await leadsService.createLead({
-        name: newLead.name,
-        phone: newLead.phone,
-        status: 'NOVO',
-        email: null,
-        avatar: null,
-        company_name: null,
-        monthly_revenue: null,
-        dataHora_Agendamento: null,
-        servico_interesse: null,
-        dados: null,
-        ai_paused: false,
-        assigned_to: null,
-        tags: []
-      });
+      if (editingLead) {
+        // UPDATE
+        const success = await leadsService.updateLead(editingLead.id, {
+          name: formData.name,
+          phone: formData.phone
+        });
 
-      if (created) {
-        console.log('Lead created successfully:', created.id);
-        setCreationSuccess(true);
-
-        // Limpar dados IMEDIATAMENTE para o usuário ver que "sumiu" e foi salvo
-        setNewLead({ name: '', phone: '' });
-
-        if (onLeadsUpdate) {
-          onLeadsUpdate([created, ...filteredLeads]);
+        if (success) {
+          setShowSuccess(true);
+          if (onLeadsUpdate) {
+            onLeadsUpdate(filteredLeads.map(l => l.id === editingLead.id ? { ...l, name: formData.name, phone: formData.phone } : l));
+          }
+          setTimeout(() => {
+            setEditingLead(null);
+            setShowNewLeadForm(false);
+            setShowSuccess(false);
+            setFormData({ name: '', phone: '' });
+          }, 1500);
         }
-
-        // Mostrar feedback por 1.5s antes de fechar o modal
-        setTimeout(() => {
-          setShowNewLeadForm(false);
-          setCreationSuccess(false);
-        }, 1500);
       } else {
-        alert('Erro ao criar contato. Verifique os dados ou se o contato já existe.');
+        // CREATE
+        const created = await leadsService.createLead({
+          name: formData.name,
+          phone: formData.phone,
+          status: 'NOVO',
+          email: null,
+          avatar: null,
+          company_name: null,
+          monthly_revenue: null,
+          dataHora_Agendamento: null,
+          servico_interesse: null,
+          dados: null,
+          ai_paused: false,
+          assigned_to: null,
+          tags: []
+        });
+
+        if (created) {
+          setShowSuccess(true);
+          if (onLeadsUpdate) {
+            onLeadsUpdate([created, ...filteredLeads]);
+          }
+          setFormData({ name: '', phone: '' });
+          setTimeout(() => {
+            setShowNewLeadForm(false);
+            setShowSuccess(false);
+          }, 1500);
+        }
       }
     } catch (error) {
-      console.error('Error creating lead:', error);
-      alert('Erro técnico ao criar contato.');
+      console.error('Error saving lead:', error);
     } finally {
-      setIsCreating(false);
+      setIsProcessing(false);
     }
+  };
+
+  const handleEditClick = (lead: Lead) => {
+    setEditingLead(lead);
+    setFormData({
+      name: lead.name,
+      phone: lead.phone ? lead.phone.replace(/\D/g, '').replace(/^55/, '') : ''
+    });
+    setShowNewLeadForm(true);
   };
 
   const handleExportCSV = useCallback(() => {
@@ -248,8 +281,9 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
           </button>
           <button
             onClick={() => {
-              setNewLead({ name: '', phone: '' });
-              setCreationSuccess(false);
+              setEditingLead(null);
+              setFormData({ name: '', phone: '' });
+              setShowSuccess(false);
               setShowNewLeadForm(true);
             }}
             className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 rounded-xl text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
@@ -260,42 +294,34 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
         </div>
       </header>
 
-      {/* Modal de Novo Contato */}
+      {/* Modal de Criar/Editar Contato */}
       {showNewLeadForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0c0c0e] border border-zinc-800 rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-200 relative overflow-hidden">
 
-            {creationSuccess && (
-              <div className="absolute inset-0 bg-[#0c0c0e]/95 backdrop-blur-md z-10 flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-300">
+            {showSuccess && (
+              <div className="absolute inset-0 bg-[#0c0c0e]/95 backdrop-blur-md z-10 flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-300 text-center">
                 <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
                   <CheckCircle2 size={32} className="text-emerald-500" />
                 </div>
-                <div className="text-center">
-                  <h3 className="text-lg font-bold text-white uppercase tracking-widest">Contato Salvo!</h3>
-                  <p className="text-zinc-500 text-xs mt-1">O contato foi adicionado à sua base.</p>
-                </div>
+                <h3 className="text-lg font-bold text-white uppercase tracking-widest">{editingLead ? 'Alterações Salvas!' : 'Contato Salvo!'}</h3>
               </div>
             )}
 
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-white uppercase tracking-widest">Novo Contato</h2>
-              <button
-                onClick={() => {
-                  setShowNewLeadForm(false);
-                  setNewLead({ name: '', phone: '' });
-                }}
-                className="text-zinc-500 hover:text-white"
-              >
-                <X size={20} />
-              </button>
+              <h2 className="text-lg font-bold text-white uppercase tracking-widest">{editingLead ? 'Editar Contato' : 'Novo Contato'}</h2>
+              <button onClick={() => {
+                setShowNewLeadForm(false);
+                setEditingLead(null);
+              }} className="text-zinc-500 hover:text-white"><X size={20} /></button>
             </div>
-            <form onSubmit={handleCreateLead} className="space-y-6">
+            <form onSubmit={handleSaveLead} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Nome Completo</label>
                 <input
                   type="text"
-                  value={newLead.name}
-                  onChange={(e) => setNewLead(prev => ({ ...prev, name: e.target.value }))}
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-5 py-3.5 bg-zinc-900/50 border border-zinc-800 rounded-2xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                   placeholder="Ex: João Silva"
                   required
@@ -306,26 +332,27 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Telefone (com DDD)</label>
                 <input
                   type="text"
-                  value={newLead.phone}
-                  onChange={(e) => setNewLead(prev => ({ ...prev, phone: e.target.value }))}
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   className="w-full px-5 py-3.5 bg-zinc-900/50 border border-zinc-800 rounded-2xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                   placeholder="Ex: 11999999999"
                   required
                 />
+                <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tight ml-1 italic">* Digite apenas números (10 ou 11 dígitos)</p>
               </div>
               <button
                 type="submit"
-                disabled={isCreating}
+                disabled={isProcessing}
                 className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-bold uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {isCreating ? <Loader2 size={16} className="animate-spin" /> : <><Check size={16} /> Salvar Contato</>}
+                {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <><Check size={16} /> {editingLead ? 'Salvar Alterações' : 'Salvar Contato'}</>}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modal de Confirmação de Exclusão */}
+      {/* Modal de Confirmação de Exclusão Individual */}
       {leadToDelete && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0c0c0e] border border-zinc-800 rounded-[2rem] w-full max-w-sm p-8 shadow-2xl animate-in zoom-in-95 duration-200">
@@ -384,6 +411,15 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                 <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-500/20 shadow-sm">
                   {selectedLeadIds.length} Selecionados
                 </span>
+
+                <button
+                  onClick={() => setSelectedLeadIds([])}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-zinc-800 border border-zinc-700 rounded-xl text-[10px] font-bold text-zinc-400 hover:text-white transition-all"
+                >
+                  <Eraser size={12} />
+                  Desmarcar
+                </button>
+
                 <div className="h-6 w-px bg-zinc-800 mx-1"></div>
 
                 <div className="relative group">
@@ -575,6 +611,13 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                         className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] font-bold text-zinc-400 hover:text-white hover:border-emerald-500/30 transition-all shadow-lg active:scale-95 uppercase tracking-tighter"
                       >
                         Ver Conversa
+                      </button>
+                      <button
+                        onClick={() => handleEditClick(lead)}
+                        className="p-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-500 hover:text-indigo-400 hover:border-indigo-500/30 transition-all shadow-lg active:scale-95"
+                        title="Editar Contato"
+                      >
+                        <Edit2 size={14} />
                       </button>
                       <button
                         onClick={() => setLeadToDelete(lead)}
