@@ -31,7 +31,17 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordComplete, onCance
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
+            // Determine supported mime type
+            const mimeTypes = [
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/ogg;codecs=opus',
+                'audio/mp4',
+                ''
+            ];
+            const supportedMimeType = mimeTypes.find(type => !type || MediaRecorder.isTypeSupported(type));
+
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: supportedMimeType });
             mediaRecorderRef.current = mediaRecorder;
             chunksRef.current = [];
 
@@ -42,14 +52,15 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordComplete, onCance
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
+                const finalMimeType = mediaRecorder.mimeType || 'audio/webm';
+                const blob = new Blob(chunksRef.current, { type: finalMimeType });
                 const url = URL.createObjectURL(blob);
                 setAudioBlob(blob);
                 setAudioUrl(url);
                 stream.getTracks().forEach(track => track.stop());
             };
 
-            mediaRecorder.start();
+            mediaRecorder.start(100); // Trigger ondataavailable every 100ms
             setIsRecording(true);
             setRecordingTime(0);
             setAudioUrl(null);
@@ -75,7 +86,8 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordComplete, onCance
 
     const handleConfirm = () => {
         if (audioBlob) {
-            const file = new File([audioBlob], `recording_${Date.now()}.ogg`, { type: 'audio/webm;codecs=opus' });
+            const extension = audioBlob.type.includes('ogg') ? 'ogg' : 'webm';
+            const file = new File([audioBlob], `recording_${Date.now()}.${extension}`, { type: audioBlob.type });
             onRecordComplete(file);
         }
     };
