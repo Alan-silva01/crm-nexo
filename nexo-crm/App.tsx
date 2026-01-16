@@ -58,13 +58,6 @@ const AppContent: React.FC = () => {
     } catch (e) { }
   }, [activeTab]);
 
-  // Para atendentes, forçar aba de Conversas se estiver em Dashboard após refresh
-  useEffect(() => {
-    if (userType === 'atendente' && activeTab === 'dashboard') {
-      setActiveTab('chats');
-    }
-  }, [userType]);
-
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
