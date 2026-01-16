@@ -203,50 +203,9 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const cacheKey = phoneNumbers || selectedChat.phone;
       console.log('[WhatsAppChat] cacheKey:', cacheKey);
 
-      // Aguardar sessão estar disponível (com timeout curto)
-      console.log('[WhatsAppChat] Step 0: Waiting for Supabase session...');
-
-      // Criar Promise que resolve quando temos sessão
-      let authSubscription: any = null;
-
-      const sessionPromise = new Promise<any>((resolve) => {
-        // PRIMEIRO: Registrar listener para pegar eventos que já dispararam ou vão disparar
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (session) {
-            console.log('[WhatsAppChat] ✅ Session from auth event:', event, session.user?.email);
-            resolve(session);
-          }
-        });
-        authSubscription = subscription;
-
-        // DEPOIS: Tentar getSession para pegar sessão já existente
-        supabase.auth.getSession().then(({ data }) => {
-          if (data.session) {
-            console.log('[WhatsAppChat] ✅ Session from getSession:', data.session.user?.email);
-            resolve(data.session);
-          }
-        }).catch((e) => {
-          console.log('[WhatsAppChat] getSession failed:', e);
-        });
-      });
-
-      const timeoutPromise = new Promise<null>((resolve) => {
-        setTimeout(() => {
-          console.log('[WhatsAppChat] ⚠️ Session timeout after 8s, proceeding anyway...');
-          resolve(null);
-        }, 8000); // 8 seconds max wait
-      });
-
-      const session = await Promise.race([sessionPromise, timeoutPromise]);
-
-      // Cleanup do listener
-      if (authSubscription) {
-        authSubscription.unsubscribe();
-      }
-
-      if (!session) {
-        console.warn('[WhatsAppChat] No session after timeout, will try RPC anyway...');
-      }
+      // Não esperar sessão - se effectiveUserId está disponível, auth está pronta
+      // chatsSdrService já tem retry interno robusto
+      console.log('[WhatsAppChat] Skipping session wait - effectiveUserId available, proceeding...');
 
       // 1. Buscar chat table name via RPC
       console.log('[WhatsAppChat] Step 1: Calling get_effective_profile RPC...');
