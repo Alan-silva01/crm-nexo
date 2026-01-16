@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Image as ImageIcon, Music, Clock, Calendar as CalendarIcon, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { Send, Image as ImageIcon, Music, Clock, Calendar as CalendarIcon, AlertCircle, Loader2, CheckCircle2, Save, Trash2, FileText } from 'lucide-react';
 import { Lead } from '../types';
 import { tagsService, Tag } from '../src/lib/tagsService';
 
@@ -21,9 +21,86 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [availableTags, setAvailableTags] = useState<Tag[]>([]);
 
+    // Draft system
+    interface Draft {
+        id: string;
+        name: string;
+        message: string;
+        interval: string;
+        startDate: string;
+        startTime: string;
+        selectedTags: string[];
+        imageCaption: string;
+    }
+    const [drafts, setDrafts] = useState<Draft[]>([]);
+    const [showDraftModal, setShowDraftModal] = useState(false);
+    const [draftName, setDraftName] = useState('');
+
     useEffect(() => {
         loadTags();
+        loadDrafts();
     }, []);
+
+    const loadDrafts = () => {
+        try {
+            const saved = localStorage.getItem('nero_broadcast_drafts');
+            if (saved) {
+                setDrafts(JSON.parse(saved));
+            }
+        } catch (e) {
+            console.error('Error loading drafts:', e);
+        }
+    };
+
+    const saveDrafts = (newDrafts: Draft[]) => {
+        try {
+            localStorage.setItem('nero_broadcast_drafts', JSON.stringify(newDrafts));
+            setDrafts(newDrafts);
+        } catch (e) {
+            console.error('Error saving drafts:', e);
+        }
+    };
+
+    const handleSaveDraft = () => {
+        if (drafts.length >= 2) {
+            alert('Você já tem 2 rascunhos salvos. Exclua um para salvar outro.');
+            return;
+        }
+        setShowDraftModal(true);
+    };
+
+    const confirmSaveDraft = () => {
+        if (!draftName.trim()) {
+            alert('Digite um nome para o rascunho.');
+            return;
+        }
+        const newDraft: Draft = {
+            id: Date.now().toString(),
+            name: draftName.trim(),
+            message,
+            interval,
+            startDate,
+            startTime,
+            selectedTags,
+            imageCaption
+        };
+        saveDrafts([...drafts, newDraft]);
+        setShowDraftModal(false);
+        setDraftName('');
+    };
+
+    const loadDraft = (draft: Draft) => {
+        setMessage(draft.message);
+        setIntervalValue(draft.interval);
+        setStartDate(draft.startDate);
+        setStartTime(draft.startTime);
+        setSelectedTags(draft.selectedTags);
+        setImageCaption(draft.imageCaption);
+    };
+
+    const deleteDraft = (id: string) => {
+        saveDrafts(drafts.filter(d => d.id !== id));
+    };
 
     const loadTags = async () => {
         const tags = await tagsService.listTags();
@@ -155,18 +232,6 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                     <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">Disparos em Massa</h1>
                     <p className="text-zinc-500 text-sm">Configure suas campanhas de transmissão para o WhatsApp.</p>
                 </div>
-                {status === 'success' && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs font-bold animate-in fade-in slide-in-from-top-2">
-                        <CheckCircle2 size={14} />
-                        Disparo enviado com sucesso!
-                    </div>
-                )}
-                {status === 'error' && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs font-bold animate-in fade-in slide-in-from-top-2">
-                        <AlertCircle size={14} />
-                        Erro ao enviar disparo.
-                    </div>
-                )}
             </header>
 
             <div className="max-w-4xl mx-auto space-y-6">
@@ -321,13 +386,28 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                         <div className="pt-6 flex gap-4">
                             <button
                                 onClick={handleStartBroadcast}
-                                disabled={isSending}
-                                className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={isSending || status === 'success'}
+                                className={`flex-1 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:cursor-not-allowed ${status === 'success'
+                                        ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                                        : status === 'error'
+                                            ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20'
+                                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20 disabled:opacity-50'
+                                    }`}
                             >
                                 {isSending ? (
                                     <>
                                         <Loader2 size={16} className="animate-spin" />
                                         Enviando...
+                                    </>
+                                ) : status === 'success' ? (
+                                    <>
+                                        <CheckCircle2 size={16} />
+                                        Disparo Enviado com Sucesso!
+                                    </>
+                                ) : status === 'error' ? (
+                                    <>
+                                        <AlertCircle size={16} />
+                                        Erro - Clique para Tentar Novamente
                                     </>
                                 ) : (
                                     <>
@@ -336,10 +416,63 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                                     </>
                                 )}
                             </button>
-                            <button className="px-8 py-4 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all active:scale-95">
+                            <button
+                                onClick={handleSaveDraft}
+                                className="px-8 py-4 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2"
+                            >
+                                <Save size={14} />
                                 Salvar Rascunho
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                {/* Rascunhos Salvos */}
+                {drafts.length > 0 && (
+                    <div className="bg-zinc-900/30 border border-zinc-800/50 p-6 rounded-3xl space-y-4">
+                        <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                            <FileText size={14} className="text-indigo-400" />
+                            Rascunhos Salvos ({drafts.length}/2)
+                        </h4>
+                        <div className="space-y-2">
+                            {drafts.map(draft => (
+                                <div key={draft.id} className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl">
+                                    <div>
+                                        <p className="text-sm font-bold text-zinc-200">{draft.name}</p>
+                                        <p className="text-[10px] text-zinc-500 truncate max-w-xs">{draft.message || 'Sem mensagem de texto'}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => loadDraft(draft)}
+                                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all"
+                                        >
+                                            Carregar
+                                        </button>
+                                        <button
+                                            onClick={() => deleteDraft(draft.id)}
+                                            className="p-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg transition-all"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Aviso de Riscos */}
+                <div className="bg-amber-500/5 border border-amber-500/20 p-6 rounded-3xl flex gap-4 items-start">
+                    <div className="p-2 bg-amber-500/10 rounded-xl">
+                        <AlertCircle size={20} className="text-amber-400" />
+                    </div>
+                    <div className="space-y-2">
+                        <h4 className="text-sm font-bold text-amber-400">⚠️ Aviso Importante sobre Disparos</h4>
+                        <ul className="text-xs text-zinc-500 leading-relaxed space-y-1 list-disc list-inside">
+                            <li><strong>Risco de Bloqueio:</strong> Enviar muitas mensagens pode resultar em bloqueio do número pelo WhatsApp. Use com moderação.</li>
+                            <li><strong>Intervalo entre Mensagens:</strong> O tempo entre cada envio é crucial. Recomendamos no mínimo 30 segundos.</li>
+                            <li><strong>Sem Previsão de Término:</strong> Os disparos iniciam na data e hora configuradas, mas não há como estimar quando terminarão, pois dependem do intervalo entre cada mensagem.</li>
+                        </ul>
                     </div>
                 </div>
 
@@ -355,6 +488,39 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal para Salvar Rascunho */}
+            {showDraftModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-[#0c0c0e] border border-zinc-800 rounded-[2rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <h3 className="text-lg font-bold text-white uppercase tracking-widest mb-4">Salvar Rascunho</h3>
+                        <p className="text-xs text-zinc-500 mb-4">Dê um nome para identificar este rascunho (ex: "Disparo para Clientes")</p>
+                        <input
+                            type="text"
+                            value={draftName}
+                            onChange={(e) => setDraftName(e.target.value)}
+                            placeholder="Nome do rascunho..."
+                            className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all mb-6"
+                            autoFocus
+                        />
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setShowDraftModal(false); setDraftName(''); }}
+                                className="flex-1 py-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmSaveDraft}
+                                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
+                            >
+                                <Save size={12} />
+                                Salvar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
