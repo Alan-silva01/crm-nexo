@@ -42,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
   ].filter(item => item.permission !== false);
 
   return (
-    <aside className="w-16 h-full flex-shrink-0 relative z-50">
+    <aside className={`${isCollapsed ? 'w-16' : 'w-52'} h-full flex-shrink-0 relative z-50 transition-all duration-300`}>
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
