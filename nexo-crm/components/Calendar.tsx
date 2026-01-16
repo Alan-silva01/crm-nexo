@@ -63,14 +63,30 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
         days.push(<div key={`prev-${i}`} className="h-12 w-12 opacity-0"></div>);
     }
 
+    // Generic date parser to handle inconsistent formats (T vs Space)
+    const parseDate = (dateStr: string | null | undefined): Date | null => {
+        if (!dateStr) return null;
+        try {
+            // Replace space with T if missing for better ISO support
+            let normalized = dateStr;
+            if (dateStr.includes(' ') && !dateStr.includes('T')) {
+                normalized = dateStr.replace(' ', 'T');
+            }
+            const date = new Date(normalized);
+            return isNaN(date.getTime()) ? null : date;
+        } catch (e) {
+            return null;
+        }
+    };
+
     // Current month days
     for (let d = 1; d <= totalDays; d++) {
         const isToday = d === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
 
         // Check if there are events on this day
         const dayEvents = leads.filter(lead => {
-            if (!lead.dataHora_Agendamento) return false;
-            const scheduled = new Date(lead.dataHora_Agendamento);
+            const scheduled = parseDate(lead.dataHora_Agendamento);
+            if (!scheduled) return false;
             return scheduled.getDate() === d && scheduled.getMonth() === month && scheduled.getFullYear() === year;
         });
 
@@ -181,11 +197,23 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
         (l.phone && l.phone.includes(searchTerm))
     ).slice(0, 5);
 
-    // Upcoming Events based on leads with dataHora_Agendamento
+    // Upcoming Events based on leads with dataHora_Agendamento (from today onwards)
     const upcomingEvents = leads
-        .filter(l => l.dataHora_Agendamento)
-        .sort((a, b) => new Date(a.dataHora_Agendamento!).getTime() - new Date(b.dataHora_Agendamento!).getTime())
-        .slice(0, 10); // Show more since we have scroll now
+        .filter(l => {
+            const date = parseDate(l.dataHora_Agendamento);
+            if (!date) return false;
+
+            // Only show events from today onwards
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return date.getTime() >= today.getTime();
+        })
+        .sort((a, b) => {
+            const dateA = parseDate(a.dataHora_Agendamento);
+            const dateB = parseDate(b.dataHora_Agendamento);
+            return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+        })
+        .slice(0, 15);
 
     return (
         <div className="h-full bg-[#0c0c0e] p-8 overflow-y-auto custom-scrollbar flex flex-col gap-8 text-zinc-300 select-none">
@@ -259,9 +287,12 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                     onClick={() => {
                                         setSelectedLeadId(event.id);
                                         setSearchTerm(getLeadDisplayName(event));
-                                        const date = new Date(event.dataHora_Agendamento!);
-                                        const localISODate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-                                        setEventDate(localISODate);
+
+                                        const date = parseDate(event.dataHora_Agendamento);
+                                        if (date) {
+                                            const localISODate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                                            setEventDate(localISODate);
+                                        }
                                         setEventService(event.servico_interesse || '');
                                         setIsEventModalOpen(true);
                                     }}
@@ -538,10 +569,11 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                                     setSelectedLeadId(event.id);
                                                     setSearchTerm(getLeadDisplayName(event));
                                                     // Set local time for datetime-local input
-                                                    const date = new Date(event.dataHora_Agendamento!);
-                                                    // This ensures the input shows the correct local time regardless of timezone
-                                                    const localISODate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-                                                    setEventDate(localISODate);
+                                                    const date = parseDate(event.dataHora_Agendamento);
+                                                    if (date) {
+                                                        const localISODate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                                                        setEventDate(localISODate);
+                                                    }
                                                     setEventService(event.servico_interesse || '');
                                                     setSelectedDayEvents(null);
                                                     setIsEventModalOpen(true);
