@@ -269,104 +269,110 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         setLoadingMessages(true);
       }
 
-      // 3. Buscar mensagens do banco - passando chatTableName para evitar RPC interno
-      console.log('[WhatsAppChat] Step 2: Fetching messages from chatsSdrService...');
-      console.log('[WhatsAppChat] Phone:', selectedChat.phone, 'Table:', chatTableName, 'Limit:', MESSAGE_PAGE_SIZE);
+      try {
+        // 3. Buscar mensagens do banco - passando chatTableName para evitar RPC interno
+        console.log('[WhatsAppChat] Step 2: Fetching messages from chatsSdrService...');
+        console.log('[WhatsAppChat] Phone:', selectedChat.phone, 'Table:', chatTableName, 'Limit:', MESSAGE_PAGE_SIZE);
 
-      const { messages, hasMore } = await chatsSdrService.fetchChatsByPhone(selectedChat.phone, MESSAGE_PAGE_SIZE, 0, chatTableName);
-      console.log('[WhatsAppChat] ✅ Messages fetched:', messages.length, 'hasMore:', hasMore);
+        const { messages, hasMore } = await chatsSdrService.fetchChatsByPhone(selectedChat.phone, MESSAGE_PAGE_SIZE, 0, chatTableName);
+        console.log('[WhatsAppChat] ✅ Messages fetched:', messages.length, 'hasMore:', hasMore);
 
-      if (!isMounted) {
-        console.log('[WhatsAppChat] Component unmounted, aborting');
-        return;
-      }
+        if (!isMounted) {
+          console.log('[WhatsAppChat] Component unmounted, aborting');
+          return;
+        }
 
-      // 4. Processar mensagens
-      const processedMessages: SDRMessage[] = [];
-      messages.forEach((msg) => {
-        const cleaned = cleanContent(msg.message.content || '');
-        const parts = cleaned.split(/\n\n+/);
-        parts.forEach((part, index) => {
-          if (part.trim() && !shouldHideMessage(part)) {
-            processedMessages.push({
-              ...msg,
-              id: msg.id * 10000 + index,
-              message: { ...msg.message, content: part.trim() }
-            });
-          }
-        });
-      });
-
-      console.log('[WhatsAppChat] ✅ Processed messages:', processedMessages.length);
-      console.log('[WhatsAppChat] ===== FETCH COMPLETE in', Date.now() - startTime, 'ms =====');
-
-      // 5. Atualizar estado
-      setSdrMessages(processedMessages);
-      setHasMoreMessages(hasMore);
-      setCurrentOffset(MESSAGE_PAGE_SIZE);
-      setMessagesCache(prev => ({ ...prev, [cacheKey]: { messages: processedMessages, hasMore, offset: MESSAGE_PAGE_SIZE } }));
-      setLoadingMessages(false);
-
-      // 6. Buscar estado da IA
-      const actualAiStatus = await chatsSdrService.getAIStatus(selectedChat.phone);
-      if (isMounted) {
-        setAiPaused(actualAiStatus);
-      }
-
-      // 7. Configurar Realtime
-
-      // 4. Configurar Realtime para a tabela DINÂMICA do usuário
-      const finalSessionIdForRealtime = messages.length > 0 ? messages[0].session_id : selectedChat.phone;
-
-      console.log(`[Realtime] Subscribing to table: ${chatTableName}`);
-
-      subscription = supabase
-        .channel(`chat_realtime_${cacheKey}`)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: chatTableName  // Usar tabela dinâmica!
-        }, (payload) => {
-          const newMsg = payload.new as any;
-
-          // Debug para ver se as mensagens chegam
-          console.log('Realtime message received:', newMsg);
-
-          // Verificar se a mensagem pertence a este chat
-          const isRelevant = newMsg.session_id === finalSessionIdForRealtime ||
-            newMsg.session_id.includes(phoneNumbers);
-
-          if (!isRelevant) return;
-
-          const cleaned = cleanContent(newMsg.message.content || '');
+        // 4. Processar mensagens
+        const processedMessages: SDRMessage[] = [];
+        messages.forEach((msg) => {
+          const cleaned = cleanContent(msg.message.content || '');
           const parts = cleaned.split(/\n\n+/);
-
-          const newProcessed: SDRMessage[] = parts
-            .filter(part => part.trim() && !shouldHideMessage(part))
-            .map((part, index) => ({
-              ...newMsg,
-              id: newMsg.id * 10000 + index,
-              message: { ...newMsg.message, content: part.trim() }
-            }));
-
-          if (isMounted) {
-            setSdrMessages(prev => {
-              // Evitar duplicatas se a mensagem já foi carregada ou enviada manualmente
-              const messageExists = prev.some(m => m.id / 10000 === newMsg.id || m.id === newMsg.id);
-              if (messageExists) return prev;
-
-              const updated = [...prev, ...newProcessed];
-              setMessagesCache(cache => {
-                const existingCache = cache[cacheKey] || { messages: [], hasMore: false, offset: 0 };
-                return { ...cache, [cacheKey]: { ...existingCache, messages: updated } };
+          parts.forEach((part, index) => {
+            if (part.trim() && !shouldHideMessage(part)) {
+              processedMessages.push({
+                ...msg,
+                id: msg.id * 10000 + index,
+                message: { ...msg.message, content: part.trim() }
               });
-              return updated;
-            });
-          }
-        })
-        .subscribe((status) => {
-          console.log(`Realtime subscription status for ${chatTableName}/${cacheKey}:`, status);
+            }
+          });
         });
+
+        console.log('[WhatsAppChat] ✅ Processed messages:', processedMessages.length);
+        console.log('[WhatsAppChat] ===== FETCH COMPLETE in', Date.now() - startTime, 'ms =====');
+
+        // 5. Atualizar estado
+        setSdrMessages(processedMessages);
+        setHasMoreMessages(hasMore);
+        setCurrentOffset(MESSAGE_PAGE_SIZE);
+        setMessagesCache(prev => ({ ...prev, [cacheKey]: { messages: processedMessages, hasMore, offset: MESSAGE_PAGE_SIZE } }));
+
+        // 6. Buscar estado da IA
+        const actualAiStatus = await chatsSdrService.getAIStatus(selectedChat.phone);
+        if (isMounted) {
+          setAiPaused(actualAiStatus);
+        }
+
+        // 7. Configurar Realtime
+        const finalSessionIdForRealtime = messages.length > 0 ? messages[0].session_id : selectedChat.phone;
+
+        console.log(`[Realtime] Subscribing to table: ${chatTableName}`);
+
+        subscription = supabase
+          .channel(`chat_realtime_${cacheKey}`)
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: chatTableName  // Usar tabela dinâmica!
+          }, (payload) => {
+            const newMsg = payload.new as any;
+
+            // Debug para ver se as mensagens chegam
+            console.log('Realtime message received:', newMsg);
+
+            // Verificar se a mensagem pertence a este chat
+            const isRelevant = newMsg.session_id === finalSessionIdForRealtime ||
+              newMsg.session_id.includes(phoneNumbers);
+
+            if (!isRelevant) return;
+
+            const cleaned = cleanContent(newMsg.message.content || '');
+            const parts = cleaned.split(/\n\n+/);
+
+            const newProcessed: SDRMessage[] = parts
+              .filter(part => part.trim() && !shouldHideMessage(part))
+              .map((part, index) => ({
+                ...newMsg,
+                id: newMsg.id * 10000 + index,
+                message: { ...newMsg.message, content: part.trim() }
+              }));
+
+            if (isMounted) {
+              setSdrMessages(prev => {
+                // Evitar duplicatas se a mensagem já foi carregada ou enviada manualmente
+                const messageExists = prev.some(m => m.id / 10000 === newMsg.id || m.id === newMsg.id);
+                if (messageExists) return prev;
+
+                const updated = [...prev, ...newProcessed];
+                setMessagesCache(cache => {
+                  const existingCache = cache[cacheKey] || { messages: [], hasMore: false, offset: 0 };
+                  return { ...cache, [cacheKey]: { ...existingCache, messages: updated } };
+                });
+                return updated;
+              });
+            }
+          })
+          .subscribe((status) => {
+            console.log(`Realtime subscription status for ${chatTableName}/${cacheKey}:`, status);
+          });
+      } catch (err) {
+        console.error('[WhatsAppChat] ERROR in fetchMessages:', err);
+      } finally {
+        if (isMounted) {
+          setLoadingMessages(false);
+          console.log('[WhatsAppChat] Loading state cleared.');
+        }
+      }
     };
 
     fetchMessages();
