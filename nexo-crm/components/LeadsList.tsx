@@ -552,8 +552,17 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                     placeholder="Filtrar por nome, tel, status ou etiqueta..."
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="pl-9 pr-4 py-2 bg-zinc-950/50 border border-zinc-800 rounded-xl text-xs w-80 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-bold"
+                    className="pl-9 pr-10 py-2 bg-zinc-950/50 border border-zinc-800 rounded-xl text-xs w-80 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-bold"
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => onSearchChange('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-red-400 transition-colors"
+                      title="Limpar filtro"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
                 </div>
 
                 {availableTags.length > 0 && (
