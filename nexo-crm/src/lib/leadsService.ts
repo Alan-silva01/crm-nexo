@@ -64,9 +64,9 @@ export const leadsService = {
         let user = null;
 
         while (!user && sessionRetries > 0) {
-            const { data: { user: authUser } } = await supabase.auth.getUser();
-            if (authUser) {
-                user = authUser;
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                user = session.user;
                 break;
             }
             sessionRetries--;
@@ -112,11 +112,12 @@ export const leadsService = {
 
     async createLead(lead: Omit<Lead, 'id' | 'user_id'>): Promise<Lead | null> {
         // Pegar usuário atual primeiro
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            console.error('No authenticated user');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+            console.error('No authenticated user (session)');
             return null;
         }
+        const user = session.user;
 
         // Tentar detectar tipo de usuário (com fallback seguro)
         let effectiveUserId = user.id;
@@ -174,8 +175,9 @@ export const leadsService = {
     },
 
     async recordHistory(leadId: string, fromColumnId: string | null, toColumnId: string): Promise<void> {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+        const user = session.user;
 
         const { error } = await supabase
             .from('lead_column_history')
@@ -246,12 +248,13 @@ export const leadsService = {
      * @returns Objeto com leads criados e contagem de erros.
      */
     async createLeadsBatch(leads: Omit<Lead, 'id' | 'user_id'>[]): Promise<{ created: Lead[]; errorCount: number }> {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
 
-        if (!user) {
-            console.error('No authenticated user');
+        if (!session?.user) {
+            console.error('No authenticated user (session)');
             return { created: [], errorCount: leads.length };
         }
+        const user = session.user;
 
         if (!leads || leads.length === 0) {
             return { created: [], errorCount: 0 };

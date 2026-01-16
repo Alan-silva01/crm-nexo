@@ -141,8 +141,9 @@ export const atendentesService = {
      * Busca o limite de atendentes do admin
      */
     async getMaxAtendentes(): Promise<number> {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return 0;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return 0;
+        const user = session.user;
 
         const { data: profile } = await supabase
             .from('profiles')
@@ -157,8 +158,9 @@ export const atendentesService = {
      * Cria um novo atendente via Edge Function
      */
     async createAtendente(nome: string, email: string, senha: string): Promise<{ success: boolean; error?: string }> {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { success: false, error: 'Não autenticado' };
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return { success: false, error: 'Não autenticado' };
+        const user = session.user;
 
         try {
             // Chamar Edge Function que usa Service Role Key

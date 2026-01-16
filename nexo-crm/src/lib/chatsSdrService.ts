@@ -20,9 +20,9 @@ async function getEffectiveProfileData(): Promise<{ chat_table_name: string | nu
     let sessionRetries = 5;
 
     while (!user && sessionRetries > 0) {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (authUser) {
-            user = authUser;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+            user = session.user;
             break;
         }
         sessionRetries--;
@@ -105,9 +105,9 @@ export const chatsSdrService = {
     async fetchChatsByPhone(phone: string, limit: number = 50, offset: number = 0): Promise<{ messages: SDRMessage[], hasMore: boolean }> {
         if (!phone) return { messages: [], hasMore: false };
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            console.error('No authenticated user');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+            console.error('No authenticated user (session)');
             return { messages: [], hasMore: false };
         }
 
@@ -161,9 +161,9 @@ export const chatsSdrService = {
     async sendMessage(phone: string, content: string, agentName: string): Promise<SDRMessage | null> {
         if (!phone) return null;
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            console.error('No authenticated user');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+            console.error('No authenticated user (session)');
             return null;
         }
 
@@ -264,9 +264,9 @@ export const chatsSdrService = {
     async toggleAI(phone: string, action: 'pausar' | 'ativar'): Promise<void> {
         if (!phone) return;
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            console.error('No authenticated user');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+            console.error('No authenticated user (session)');
             return;
         }
 
