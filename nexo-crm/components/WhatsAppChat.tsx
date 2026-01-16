@@ -203,33 +203,44 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const cacheKey = phoneNumbers || selectedChat.phone;
       console.log('[WhatsAppChat] cacheKey:', cacheKey);
 
-      // Pequeno delay para deixar Supabase inicializar
-      await new Promise(r => setTimeout(r, 100));
+      // Aguardar sessão estar disponível (com timeout curto)
+      console.log('[WhatsAppChat] Step 0: Waiting for Supabase session...');
 
-      // 0. Aguardar sessão Supabase usando getSession (mais rápido que getUser)
-      console.log('[WhatsAppChat] Step 0: Checking Supabase session...');
-      let session = null;
-      let sessionRetries = 20;
-      while (!session && sessionRetries > 0) {
+      // Usar Promise.race com timeout para não bloquear indefinidamente
+      const sessionPromise = new Promise<any>(async (resolve) => {
+        // Tentar getSession primeiro
         try {
           const { data } = await supabase.auth.getSession();
           if (data.session) {
-            session = data.session;
-            console.log('[WhatsAppChat] ✅ Session ready! User:', session.user?.email);
-            break;
+            console.log('[WhatsAppChat] ✅ Session from getSession:', data.session.user?.email);
+            resolve(data.session);
+            return;
           }
         } catch (e) {
-          console.error('[WhatsAppChat] getSession error:', e);
+          console.log('[WhatsAppChat] getSession failed, waiting for auth event...');
         }
-        sessionRetries--;
-        console.log(`[WhatsAppChat] ⏳ Session not ready, retry ${20 - sessionRetries}/20...`);
-        await new Promise(r => setTimeout(r, 300));
-      }
+
+        // Se não tem sessão ainda, espera pelo evento de auth
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (session) {
+            console.log('[WhatsAppChat] ✅ Session from auth event:', event, session.user?.email);
+            subscription.unsubscribe();
+            resolve(session);
+          }
+        });
+      });
+
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          console.log('[WhatsAppChat] ⚠️ Session timeout, proceeding anyway...');
+          resolve(null);
+        }, 5000); // 5 seconds max wait
+      });
+
+      const session = await Promise.race([sessionPromise, timeoutPromise]);
 
       if (!session) {
-        console.error('[WhatsAppChat] ❌ CRITICAL: No session after 20 retries!');
-        if (isMounted) setLoadingMessages(false);
-        return;
+        console.warn('[WhatsAppChat] No session after timeout, will try RPC anyway...');
       }
 
       // 1. Buscar chat table name via RPC
