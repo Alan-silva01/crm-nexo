@@ -56,6 +56,7 @@ export const tenantService = {
     /**
      * Obtém informações do usuário atual (tenant, role, etc.)
      * Esta é a função principal - substitui atendentesService.getUserTypeInfo()
+     * Inclui retry robusto para evitar falhas após refresh
      */
     async getCurrentUserInfo(userId?: string): Promise<CurrentUserInfo | null> {
         const requestId = Math.random().toString(36).substring(7);
@@ -63,29 +64,63 @@ export const tenantService = {
             let targetUserId = userId;
 
             if (!targetUserId) {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session?.user) {
-                    console.log(`[${requestId}] No session found`);
+                // Aguardar sessão estabilizar com retry
+                let sessionRetries = 5;
+                while (sessionRetries > 0) {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user) {
+                        targetUserId = session.user.id;
+                        break;
+                    }
+                    sessionRetries--;
+                    if (sessionRetries > 0) {
+                        console.log(`[${requestId}] Waiting for session... (${5 - sessionRetries}/5)`);
+                        await new Promise(r => setTimeout(r, 300));
+                    }
+                }
+
+                if (!targetUserId) {
+                    console.log(`[${requestId}] No session found after retries`);
                     return null;
                 }
-                targetUserId = session.user.id;
             }
 
             console.log(`[${requestId}] Getting user info for:`, targetUserId);
 
-            // Query única para obter todas as informações
-            const { data: tenantUser, error } = await supabase
-                .from('tenant_users')
-                .select(`
-                    *,
-                    tenant:tenants(*)
-                `)
-                .eq('user_id', targetUserId)
-                .eq('ativo', true)
-                .maybeSingle();
+            // Retry para query de tenant_users (pode falhar logo após refresh)
+            let retries = 5;
+            let delay = 200;
+            let tenantUser = null;
+            let lastError = null;
 
-            if (error) {
-                console.error(`[${requestId}] Error fetching tenant user:`, error);
+            while (retries > 0 && !tenantUser) {
+                const { data, error } = await supabase
+                    .from('tenant_users')
+                    .select(`
+                        *,
+                        tenant:tenants(*)
+                    `)
+                    .eq('user_id', targetUserId)
+                    .eq('ativo', true)
+                    .maybeSingle();
+
+                if (error) {
+                    lastError = error;
+                    console.warn(`[${requestId}] Retry ${6 - retries}/5 failed:`, error.message);
+                } else if (data) {
+                    tenantUser = data;
+                    break;
+                }
+
+                retries--;
+                if (retries > 0) {
+                    await new Promise(r => setTimeout(r, delay));
+                    delay = Math.min(delay * 1.5, 1500);
+                }
+            }
+
+            if (lastError && !tenantUser) {
+                console.error(`[${requestId}] All retries failed:`, lastError);
                 return null;
             }
 
@@ -97,13 +132,13 @@ export const tenantService = {
             const tenant = tenantUser.tenant as Tenant;
             const role = tenantUser.role as UserRole;
 
-            console.log(`[${requestId}] Found user: ${tenantUser.nome}, role: ${role}, tenant: ${tenant.name}`);
+            console.log(`[${requestId}] Found user: ${tenantUser.nome}, role: ${role}, tenant: ${tenant?.name}`);
 
             return {
                 role,
                 tenantId: tenantUser.tenant_id,
                 tenantUserId: tenantUser.id,
-                tenantName: tenant.name,
+                tenantName: tenant?.name || 'Unknown',
                 userName: tenantUser.nome,
                 userEmail: tenantUser.email,
                 isOwnerOrAdmin: role === 'owner' || role === 'admin',
@@ -114,6 +149,7 @@ export const tenantService = {
             return null;
         }
     },
+
 
     /**
      * Lista todos os membros do tenant atual
