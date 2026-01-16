@@ -154,7 +154,7 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
 
         try {
             const filteredLeads = leads.filter(lead =>
-                lead.tags?.some(tag => selectedTags.includes(tag))
+                selectedTags.every(tag => lead.tags?.includes(tag))
             );
 
             if (filteredLeads.length === 0) {
@@ -325,7 +325,7 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                         <div className="space-y-3 pb-4 border-b border-zinc-800/50">
                             <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                                 <AlertCircle size={12} className="text-indigo-400" />
-                                Filtrar por Etiquetas (Opcional)
+                                Enviar para contatos marcados com a etiqueta ou etiquetas:
                             </label>
                             <div className="flex flex-wrap gap-2">
                                 {availableTags.map((tag) => (
@@ -345,7 +345,7 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                                     <p className="text-[10px] text-zinc-600 italic">Crie etiquetas na aba "Etiquetas" para filtrar disparos.</p>
                                 )}
                             </div>
-                            <p className="text-[10px] text-zinc-600">Selecione uma ou mais etiquetas para direcionar o disparo.</p>
+                            <p className="text-[10px] text-zinc-600">O disparo será enviado apenas para contatos que possuam **TODAS** as etiquetas selecionadas acima.</p>
                         </div>
 
                         <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
