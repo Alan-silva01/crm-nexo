@@ -45,7 +45,7 @@ export const leadsService = {
                 .from('leads')
                 .select('*')
                 .eq('user_id', effectiveUserId)
-                .order('created_at', { ascending: false });
+                .order('updated_at', { ascending: false });
 
             if (!error && data) {
                 console.log(`[${requestId}] Direct query success! Leads:`, data.length);
@@ -156,6 +156,11 @@ export const leadsService = {
             console.error('Error creating lead:', error);
             return null;
         }
+
+        // The provided snippet for sorting is syntactically incorrect for a single object returned by .single().
+        // If the intention was to sort a list of leads, it would apply to a different function or context.
+        // As per instructions to make the file syntactically correct, this specific snippet cannot be applied here.
+        // If the goal is to ensure the returned lead has an updated_at, that's handled by the database trigger.
 
         return data as Lead;
     },
