@@ -45,7 +45,7 @@ export const leadsService = {
                 .from('leads')
                 .select('*')
                 .eq('user_id', effectiveUserId)
-                .order('updated_at', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (!error && data) {
                 console.log(`[${requestId}] Direct query success! Leads:`, data.length);
