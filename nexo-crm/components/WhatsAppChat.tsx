@@ -205,10 +205,13 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const startTimeFetch = Date.now();
       console.log('[WhatsAppChat] 📞 fetchMessages() CALLED');
 
-      // IMPORTANTE: Usar a sessão do contexto que já foi validada
+      // 1. IMPORTANTE: Usar a sessão do contexto que já foi validada
       if (!session?.access_token) {
-        console.log('[WhatsAppChat] ⏳ Session not ready in context, skipping fetchMessages');
-        if (isMounted) setLoadingMessages(false);
+        console.log('[WhatsAppChat] ⏳ Session not ready or access_token missing, skipping fetchMessages');
+        if (isMounted) {
+          setLoadingMessages(false);
+          // Opcional: setSdrMessages([]) se quiser limpar, mas melhor manter o que tem (ou nada) até carregar
+        }
         return;
       }
 
@@ -385,7 +388,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         supabase.removeChannel(subscription);
       }
     };
-  }, [selectedChat?.phone, effectiveUserId, propChatTableName]);
+  }, [selectedChat?.phone, effectiveUserId, propChatTableName, session?.access_token]);
 
   // Auto-scroll to bottom
   useEffect(() => {
