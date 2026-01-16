@@ -97,6 +97,7 @@ const Kanban: React.FC<KanbanProps> = ({
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [newLead, setNewLead] = useState({ name: '', phone: '', email: '', status: '', company_name: '', monthly_revenue: '' });
   const [isCreating, setIsCreating] = useState(false);
+  const [creationSuccess, setCreationSuccess] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; lead: Lead | null }>({ isOpen: false, lead: null });
   const [deleteColumnModal, setDeleteColumnModal] = useState<{ isOpen: boolean; column: KanbanColumn | null }>({ isOpen: false, column: null });
@@ -337,29 +338,41 @@ const Kanban: React.FC<KanbanProps> = ({
     }
 
     setIsCreating(true);
-    const created = await leadsService.createLead({
-      name: newLead.name,
-      phone: newLead.phone || null,
-      email: newLead.email || null,
-      status: newLead.status || columns[0]?.name || 'Novos Leads',
-      avatar: `https://picsum.photos/seed/${newLead.name}/200`,
-      company_name: newLead.company_name || null,
-      monthly_revenue: newLead.monthly_revenue ? parseFloat(newLead.monthly_revenue) : null,
-    });
-
-    if (created) {
-      const updatedLeads = await leadsService.fetchLeads();
-      onLeadsUpdate(updatedLeads);
-      setNewLead({ name: '', phone: '', email: '', status: columns[0]?.name || '', company_name: '', monthly_revenue: '' });
-      setIsAddingLead(false);
-    } else {
-      setAlertModal({
-        isOpen: true,
-        title: 'Falha no Cadastro',
-        message: 'Ocorreu um erro ao tentar criar o lead. Por favor, verifique os dados e tente novamente.'
+    try {
+      const created = await leadsService.createLead({
+        name: newLead.name,
+        phone: newLead.phone || null,
+        email: newLead.email || null,
+        status: newLead.status || columns[0]?.name || 'Novos Leads',
+        avatar: `https://picsum.photos/seed/${newLead.name}/200`,
+        company_name: newLead.company_name || null,
+        monthly_revenue: newLead.monthly_revenue ? parseFloat(newLead.monthly_revenue) : null,
       });
+
+      if (created) {
+        setCreationSuccess(true);
+        const updatedLeads = await leadsService.fetchLeads();
+        onLeadsUpdate(updatedLeads);
+
+        // Limpar dados IMEDIATAMENTE
+        setNewLead({ name: '', phone: '', email: '', status: columns[0]?.name || '', company_name: '', monthly_revenue: '' });
+
+        setTimeout(() => {
+          setIsAddingLead(false);
+          setCreationSuccess(false);
+        }, 1500);
+      } else {
+        setAlertModal({
+          isOpen: true,
+          title: 'Falha no Cadastro',
+          message: 'Ocorreu um erro ao tentar criar o lead. Por favor, verifique os dados ou se o contato já existe.'
+        });
+      }
+    } catch (error) {
+      console.error('Error creating lead:', error);
+    } finally {
+      setIsCreating(false);
     }
-    setIsCreating(false);
   };
 
   if (loadingColumns) {
@@ -768,7 +781,19 @@ const Kanban: React.FC<KanbanProps> = ({
       {/* Add Lead Modal */}
       {isAddingLead && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
-          <div className="bg-[#0c0c0e] border border-zinc-800/30 rounded-[3rem] p-10 w-full max-w-md shadow-[20px_20px_40px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+          <div className="bg-[#0c0c0e] border border-zinc-800/30 rounded-[3rem] p-10 w-full max-w-md shadow-[20px_20px_40px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh] relative overflow-hidden">
+
+            {creationSuccess && (
+              <div className="absolute inset-0 bg-[#0c0c0e]/95 backdrop-blur-md z-10 flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-300">
+                <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
+                  <CheckCircle2 size={32} className="text-emerald-500" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-bold text-white uppercase tracking-widest">Lead Salvo!</h3>
+                  <p className="text-zinc-500 text-xs mt-1">O contato foi adicionado ao pipeline.</p>
+                </div>
+              </div>
+            )}
             <div className="flex justify-between items-center mb-8 shrink-0">
               <h2 className="text-xl font-bold tracking-tight">Novo Lead</h2>
               <button onClick={() => setIsAddingLead(false)} className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-500 hover:text-white">
@@ -882,9 +907,16 @@ const Kanban: React.FC<KanbanProps> = ({
         onClose={() => setDeleteModal({ isOpen: false, lead: null })}
         onConfirm={async () => {
           if (deleteModal.lead) {
+            console.log('Kanban: starting delete for lead:', deleteModal.lead.id);
             const { error } = await supabase.from('leads').delete().eq('id', deleteModal.lead.id);
             if (error) {
-              alert('Erro ao excluir lead');
+              console.error('Kanban: error deleting lead:', error);
+              alert('Erro ao excluir lead no banco de dados. Verifique suas permissões.');
+            } else {
+              console.log('Kanban: deletion success. Updating list...');
+              const updatedLeads = filteredLeads.filter(l => l.id !== deleteModal.lead!.id);
+              onLeadsUpdate(updatedLeads);
+              setDeleteModal({ isOpen: false, lead: null });
             }
           }
         }}

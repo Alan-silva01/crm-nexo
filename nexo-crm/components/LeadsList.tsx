@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, Download, UserPlus, Users, Database, Tag as TagIcon, Plus, X, Check, Trash2, Loader2, CheckSquare, Square, AlertTriangle } from 'lucide-react';
+import { Search, Filter, Download, UserPlus, Users, Database, Tag as TagIcon, Plus, X, Check, Trash2, Loader2, CheckSquare, Square, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Lead, getLeadDisplayName } from '../types';
 import { leadsService } from '../src/lib/leadsService';
 import { tagsService, Tag } from '../src/lib/tagsService';
@@ -26,6 +26,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
   const [newLead, setNewLead] = useState({ name: '', phone: '' });
   const [isCreating, setIsCreating] = useState(false);
+  const [creationSuccess, setCreationSuccess] = useState(false);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -95,7 +96,13 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
     if (!confirm(`Tem certeza que deseja excluir ${selectedLeadIds.length} contatos?`)) return;
 
     try {
-      await Promise.all(selectedLeadIds.map(id => leadsService.deleteLead(id)));
+      const results = await Promise.all(selectedLeadIds.map(id => leadsService.deleteLead(id)));
+      const successCount = results.filter(r => r === true).length;
+
+      if (successCount < selectedLeadIds.length) {
+        alert(`Aviso: ${selectedLeadIds.length - successCount} contatos não puderam ser excluídos. Eles podem ter históricos ou mensagens vinculadas.`);
+      }
+
       if (onLeadsUpdate) {
         onLeadsUpdate(filteredLeads.filter(l => !selectedLeadIds.includes(l.id)));
       }
@@ -108,15 +115,24 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
   const handleDeleteIndividual = async () => {
     if (!leadToDelete) return;
 
+    console.log('Starting individual delete for lead:', leadToDelete.id);
     setIsDeleting(true);
     try {
-      await leadsService.deleteLead(leadToDelete.id);
-      if (onLeadsUpdate) {
-        onLeadsUpdate(filteredLeads.filter(l => l.id !== leadToDelete.id));
+      const success = await leadsService.deleteLead(leadToDelete.id);
+      console.log('Delete result:', success);
+      if (success) {
+        if (onLeadsUpdate) {
+          const newList = filteredLeads.filter(l => l.id !== leadToDelete.id);
+          console.log('Updating parent list. New count:', newList.length);
+          onLeadsUpdate(newList);
+        }
+        setLeadToDelete(null);
+      } else {
+        alert('Não foi possível excluir o contato no banco de dados. Verifique suas permissões.');
       }
-      setLeadToDelete(null);
     } catch (error) {
       console.error('Error deleting lead:', error);
+      alert('Erro técnico ao excluir contato. Verifique o console.');
     } finally {
       setIsDeleting(false);
     }
@@ -125,8 +141,9 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLead.name || !newLead.phone) return;
-    if (isCreating) return; // Prevent multiple clicks
+    if (isCreating || creationSuccess) return;
 
+    console.log('Creating new lead:', newLead);
     setIsCreating(true);
     try {
       const created = await leadsService.createLead({
@@ -146,16 +163,27 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
       });
 
       if (created) {
+        console.log('Lead created successfully:', created.id);
+        setCreationSuccess(true);
+
+        // Limpar dados IMEDIATAMENTE para o usuário ver que "sumiu" e foi salvo
+        setNewLead({ name: '', phone: '' });
+
         if (onLeadsUpdate) {
           onLeadsUpdate([created, ...filteredLeads]);
         }
-        setNewLead({ name: '', phone: '' });
-        setShowNewLeadForm(false);
+
+        // Mostrar feedback por 1.5s antes de fechar o modal
+        setTimeout(() => {
+          setShowNewLeadForm(false);
+          setCreationSuccess(false);
+        }, 1500);
       } else {
         alert('Erro ao criar contato. Verifique os dados ou se o contato já existe.');
       }
     } catch (error) {
       console.error('Error creating lead:', error);
+      alert('Erro técnico ao criar contato.');
     } finally {
       setIsCreating(false);
     }
@@ -221,6 +249,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
           <button
             onClick={() => {
               setNewLead({ name: '', phone: '' });
+              setCreationSuccess(false);
               setShowNewLeadForm(true);
             }}
             className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 rounded-xl text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
@@ -234,7 +263,20 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
       {/* Modal de Novo Contato */}
       {showNewLeadForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0c0c0e] border border-zinc-800 rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-[#0c0c0e] border border-zinc-800 rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-200 relative overflow-hidden">
+
+            {creationSuccess && (
+              <div className="absolute inset-0 bg-[#0c0c0e]/95 backdrop-blur-md z-10 flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-300">
+                <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
+                  <CheckCircle2 size={32} className="text-emerald-500" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-bold text-white uppercase tracking-widest">Contato Salvo!</h3>
+                  <p className="text-zinc-500 text-xs mt-1">O contato foi adicionado à sua base.</p>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-white uppercase tracking-widest">Novo Contato</h2>
               <button
