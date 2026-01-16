@@ -85,9 +85,9 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
   oneDayAgo.setDate(oneDayAgo.getDate() - 1);
   const newLeads = leads.filter(l => l.created_at && new Date(l.created_at) > oneDayAgo).length;
   const leadsWaitingDecision = leads.filter(l => l.status?.trim().toUpperCase() === 'AGUARDANDO DECISAO').length;
-  const leadsWithAppointment = leads.filter(l => l.dataHora_Agendamento !== null).length;
-  const conversionRate = totalLeads > 0 ? ((leadsWithAppointment / totalLeads) * 100).toFixed(1) : '0';
 
+  // Fix: Check for truthy value to avoid undefined !== null issues
+  // and include status-based appointments for consistency with the chart
   const agendamentoCols = columns.filter(c => c.name.toLowerCase().includes('agendad'));
   const agendamentoNames = new Set(agendamentoCols.map(c => c.name.trim().toUpperCase()));
   const agendamentoLabel = agendamentoCols.length > 1 ? 'Agendados' : (agendamentoCols.length === 1 ? agendamentoCols[0].name : 'Agendados');
@@ -99,6 +99,20 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
     c.name.toLowerCase().includes('lixo')
   );
   const noInterestNames = new Set(noInterestCols.map(c => c.name.trim().toUpperCase()));
+
+  const leadsWithAppointment = leads.filter(l => {
+    const hasDate = !!l.dataHora_Agendamento;
+    const isAgendadoStatus = l.status && agendamentoNames.has(l.status.trim().toUpperCase());
+    return hasDate || isAgendadoStatus;
+  }).length;
+
+  const conversionRate = totalLeads > 0 ? ((leadsWithAppointment / totalLeads) * 100).toFixed(1) : '0';
+
+  const rejectedLeads = leads.filter(l =>
+    l.status && noInterestNames.has(l.status.trim().toUpperCase())
+  ).length;
+
+  const rejectionRate = totalLeads > 0 ? ((rejectedLeads / totalLeads) * 100).toFixed(0) : '0';
 
   const chartScrollRef = React.useRef<HTMLDivElement>(null);
 
@@ -247,12 +261,6 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
     );
   };
 
-  const rejectedLeads = leads.filter(l =>
-    l.status === 'SEM INTERESSE' ||
-    l.status === 'SERVIÇO NÃO ATENDIDO' ||
-    l.status === 'ENCERRADO'
-  ).length;
-  const rejectionRate = totalLeads > 0 ? ((rejectedLeads / totalLeads) * 100).toFixed(0) : '0';
   const [responseTime] = React.useState(() => (Math.random() * (90 - 40) + 40).toFixed(0));
 
   const handleExportCSV = () => {
