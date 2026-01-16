@@ -13,10 +13,11 @@ const getTagsCacheKey = (userId: string) => `nexo_tags_cache_${userId}`;
 
 export const tagsService = {
     async listTags(): Promise<Tag[]> {
-        const userTypeInfo = await atendentesService.getUserTypeInfo();
-        const effectiveUserId = userTypeInfo?.effectiveUserId;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return [];
 
-        if (!effectiveUserId) return [];
+        const userTypeInfo = await atendentesService.getUserTypeInfo(session.user.id, session.user.user_metadata);
+        const effectiveUserId = userTypeInfo?.effectiveUserId || session.user.id;
 
         // Try to load from cache first
         const cacheKey = getTagsCacheKey(effectiveUserId);
@@ -46,16 +47,16 @@ export const tagsService = {
     },
 
     subscribeToTags(callback: (tags: Tag[]) => void) {
-        let effectiveUserId: string | null = null;
+        let subscriptionChannel: any = null;
 
         const setupSubscription = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.user) return;
 
-            const userTypeInfo = await atendentesService.getUserTypeInfo();
-            effectiveUserId = userTypeInfo?.effectiveUserId || session.user.id;
+            const userTypeInfo = await atendentesService.getUserTypeInfo(session.user.id, session.user.user_metadata);
+            const effectiveUserId = userTypeInfo?.effectiveUserId || session.user.id;
 
-            return supabase
+            subscriptionChannel = supabase
                 .channel('tags-changes')
                 .on(
                     'postgres_changes',
@@ -73,12 +74,12 @@ export const tagsService = {
                 .subscribe();
         };
 
-        const subscriptionPromise = setupSubscription();
+        setupSubscription();
 
         return () => {
-            subscriptionPromise.then(channel => {
-                if (channel) supabase.removeChannel(channel);
-            });
+            if (subscriptionChannel) {
+                supabase.removeChannel(subscriptionChannel);
+            }
         };
     },
 
@@ -87,7 +88,7 @@ export const tagsService = {
         if (!session?.user) return null;
 
         // Tags são ligadas ao admin
-        const userTypeInfo = await atendentesService.getUserTypeInfo();
+        const userTypeInfo = await atendentesService.getUserTypeInfo(session.user.id, session.user.user_metadata);
         const effectiveUserId = userTypeInfo?.effectiveUserId || session.user.id;
 
         const { data, error } = await supabase
