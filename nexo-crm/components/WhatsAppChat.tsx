@@ -644,6 +644,18 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     );
   }
 
+  // Loading while auth not ready
+  if (!effectiveUserId) {
+    return (
+      <div className="h-full flex items-center justify-center bg-[#0b141a]">
+        <div className="text-center p-8">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-zinc-400 text-sm">Carregando sessão...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex overflow-hidden">
       {/* Chat List */}
