@@ -556,16 +556,41 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
 
           <div className="flex items-center gap-4">
             {showLocalSearch && (
-              <div className="relative animate-in fade-in slide-in-from-right-4 duration-300">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="Filtrar por nome, tel ou status..."
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="pl-9 pr-4 py-2 bg-zinc-950/50 border border-zinc-800 rounded-xl text-xs w-64 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-bold"
-                />
+              <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Filtrar por nome, tel, status ou etiqueta..."
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    className="pl-9 pr-4 py-2 bg-zinc-950/50 border border-zinc-800 rounded-xl text-xs w-80 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-bold"
+                  />
+                </div>
+
+                {availableTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 max-w-sm">
+                    {availableTags.map(tag => (
+                      <button
+                        key={`filter-${tag.id}`}
+                        onClick={() => {
+                          const query = searchQuery === tag.name ? '' : tag.name;
+                          onSearchChange(query);
+                        }}
+                        style={{
+                          backgroundColor: searchQuery.toLowerCase() === tag.name.toLowerCase() ? tag.color + '30' : 'transparent',
+                          color: searchQuery.toLowerCase() === tag.name.toLowerCase() ? tag.color : 'inherit',
+                          borderColor: searchQuery.toLowerCase() === tag.name.toLowerCase() ? tag.color + '50' : '#27272a'
+                        }}
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-tight transition-all hover:bg-zinc-800 flex items-center gap-1.5 ${searchQuery.toLowerCase() === tag.name.toLowerCase() ? '' : 'text-zinc-500'}`}
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tag.color }}></div>
+                        {tag.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             <button

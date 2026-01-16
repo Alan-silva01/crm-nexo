@@ -438,7 +438,8 @@ const AppContent: React.FC = () => {
         (l.email && l.email.toLowerCase().includes(lower)) ||
         (l.status && l.status.toLowerCase().includes(lower)) ||
         (l.company_name && l.company_name.toLowerCase().includes(lower)) ||
-        (l.last_message && l.last_message.toLowerCase().includes(lower));
+        (l.last_message && l.last_message.toLowerCase().includes(lower)) ||
+        (l.tags && l.tags.some(tag => tag.toLowerCase().includes(lower)));
 
       if (matchesText) return true;
 

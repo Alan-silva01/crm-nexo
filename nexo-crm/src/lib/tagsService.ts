@@ -9,12 +9,18 @@ export interface Tag {
     created_at?: string;
 }
 
-const TAGS_CACHE_KEY = 'nexo_tags_cache';
+const getTagsCacheKey = (userId: string) => `nexo_tags_cache_${userId}`;
 
 export const tagsService = {
     async listTags(): Promise<Tag[]> {
+        const userTypeInfo = await atendentesService.getUserTypeInfo();
+        const effectiveUserId = userTypeInfo?.effectiveUserId;
+
+        if (!effectiveUserId) return [];
+
         // Try to load from cache first
-        const cached = localStorage.getItem(TAGS_CACHE_KEY);
+        const cacheKey = getTagsCacheKey(effectiveUserId);
+        const cached = localStorage.getItem(cacheKey);
         if (cached) {
             try {
                 return JSON.parse(cached);
@@ -22,12 +28,6 @@ export const tagsService = {
                 console.error('Error parsing tags cache:', e);
             }
         }
-
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return [];
-
-        const userTypeInfo = await atendentesService.getUserTypeInfo();
-        const effectiveUserId = userTypeInfo?.effectiveUserId || session.user.id;
 
         const { data, error } = await supabase
             .from('tags')
@@ -41,7 +41,7 @@ export const tagsService = {
         }
 
         // Update cache
-        localStorage.setItem(TAGS_CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(cacheKey, JSON.stringify(data));
         return data as Tag[];
     },
 
