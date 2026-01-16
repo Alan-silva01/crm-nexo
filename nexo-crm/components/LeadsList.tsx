@@ -101,6 +101,39 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
     }
   };
 
+  const handleRemoveBulkTag = async (tagName: string) => {
+    setIsApplyingTag(true);
+    try {
+      const updates = selectedLeadIds.map(async (id) => {
+        const lead = filteredLeads.find(l => l.id === id);
+        if (!lead) return;
+
+        const currentTags = lead.tags || [];
+        if (currentTags.includes(tagName)) {
+          const newTags = currentTags.filter(t => t !== tagName);
+          await leadsService.updateLead(id, { tags: newTags });
+          return { id, tags: newTags };
+        }
+        return null;
+      });
+
+      const results = await Promise.all(updates);
+
+      if (onLeadsUpdate) {
+        const updatedLeads = filteredLeads.map(l => {
+          const update = results.find(r => r?.id === l.id);
+          return update ? { ...l, tags: update.tags } : l;
+        });
+        onLeadsUpdate(updatedLeads);
+      }
+      setSelectedLeadIds([]);
+    } catch (error) {
+      console.error('Error removing bulk tags:', error);
+    } finally {
+      setIsApplyingTag(false);
+    }
+  };
+
   const handleBulkDelete = async () => {
     setIsDeleting(true);
     try {
@@ -460,18 +493,47 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
 
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-4 py-1.5 bg-zinc-800 border border-zinc-700 rounded-xl text-[10px] font-bold text-zinc-300 hover:text-white hover:border-indigo-500/30 transition-all">
-                    <TagIcon size={12} />
+                    <TagIcon size={12} className="text-indigo-400" />
                     Etiquetar
                   </button>
                   <div className="absolute top-full left-0 mt-2 w-48 bg-[#0c0c0e] border border-zinc-800 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2 space-y-1">
+                    <div className="px-3 py-1.5 pointer-events-none">
+                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Adicionar</span>
+                    </div>
                     {availableTags.length === 0 ? (
-                      <p className="text-[10px] text-zinc-500 p-3 italic">Crie etiquetas em "Etiquetas"</p>
+                      <p className="text-[10px] text-zinc-500 p-3 italic">Sem etiquetas disponíveis</p>
                     ) : (
                       availableTags.map(tag => (
                         <button
-                          key={tag.id}
+                          key={`add-${tag.id}`}
                           onClick={() => handleApplyBulkTag(tag.name)}
                           className="w-full flex items-center gap-2 px-3 py-2 hover:bg-zinc-900 rounded-xl text-[10px] font-bold text-zinc-400 hover:text-white transition-all text-left"
+                        >
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }}></div>
+                          {tag.name}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="relative group">
+                  <button className="flex items-center gap-2 px-4 py-1.5 bg-zinc-800 border border-zinc-700 rounded-xl text-[10px] font-bold text-zinc-300 hover:text-white hover:border-rose-500/30 transition-all">
+                    <X size={12} className="text-rose-400" />
+                    Remover Etiqueta
+                  </button>
+                  <div className="absolute top-full left-0 mt-2 w-48 bg-[#0c0c0e] border border-zinc-800 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2 space-y-1">
+                    <div className="px-3 py-1.5 pointer-events-none">
+                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest text-rose-500/50">Remover</span>
+                    </div>
+                    {availableTags.length === 0 ? (
+                      <p className="text-[10px] text-zinc-500 p-3 italic">Sem etiquetas disponíveis</p>
+                    ) : (
+                      availableTags.map(tag => (
+                        <button
+                          key={`remove-${tag.id}`}
+                          onClick={() => handleRemoveBulkTag(tag.name)}
+                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-rose-500/10 rounded-xl text-[10px] font-bold text-zinc-400 hover:text-rose-400 transition-all text-left"
                         >
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }}></div>
                           {tag.name}
