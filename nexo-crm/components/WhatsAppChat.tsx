@@ -197,9 +197,21 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
       const cacheKey = phoneNumbers || selectedChat.phone;
 
-      // 0. Buscar nome da tabela de chats usando função RPC (bypassa RLS)
-      // O chatsSdrService já lida com retry robusto internamente
-      const { data: { user } } = await supabase.auth.getUser();
+      // 0. Aguardar sessão Supabase estar disponível com retry
+      let user = null;
+      let sessionRetries = 10;
+      while (!user && sessionRetries > 0) {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser) {
+          user = authUser;
+          console.log('[WhatsAppChat] Auth session ready, user:', user.email);
+          break;
+        }
+        sessionRetries--;
+        console.log(`[WhatsAppChat] Waiting for Supabase session... (${10 - sessionRetries}/10)`);
+        await new Promise(r => setTimeout(r, 300));
+      }
+
       let chatTableName = 'chats_sdr'; // fallback
 
       if (user) {
@@ -216,6 +228,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         } catch (e) {
           console.error('WhatsApp: RPC exception:', e);
         }
+      } else {
+        console.error('[WhatsAppChat] CRITICAL: No auth user after 10 retries');
       }
 
       // 1. Usar Cache imediatamente se existir
