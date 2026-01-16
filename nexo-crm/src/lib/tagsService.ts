@@ -14,35 +14,49 @@ const getTagsCacheKey = (userId: string) => `nexo_tags_cache_${userId}`;
 export const tagsService = {
     async listTags(): Promise<Tag[]> {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return [];
+        if (!session?.user) {
+            console.log('[tagsService] No session, returning empty array');
+            return [];
+        }
 
         const userTypeInfo = await atendentesService.getUserTypeInfo(session.user.id, session.user.user_metadata);
         const effectiveUserId = userTypeInfo?.effectiveUserId || session.user.id;
 
-        // Try to load from cache first
+        console.log('[tagsService] Fetching tags for effectiveUserId:', effectiveUserId, 'userType:', userTypeInfo?.type);
+
+        // Try to load from cache first (but always fetch fresh data too)
         const cacheKey = getTagsCacheKey(effectiveUserId);
         const cached = localStorage.getItem(cacheKey);
+        let cachedTags: Tag[] = [];
         if (cached) {
             try {
-                return JSON.parse(cached);
+                cachedTags = JSON.parse(cached);
+                console.log('[tagsService] Found cached tags:', cachedTags.length);
             } catch (e) {
                 console.error('Error parsing tags cache:', e);
             }
         }
 
+        // Fetch from database - RLS handles the filtering now
+        // Don't filter by user_id explicitly, let RLS do its job
         const { data, error } = await supabase
             .from('tags')
             .select('*')
-            .eq('user_id', effectiveUserId)
             .order('name');
 
         if (error) {
-            console.error('Error listing tags:', error);
-            return [];
+            console.error('[tagsService] Error listing tags:', error);
+            // Return cached if available
+            return cachedTags;
         }
 
+        console.log('[tagsService] Fetched tags from DB:', data?.length);
+
         // Update cache
-        localStorage.setItem(cacheKey, JSON.stringify(data));
+        if (data && data.length > 0) {
+            localStorage.setItem(cacheKey, JSON.stringify(data));
+        }
+
         return data as Tag[];
     },
 
@@ -101,6 +115,9 @@ export const tagsService = {
             console.error('Error creating tag:', error);
             return null;
         }
+
+        // Clear cache so it refreshes
+        localStorage.removeItem(getTagsCacheKey(effectiveUserId));
 
         return data as Tag;
     },

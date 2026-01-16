@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tag as TagIcon, Plus, Trash2, Edit2, Check, X, Palette } from 'lucide-react';
 import { Tag, tagsService } from '../src/lib/tagsService';
+import { useAuth } from '../src/lib/AuthProvider';
 
 const PRESET_COLORS = [
     '#6366f1', // Indigo
@@ -16,6 +17,7 @@ const PRESET_COLORS = [
 ];
 
 const Labels: React.FC = () => {
+    const { effectiveUserId, loading: authLoading } = useAuth();
     const [tags, setTags] = useState<Tag[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
@@ -26,12 +28,17 @@ const Labels: React.FC = () => {
     const [editColor, setEditColor] = useState('');
 
     useEffect(() => {
-        loadTags();
-    }, []);
+        // Only load tags after auth is ready and we have effectiveUserId
+        if (!authLoading && effectiveUserId) {
+            console.log('[Labels] Auth ready, loading tags for:', effectiveUserId);
+            loadTags();
+        }
+    }, [authLoading, effectiveUserId]);
 
     const loadTags = async () => {
         setLoading(true);
         const data = await tagsService.listTags();
+        console.log('[Labels] Loaded tags:', data.length);
         setTags(data);
         setLoading(false);
     };

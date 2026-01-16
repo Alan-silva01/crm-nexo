@@ -6,6 +6,7 @@ import { tagsService, Tag } from '../src/lib/tagsService';
 import { formatPhoneNumber } from '../src/lib/formatPhone';
 import LetterAvatar from './LetterAvatar';
 import ImportContactsModal from './ImportContactsModal';
+import { useAuth } from '../src/lib/AuthProvider';
 
 interface LeadsListProps {
   searchQuery: string;
@@ -18,6 +19,7 @@ interface LeadsListProps {
 }
 
 const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filteredLeads, onViewDetails, onViewChat, onLeadsUpdate, showTags }) => {
+  const { effectiveUserId, loading: authLoading } = useAuth();
   const [showLocalSearch, setShowLocalSearch] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
@@ -36,12 +38,15 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    loadTags();
-    const unsubscribe = tagsService.subscribeToTags((updatedTags) => {
-      setAvailableTags(updatedTags);
-    });
-    return () => unsubscribe();
-  }, []);
+    // Only load tags after auth is ready
+    if (!authLoading && effectiveUserId) {
+      loadTags();
+      const unsubscribe = tagsService.subscribeToTags((updatedTags) => {
+        setAvailableTags(updatedTags);
+      });
+      return () => unsubscribe();
+    }
+  }, [authLoading, effectiveUserId]);
 
   const loadTags = async () => {
     const tags = await tagsService.listTags();
