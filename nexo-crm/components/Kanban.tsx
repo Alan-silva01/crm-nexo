@@ -384,11 +384,11 @@ const Kanban: React.FC<KanbanProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col p-8 overflow-y-auto relative custom-scrollbar">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div className="h-full flex flex-col p-4 overflow-y-auto relative custom-scrollbar">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Kanban de Leads</h1>
-          <p className="text-zinc-500 text-sm">Gerencie o fluxo de atendimento com precisão e agilidade.</p>
+          <h1 className="text-xl font-semibold tracking-tight">Kanban de Leads</h1>
+          <p className="text-zinc-500 text-xs">Gerencie o fluxo de atendimento com precisão e agilidade.</p>
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -436,7 +436,7 @@ const Kanban: React.FC<KanbanProps> = ({
               draggable
               onDragStart={(e) => onColumnDragStart(e, col.id)}
               onDragEnd={onDragEnd}
-              className="flex items-center justify-between mb-6 px-4 cursor-grab active:cursor-grabbing hover:bg-zinc-800/20 rounded-2xl py-3 transition-all border border-transparent hover:border-zinc-800/50"
+              className="flex items-center justify-between mb-4 px-4 cursor-grab active:cursor-grabbing hover:bg-zinc-800/20 rounded-2xl py-2 transition-all border border-transparent hover:border-zinc-800/50"
             >
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: BORDER_COLORS[colIndex % BORDER_COLORS.length], color: BORDER_COLORS[colIndex % BORDER_COLORS.length] }}></div>
@@ -455,7 +455,7 @@ const Kanban: React.FC<KanbanProps> = ({
               </div>
             </div>
 
-            <div className="space-y-4 kanban-column overflow-y-auto pr-2 custom-scrollbar" style={{ maxHeight: 'calc(100vh - 320px)' }}>
+            <div className="flex-1 space-y-4 kanban-column overflow-y-auto pr-2 custom-scrollbar min-h-0">
               {filteredLeads.filter(lead => lead.status?.trim().toUpperCase() === col.name?.trim().toUpperCase()).map((lead) => {
                 const borderColor = BORDER_COLORS[parseInt(lead.id.slice(0, 8), 16) % BORDER_COLORS.length];
                 return (

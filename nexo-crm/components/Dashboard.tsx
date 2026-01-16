@@ -398,41 +398,43 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
             </ResponsiveContainer>
           </div>
 
-          {/* Custom Grid Legend - Two equal columns */}
-          <div className="flex mt-2 shrink-0">
-            {/* Left column - centered in its 50% */}
-            <div className="w-1/2 flex justify-center">
-              <div className="flex flex-col items-start gap-0.5">
-                {pieData.slice(0, Math.ceil(pieData.length / 2)).map((entry, index) => (
-                  <div key={`legend-l-${index}`} className="flex items-center gap-1.5">
-                    <div
-                      className="w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    />
-                    <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight">
-                      {entry.name.length > 12 ? `${entry.name.substring(0, 10)}...` : entry.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Right column - centered in its 50% */}
-            <div className="w-1/2 flex justify-center">
-              <div className="flex flex-col items-start gap-0.5">
-                {pieData.slice(Math.ceil(pieData.length / 2)).map((entry, index) => {
-                  const realIndex = Math.ceil(pieData.length / 2) + index;
-                  return (
-                    <div key={`legend-r-${index}`} className="flex items-center gap-1.5">
+          {/* Custom Grid Legend - Two equal columns with scroll if many items */}
+          <div className="mt-2 shrink-0 max-h-32 overflow-y-auto custom-scrollbar pr-1">
+            <div className="flex">
+              {/* Left column - centered in its 50% */}
+              <div className="w-1/2 flex justify-center border-r border-zinc-800/20">
+                <div className="flex flex-col items-start gap-1 w-full pl-2">
+                  {pieData.slice(0, Math.ceil(pieData.length / 2)).map((entry, index) => (
+                    <div key={`legend-l-${index}`} className="flex items-center gap-2 min-w-0 w-full">
                       <div
                         className="w-2 h-2 rounded-full shrink-0"
-                        style={{ backgroundColor: COLORS[realIndex % COLORS.length] }}
+                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
                       />
-                      <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight">
-                        {entry.name.length > 12 ? `${entry.name.substring(0, 10)}...` : entry.name}
+                      <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight truncate flex-1" title={entry.name}>
+                        {entry.name}
                       </span>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+              </div>
+              {/* Right column - centered in its 50% */}
+              <div className="w-1/2 flex justify-center">
+                <div className="flex flex-col items-start gap-1 w-full pl-4">
+                  {pieData.slice(Math.ceil(pieData.length / 2)).map((entry, index) => {
+                    const realIndex = Math.ceil(pieData.length / 2) + index;
+                    return (
+                      <div key={`legend-r-${index}`} className="flex items-center gap-2 min-w-0 w-full">
+                        <div
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: COLORS[realIndex % COLORS.length] }}
+                        />
+                        <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight truncate flex-1" title={entry.name}>
+                          {entry.name}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
