@@ -521,11 +521,11 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                     {selectedLeadIds.length === filteredLeads.length && filteredLeads.length > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
                   </button>
                 </th>
-                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50">Contato</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50">Status Estratégico</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50">Informações</th>
-                {showTags && <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50">Etiquetas</th>}
-                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 text-center">Ações</th>
+                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 min-w-[200px]">Contato</th>
+                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 w-48">Status Estratégico</th>
+                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 min-w-[200px]">Informações</th>
+                {showTags && <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 min-w-[150px]">Etiquetas</th>}
+                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 text-center w-64">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/20">

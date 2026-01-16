@@ -661,7 +661,7 @@ const AppContent: React.FC = () => {
                 )}
               </div>
             )}
-            <div className="relative flex-1 max-w-sm">
+            <div className="relative flex-1 max-w-sm xl:max-w-md 2xl:max-w-lg">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input
                 type="text"

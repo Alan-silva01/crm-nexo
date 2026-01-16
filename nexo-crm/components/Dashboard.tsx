@@ -287,7 +287,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
       </header>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-4 gap-4 shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 shrink-0">
         <StatCard title="Total de Leads" value={totalLeads.toLocaleString()} change="+12.5%" isPositive={true} icon={Users} color="bg-blue-500" />
         <StatCard title="Novos Leads (24h)" value={newLeads.toLocaleString()} icon={PhoneCall} color="bg-amber-500" change="+4.2%" isPositive={true} />
         <StatCard title="Aguardando Decisão" value={leadsWaitingDecision.toLocaleString()} change="+5.4%" isPositive={true} icon={TrendingUp} color="bg-indigo-500" />
@@ -295,7 +295,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-3 gap-6 flex-1 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
         <div className="col-span-2 bg-[#0c0c0e] border border-zinc-800/50 p-6 rounded-[2rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
           <div className="flex justify-between items-center mb-6 shrink-0">
             <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2 border-l-4 border-indigo-500">
