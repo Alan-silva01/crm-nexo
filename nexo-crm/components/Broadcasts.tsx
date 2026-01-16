@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'; // v2
-import { Send, Image as ImageIcon, Music, Clock, Calendar as CalendarIcon, AlertCircle, Loader2, CheckCircle2, Save, Trash2, FileText, Mic, X } from 'lucide-react';
+import { Send, Image as ImageIcon, Music, Clock, Calendar as CalendarIcon, AlertCircle, Loader2, CheckCircle2, Save, Trash2, FileText, Mic, X, Tag as TagIcon } from 'lucide-react';
 import AudioRecorder from './AudioRecorder';
+import ConfirmModal from './ConfirmModal';
 import { Lead } from '../types';
 import { tagsService, Tag } from '../src/lib/tagsService';
 
@@ -24,6 +25,8 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
     const [showConsentModal, setShowConsentModal] = useState(false);
     const [hasCheckedConsent, setHasCheckedConsent] = useState(false);
     const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+    const [showTagValidationModal, setShowTagValidationModal] = useState(false);
+    const [validationMessage, setValidationMessage] = useState({ title: '', message: '' });
 
     // Draft system
     interface Draft {
@@ -130,13 +133,21 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
         }
 
         if (selectedTags.length === 0) {
-            alert('Por favor, selecione ao menos uma etiqueta.');
+            setValidationMessage({
+                title: 'Selecione uma Etiqueta',
+                message: 'Para iniciar o disparo, você precisa selecionar pelo menos uma etiqueta de contato.'
+            });
+            setShowTagValidationModal(true);
             return;
         }
 
         const webhookUrl = profile?.disparos_whebhook;
         if (!webhookUrl) {
-            alert('Webhook de disparos não configurado no seu perfil.');
+            setValidationMessage({
+                title: 'Configuração Pendente',
+                message: 'O webhook de disparos não está configurado no seu perfil. Verifique seus ajustes.'
+            });
+            setShowTagValidationModal(true);
             return;
         }
 
@@ -616,6 +627,17 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
                     </div>
                 </div>
             )}
+            {/* Tag Validation Modal */}
+            <ConfirmModal
+                isOpen={showTagValidationModal}
+                onClose={() => setShowTagValidationModal(false)}
+                onConfirm={() => setShowTagValidationModal(false)}
+                title={validationMessage.title}
+                message={validationMessage.message}
+                confirmText="Entendido"
+                type="warning"
+                hideCancel={true}
+            />
         </div>
     );
 };
