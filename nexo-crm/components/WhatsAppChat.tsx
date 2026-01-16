@@ -206,38 +206,43 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       // Aguardar sessão estar disponível (com timeout curto)
       console.log('[WhatsAppChat] Step 0: Waiting for Supabase session...');
 
-      // Usar Promise.race com timeout para não bloquear indefinidamente
-      const sessionPromise = new Promise<any>(async (resolve) => {
-        // Tentar getSession primeiro
-        try {
-          const { data } = await supabase.auth.getSession();
-          if (data.session) {
-            console.log('[WhatsAppChat] ✅ Session from getSession:', data.session.user?.email);
-            resolve(data.session);
-            return;
-          }
-        } catch (e) {
-          console.log('[WhatsAppChat] getSession failed, waiting for auth event...');
-        }
+      // Criar Promise que resolve quando temos sessão
+      let authSubscription: any = null;
 
-        // Se não tem sessão ainda, espera pelo evento de auth
+      const sessionPromise = new Promise<any>((resolve) => {
+        // PRIMEIRO: Registrar listener para pegar eventos que já dispararam ou vão disparar
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
           if (session) {
             console.log('[WhatsAppChat] ✅ Session from auth event:', event, session.user?.email);
-            subscription.unsubscribe();
             resolve(session);
           }
+        });
+        authSubscription = subscription;
+
+        // DEPOIS: Tentar getSession para pegar sessão já existente
+        supabase.auth.getSession().then(({ data }) => {
+          if (data.session) {
+            console.log('[WhatsAppChat] ✅ Session from getSession:', data.session.user?.email);
+            resolve(data.session);
+          }
+        }).catch((e) => {
+          console.log('[WhatsAppChat] getSession failed:', e);
         });
       });
 
       const timeoutPromise = new Promise<null>((resolve) => {
         setTimeout(() => {
-          console.log('[WhatsAppChat] ⚠️ Session timeout, proceeding anyway...');
+          console.log('[WhatsAppChat] ⚠️ Session timeout after 8s, proceeding anyway...');
           resolve(null);
-        }, 5000); // 5 seconds max wait
+        }, 8000); // 8 seconds max wait
       });
 
       const session = await Promise.race([sessionPromise, timeoutPromise]);
+
+      // Cleanup do listener
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
 
       if (!session) {
         console.warn('[WhatsAppChat] No session after timeout, will try RPC anyway...');
