@@ -789,16 +789,6 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                   </>
                 )}
               </button>
-
-              {/* Logout button */}
-              <button
-                onClick={signOut}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
-                title="Sair da conta"
-              >
-                <LogOut size={12} />
-                <span>Sair</span>
-              </button>
             </div>
           </header>
 
