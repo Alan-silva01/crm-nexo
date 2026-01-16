@@ -176,16 +176,19 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
   // Fetch SDR messages when chat changes (with Cache and Realtime)
   useEffect(() => {
-    console.log('[WhatsAppChat] useEffect triggered. selectedChat:', selectedChat?.name, 'phone:', selectedChat?.phone, 'leads count:', leads.length, 'effectiveUserId:', effectiveUserId);
+    const startTime = Date.now();
+    console.log('[WhatsAppChat] ===== FETCH EFFECT START =====');
+    console.log('[WhatsAppChat] selectedChat:', selectedChat?.name, '| phone:', selectedChat?.phone);
+    console.log('[WhatsAppChat] leads count:', leads.length, '| effectiveUserId:', effectiveUserId);
 
     // Aguardar auth estar pronta (effectiveUserId disponível)
     if (!effectiveUserId) {
-      console.log('[WhatsAppChat] Waiting for auth to be ready (effectiveUserId is null)');
+      console.log('[WhatsAppChat] ⏳ BLOCKED: Waiting for effectiveUserId');
       return;
     }
 
     if (!selectedChat?.phone) {
-      console.log('[WhatsAppChat] No selectedChat or no phone, clearing messages');
+      console.log('[WhatsAppChat] ⏳ BLOCKED: No selectedChat phone');
       setSdrMessages([]);
       return;
     }
@@ -194,72 +197,69 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     let subscription: any = null;
 
     const fetchMessages = async () => {
+      console.log('[WhatsAppChat] 📞 fetchMessages() CALLED');
+
       const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
       const cacheKey = phoneNumbers || selectedChat.phone;
+      console.log('[WhatsAppChat] cacheKey:', cacheKey);
 
-      // 0. Aguardar sessão Supabase estar disponível com retry
+      // 0. Aguardar sessão Supabase estar disponível
+      console.log('[WhatsAppChat] Step 0: Waiting for Supabase session...');
       let user = null;
-      let sessionRetries = 10;
+      let sessionRetries = 15;
       while (!user && sessionRetries > 0) {
         const { data: { user: authUser } } = await supabase.auth.getUser();
         if (authUser) {
           user = authUser;
-          console.log('[WhatsAppChat] Auth session ready, user:', user.email);
+          console.log('[WhatsAppChat] ✅ Session ready! User:', user.email);
           break;
         }
         sessionRetries--;
-        console.log(`[WhatsAppChat] Waiting for Supabase session... (${10 - sessionRetries}/10)`);
-        await new Promise(r => setTimeout(r, 300));
+        console.log(`[WhatsAppChat] ⏳ Session not ready, retry ${15 - sessionRetries}/15...`);
+        await new Promise(r => setTimeout(r, 400));
       }
 
-      let chatTableName = 'chats_sdr'; // fallback
+      if (!user) {
+        console.error('[WhatsAppChat] ❌ CRITICAL: No auth user after 15 retries!');
+        if (isMounted) setLoadingMessages(false);
+        return;
+      }
 
-      if (user) {
-        // Tentar buscar uma vez - o serviço tem retry interno completo
-        try {
-          const { data: profileData, error: rpcError } = await supabase.rpc('get_effective_profile');
+      // 1. Buscar chat table name via RPC
+      console.log('[WhatsAppChat] Step 1: Calling get_effective_profile RPC...');
+      let chatTableName = 'chats_sdr';
+      try {
+        const { data: profileData, error: rpcError } = await supabase.rpc('get_effective_profile');
+        console.log('[WhatsAppChat] RPC result:', { data: profileData, error: rpcError?.message });
 
-          if (!rpcError && profileData && profileData.length > 0) {
-            chatTableName = profileData[0].chat_table_name || 'chats_sdr';
-            console.log('WhatsApp: Got chat table:', chatTableName);
-          } else {
-            console.warn('WhatsApp: RPC failed, will use chatsSdrService fallback:', rpcError?.message);
-          }
-        } catch (e) {
-          console.error('WhatsApp: RPC exception:', e);
+        if (!rpcError && profileData && profileData.length > 0) {
+          chatTableName = profileData[0].chat_table_name || 'chats_sdr';
+          console.log('[WhatsAppChat] ✅ Chat table:', chatTableName);
+        } else {
+          console.warn('[WhatsAppChat] ⚠️ RPC failed or empty, using fallback');
         }
-      } else {
-        console.error('[WhatsAppChat] CRITICAL: No auth user after 10 retries');
+      } catch (e) {
+        console.error('[WhatsAppChat] ❌ RPC exception:', e);
       }
 
-      // 1. Usar Cache imediatamente se existir
-      if (messagesCache[cacheKey]) {
-        const cached = messagesCache[cacheKey];
-        if (isMounted) {
-          setSdrMessages(cached.messages);
-          setHasMoreMessages(cached.hasMore);
-          setCurrentOffset(cached.offset);
-        }
-      } else {
-        if (isMounted) setLoadingMessages(true);
+      // 2. Mostrar loading
+      if (isMounted && !messagesCache[cacheKey]) {
+        setLoadingMessages(true);
       }
 
-      // 2. Buscar estado da IA
-      const actualAiStatus = await chatsSdrService.getAIStatus(selectedChat.phone);
-      if (isMounted) {
-        setAiPaused(actualAiStatus);
-        // Sincronizar com a lista de leads (sidebar)
-        if (selectedChat.ai_paused !== actualAiStatus) {
-          const updatedLeads = leads.map(l =>
-            l.id === selectedChat.id ? { ...l, ai_paused: actualAiStatus } : l
-          );
-          onLeadsUpdate(updatedLeads);
-        }
-      }
+      // 3. Buscar mensagens do banco
+      console.log('[WhatsAppChat] Step 2: Fetching messages from chatsSdrService...');
+      console.log('[WhatsAppChat] Phone:', selectedChat.phone, 'Limit:', MESSAGE_PAGE_SIZE);
 
-      // 3. Buscar mensagens do banco (primeiras 50) - chatsSdrService tem retry robusto interno
       const { messages, hasMore } = await chatsSdrService.fetchChatsByPhone(selectedChat.phone, MESSAGE_PAGE_SIZE, 0);
+      console.log('[WhatsAppChat] ✅ Messages fetched:', messages.length, 'hasMore:', hasMore);
 
+      if (!isMounted) {
+        console.log('[WhatsAppChat] Component unmounted, aborting');
+        return;
+      }
+
+      // 4. Processar mensagens
       const processedMessages: SDRMessage[] = [];
       messages.forEach((msg) => {
         const cleaned = cleanContent(msg.message.content || '');
@@ -275,13 +275,23 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         });
       });
 
+      console.log('[WhatsAppChat] ✅ Processed messages:', processedMessages.length);
+      console.log('[WhatsAppChat] ===== FETCH COMPLETE in', Date.now() - startTime, 'ms =====');
+
+      // 5. Atualizar estado
+      setSdrMessages(processedMessages);
+      setHasMoreMessages(hasMore);
+      setCurrentOffset(MESSAGE_PAGE_SIZE);
+      setMessagesCache(prev => ({ ...prev, [cacheKey]: { messages: processedMessages, hasMore, offset: MESSAGE_PAGE_SIZE } }));
+      setLoadingMessages(false);
+
+      // 6. Buscar estado da IA
+      const actualAiStatus = await chatsSdrService.getAIStatus(selectedChat.phone);
       if (isMounted) {
-        setSdrMessages(processedMessages);
-        setHasMoreMessages(hasMore);
-        setCurrentOffset(MESSAGE_PAGE_SIZE);
-        setMessagesCache(prev => ({ ...prev, [cacheKey]: { messages: processedMessages, hasMore, offset: MESSAGE_PAGE_SIZE } }));
-        setLoadingMessages(false);
+        setAiPaused(actualAiStatus);
       }
+
+      // 7. Configurar Realtime
 
       // 4. Configurar Realtime para a tabela DINÂMICA do usuário
       const finalSessionIdForRealtime = messages.length > 0 ? messages[0].session_id : selectedChat.phone;
