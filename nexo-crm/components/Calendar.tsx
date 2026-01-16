@@ -106,13 +106,15 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                 }}
                 className="relative flex flex-col items-center justify-center group cursor-pointer"
             >
-                <div className={`h-12 w-12 flex flex-col items-center justify-center rounded-xl transition-all duration-300
+                <div className={`h-12 w-12 [@media(max-height:850px)]:h-10 [@media(max-height:850px)]:w-10 [@media(max-height:768px)]:h-7 [@media(max-height:768px)]:w-7 flex flex-col items-center justify-center rounded-xl transition-all duration-300
           ${isToday
                         ? 'bg-[#1a1a1c] shadow-[inset_4px_4px_8px_#0d0d0e,inset_-4px_-4px_8px_#27272a] text-indigo-400 font-bold border border-indigo-500/20'
                         : 'text-zinc-400 hover:text-white hover:bg-zinc-800/10'}`}>
-                    <span className="text-sm">{d}</span>
+                    <span className="text-sm [@media(max-height:768px)]:text-[10px]">{d}</span>
                     {hasEvent && (
-                        <span className="text-[8px] font-medium opacity-60 mt-0.5">{dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventos'}</span>
+                        <span className="text-[8px] [@media(max-height:768px)]:text-[6px] font-medium opacity-60 mt-0.5 [@media(max-height:850px)]:mt-0">
+                            {dayEvents.length} <span className="[@media(max-height:850px)]:hidden">{dayEvents.length === 1 ? 'evento' : 'eventos'}</span>
+                        </span>
                     )}
                 </div>
                 {hasEvent && (
@@ -216,46 +218,46 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
         .slice(0, 15);
 
     return (
-        <div className="h-full bg-[#0c0c0e] p-8 overflow-y-auto custom-scrollbar flex flex-col gap-8 text-zinc-300 select-none">
+        <div className="h-full bg-[#0c0c0e] p-8 [@media(max-height:850px)]:p-5 [@media(max-height:768px)]:p-3 overflow-y-auto custom-scrollbar flex flex-col gap-8 [@media(max-height:850px)]:gap-4 [@media(max-height:768px)]:gap-2 text-zinc-300 select-none">
 
             {/* Top Header Section */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 [@media(max-height:850px)]:gap-2">
                 <div className="flex items-center gap-4">
-                    <div className="p-5 rounded-[2rem] bg-[#0c0c0e] shadow-[8px_8px_16px_#060607,-8px_-8px_16px_#121215] flex flex-col gap-1 min-w-[200px]">
+                    <div className="p-5 [@media(max-height:850px)]:p-3 [@media(max-height:720px)]:p-2 rounded-[2rem] [@media(max-height:850px)]:rounded-2xl bg-[#0c0c0e] shadow-[8px_8px_16px_#060607,-8px_-8px_16px_#121215] flex flex-col gap-1 min-w-[200px] [@media(max-height:850px)]:min-w-[150px]">
                         <div className="flex items-center gap-2 text-zinc-400">
-                            <Clock size={16} />
-                            <span className="text-sm font-medium">{time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <Clock size={16} className="[@media(max-height:850px)]:w-3.5 [@media(max-height:850px)]:h-3.5" />
+                            <span className="text-sm [@media(max-height:850px)]:text-xs font-medium">{time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
-                        <div className="text-xs text-zinc-500 capitalize">
+                        <div className="text-xs [@media(max-height:850px)]:text-[10px] text-zinc-500 capitalize">
                             {time.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="flex flex-col md:flex-row items-center gap-6 [@media(max-height:850px)]:gap-2">
                     {/* Month Navigator */}
-                    <div className="flex items-center gap-3">
-                        <button onClick={prevMonth} className="p-4 rounded-full bg-[#0c0c0e] shadow-[5px_5px_10px_#060607,-5px_-5px_10px_#121215] hover:shadow-[inset_2px_2px_5px_#060607,inset_-2px_-2px_5px_#121215] transition-all active:scale-95 text-zinc-500 hover:text-white">
-                            <ChevronLeft size={20} />
+                    <div className="flex items-center gap-3 [@media(max-height:850px)]:gap-1.5">
+                        <button onClick={prevMonth} className="p-4 [@media(max-height:850px)]:p-2.5 rounded-full bg-[#0c0c0e] shadow-[5px_5px_10px_#060607,-5px_-5px_10px_#121215] hover:shadow-[inset_2px_2px_5px_#060607,inset_-2px_-2px_5px_#121215] transition-all active:scale-95 text-zinc-500 hover:text-white">
+                            <ChevronLeft size={20} className="[@media(max-height:850px)]:w-4 [@media(max-height:850px)]:h-4" />
                         </button>
-                        <div className="px-8 py-4 rounded-[2rem] bg-[#0c0c0e] shadow-[8px_8px_16px_#060607,-8px_-8px_16px_#121215] font-semibold flex items-center gap-3 min-w-[180px] justify-center">
+                        <div className="px-8 py-4 [@media(max-height:850px)]:px-4 [@media(max-height:850px)]:py-2.5 rounded-[2rem] [@media(max-height:850px)]:rounded-2xl bg-[#0c0c0e] shadow-[8px_8px_16px_#060607,-8px_-8px_16px_#121215] font-semibold flex items-center gap-3 min-w-[180px] [@media(max-height:850px)]:min-w-[140px] justify-center text-sm [@media(max-height:850px)]:text-xs">
                             <span className="capitalize">{monthName}</span>
-                            <span className="text-zinc-500">{year}</span>
+                            <span className="text-zinc-500 font-medium">{year}</span>
                         </div>
-                        <button onClick={nextMonth} className="p-4 rounded-full bg-[#0c0c0e] shadow-[5px_5px_10px_#060607,-5px_-5px_10px_#121215] hover:shadow-[inset_2px_2px_5px_#060607,inset_-2px_-2px_5px_#121215] transition-all active:scale-95 text-zinc-500 hover:text-white">
-                            <ChevronRight size={20} />
+                        <button onClick={nextMonth} className="p-4 [@media(max-height:850px)]:p-2.5 rounded-full bg-[#0c0c0e] shadow-[5px_5px_10px_#060607,-5px_-5px_10px_#121215] hover:shadow-[inset_2px_2px_5px_#060607,inset_-2px_-2px_5px_#121215] transition-all active:scale-95 text-zinc-500 hover:text-white">
+                            <ChevronRight size={20} className="[@media(max-height:850px)]:w-4 [@media(max-height:850px)]:h-4" />
                         </button>
                     </div>
 
                     {/* Interval Selector */}
-                    <div className="flex flex-col gap-2">
-                        <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest ml-2">Intervalo entre eventos</span>
-                        <div className="flex bg-[#0c0c0e] p-1.5 rounded-2xl shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-zinc-800/10">
+                    <div className="flex flex-col gap-1.5 [@media(max-height:850px)]:gap-0.5">
+                        <span className="text-[9px] [@media(max-height:850px)]:text-[8px] font-bold text-zinc-600 uppercase tracking-widest ml-2">Intervalo</span>
+                        <div className="flex bg-[#0c0c0e] p-1.5 [@media(max-height:850px)]:p-1 rounded-2xl bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-zinc-800/10">
                             {[15, 30, 45, 60, 90, 120].map((interval) => (
                                 <button
                                     key={interval}
                                     onClick={() => setDuration(interval)}
-                                    className={`px-3 py-2 rounded-xl text-[10px] font-bold transition-all duration-300 min-w-[45px] ${duration === interval
+                                    className={`px-3 py-2 [@media(max-height:850px)]:px-1.5 [@media(max-height:850px)]:py-1 rounded-xl text-[10px] [@media(max-height:850px)]:text-[8px] font-bold transition-all duration-300 min-w-[45px] [@media(max-height:850px)]:min-w-[32px] ${duration === interval
                                         ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                                         : 'text-zinc-500 hover:text-zinc-300'
                                         }`}
@@ -268,19 +270,19 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 [@media(max-height:850px)]:gap-4 items-stretch">
                 {/* Left Column: Upcoming Events */}
                 <div className="lg:col-span-4 flex flex-col">
-                    <div className="p-8 rounded-[3rem] bg-[#0c0c0e] shadow-[12px_12px_24px_#050506,-12px_-12px_24px_#131316] flex flex-col h-full border border-zinc-800/20">
-                        <div className="flex justify-between items-center mb-8">
+                    <div className="p-8 [@media(max-height:850px)]:p-4 rounded-[3rem] [@media(max-height:850px)]:rounded-[2rem] bg-[#0c0c0e] shadow-[12px_12px_24px_#050506,-12px_-12px_24px_#131316] flex flex-col h-full border border-zinc-800/20">
+                        <div className="flex justify-between items-center mb-8 [@media(max-height:850px)]:mb-3">
                             <div>
-                                <h3 className="text-lg font-bold text-white">Próximos Eventos</h3>
-                                <p className="text-[10px] text-zinc-500 font-medium mt-1">Sua agenda da semana</p>
+                                <h3 className="text-lg [@media(max-height:850px)]:text-sm font-bold text-white">Próximos Eventos</h3>
+                                <p className="text-[10px] [@media(max-height:850px)]:text-[8px] text-zinc-500 font-medium mt-1">Sua agenda da semana</p>
                             </div>
-                            <div className="text-[9px] bg-indigo-500/10 px-3 py-1.5 rounded-full text-indigo-400 font-bold uppercase tracking-wider border border-indigo-500/10">Esta Semana</div>
+                            <div className="text-[9px] [@media(max-height:850px)]:text-[7px] bg-indigo-500/10 px-3 py-1.5 [@media(max-height:850px)]:px-1.5 [@media(max-height:850px)]:py-1 rounded-full text-indigo-400 font-bold uppercase tracking-wider border border-indigo-500/10">Hoje</div>
                         </div>
 
-                        <div className="flex-1 space-y-4 overflow-y-auto custom-scrollbar pr-2 min-h-[400px] max-h-[600px]">
+                        <div className="flex-1 space-y-4 [@media(max-height:850px)]:space-y-2 overflow-y-auto custom-scrollbar pr-2 min-h-[400px] [@media(max-height:850px)]:min-h-[200px] [@media(max-height:768px)]:min-h-[140px] max-h-[600px]">
                             {upcomingEvents.length > 0 ? upcomingEvents.map((event, i) => (
                                 <div
                                     key={event.id}
@@ -296,33 +298,33 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                         setEventService(event.servico_interesse || '');
                                         setIsEventModalOpen(true);
                                     }}
-                                    className="p-5 rounded-[2rem] bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] flex flex-col gap-3 group border border-transparent hover:border-zinc-800/50 transition-all cursor-pointer"
+                                    className="p-5 [@media(max-height:850px)]:p-3 rounded-[2rem] [@media(max-height:850px)]:rounded-2xl bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] flex flex-col gap-3 [@media(max-height:850px)]:gap-1 group border border-transparent hover:border-zinc-800/50 transition-all cursor-pointer"
                                 >
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex items-center gap-3 [@media(max-height:850px)]:gap-1.5 min-w-0">
                                             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${i === 0 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]' : 'bg-zinc-700'} `}></div>
-                                            <p className="text-xs font-bold truncate text-zinc-300 group-hover:text-white transition-colors">{getLeadDisplayName(event)}</p>
+                                            <p className="text-xs [@media(max-height:850px)]:text-[10px] font-bold truncate text-zinc-300 group-hover:text-white transition-colors">{getLeadDisplayName(event)}</p>
                                         </div>
-                                        <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/5 px-2 py-0.5 rounded-md border border-indigo-500/10">
-                                            {new Date(event.dataHora_Agendamento!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        <span className="text-[10px] [@media(max-height:850px)]:text-[8px] font-bold text-indigo-400 bg-indigo-500/5 px-2 py-0.5 rounded-md border border-indigo-500/10">
+                                            {parseDate(event.dataHora_Agendamento)!.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
-                                    <div className="flex flex-col gap-2 ml-4.5">
+                                    <div className="flex flex-col gap-2 [@media(max-height:850px)]:gap-0.5 ml-4.5">
                                         <div className="flex items-center gap-2">
                                             <div className="p-1 rounded-md bg-zinc-900 shadow-sm">
                                                 <div className="w-1 h-1 rounded-full bg-zinc-600"></div>
                                             </div>
-                                            <p className="text-[10px] text-zinc-500 font-medium italic truncate">
+                                            <p className="text-[10px] [@media(max-height:850px)]:text-[8px] text-zinc-500 font-medium italic truncate">
                                                 {event.servico_interesse || 'Serviço não especificado'}
                                             </p>
                                         </div>
-                                        <div className="flex items-center justify-between mt-1 pt-2 border-t border-zinc-800/30">
-                                            <div className="flex items-center gap-1.5 capitalize text-[9px] font-bold text-zinc-600 tracking-wider">
+                                        <div className="flex items-center justify-between mt-1 [@media(max-height:850px)]:mt-0.5 pt-2 [@media(max-height:850px)]:pt-1 border-t border-zinc-800/30">
+                                            <div className="flex items-center gap-1.5 capitalize text-[9px] [@media(max-height:850px)]:text-[7px] font-bold text-zinc-600 tracking-wider">
                                                 <Clock size={10} strokeWidth={3} />
                                                 <span>{formatEventDateLabel(event.dataHora_Agendamento!)}</span>
                                             </div>
-                                            <p className="text-[9px] text-zinc-700 font-bold uppercase tracking-tight">
-                                                Duração: {duration}min
+                                            <p className="text-[9px] [@media(max-height:850px)]:text-[7px] text-zinc-700 font-bold uppercase tracking-tight">
+                                                {duration}min
                                             </p>
                                         </div>
                                     </div>
@@ -342,24 +344,24 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                 resetForm();
                                 setIsEventModalOpen(true);
                             }}
-                            className="w-full py-4 mt-6 rounded-2xl bg-[#0c0c0e] shadow-[4px_4px_8px_#060607,-4px_-4px_8px_#121215] flex items-center justify-center gap-2 text-[10px] font-bold text-zinc-500 hover:text-indigo-400 transition-all active:scale-95 border border-zinc-800/10 group/btn"
+                            className="w-full py-4 [@media(max-height:850px)]:py-2.5 mt-6 [@media(max-height:850px)]:mt-2.5 rounded-2xl bg-[#0c0c0e] shadow-[4px_4px_8px_#060607,-4px_-4px_8px_#121215] flex items-center justify-center gap-2 text-[10px] [@media(max-height:850px)]:text-[8px] font-bold text-zinc-500 hover:text-indigo-400 transition-all active:scale-95 border border-zinc-800/10 group/btn"
                         >
                             <Plus size={14} className="group-hover/btn:scale-125 transition-transform" />
-                            <span>ADICIONAR NOVO EVENTO</span>
+                            <span>NOVO EVENTO</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Right Column: Calendar Grid */}
-                <div className="lg:col-span-8">
-                    <div className="p-10 rounded-[3rem] bg-[#0c0c0e] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] h-full flex flex-col border border-zinc-800/20">
-                        <div className="grid grid-cols-7 gap-4 mb-8">
+                <div className="lg:col-span-8 flex flex-col">
+                    <div className="p-10 [@media(max-height:850px)]:p-4 rounded-[3rem] [@media(max-height:850px)]:rounded-[2rem] bg-[#0c0c0e] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex-1 flex flex-col border border-zinc-800/20">
+                        <div className="grid grid-cols-7 gap-4 [@media(max-height:850px)]:gap-2 mb-8 [@media(max-height:850px)]:mb-3">
                             {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'].map(day => (
-                                <div key={day} className="text-center text-[10px] font-bold text-zinc-600 tracking-widest">{day}</div>
+                                <div key={day} className="text-center text-[10px] [@media(max-height:850px)]:text-[8px] font-bold text-zinc-600 tracking-widest">{day}</div>
                             ))}
                         </div>
 
-                        <div className="grid grid-cols-7 gap-y-6 gap-x-4">
+                        <div className="grid grid-cols-7 gap-y-6 [@media(max-height:850px)]:gap-y-3 gap-x-4 [@media(max-height:850px)]:gap-x-2 [@media(max-height:768px)]:gap-x-1">
                             {days}
                         </div>
                     </div>
