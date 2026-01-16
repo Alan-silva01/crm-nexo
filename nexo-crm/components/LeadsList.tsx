@@ -142,8 +142,8 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
 
   const validatePhone = (phone: string) => {
     const digits = phone.replace(/\D/g, '');
-    if (digits.length < 10 || digits.length > 11) {
-      alert('Número de telefone inválido. Deve conter DDD + número (10 ou 11 dígitos).');
+    if (digits.length < 9 || digits.length > 11) {
+      alert('Número de telefone inválido. Deve conter entre 9 e 11 dígitos.');
       return false;
     }
     return true;
@@ -338,7 +338,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                   placeholder="Ex: 11999999999"
                   required
                 />
-                <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tight ml-1 italic">* Digite apenas números (10 ou 11 dígitos)</p>
+                <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tight ml-1 italic">* Digite apenas números (9 a 11 dígitos)</p>
               </div>
               <button
                 type="submit"
