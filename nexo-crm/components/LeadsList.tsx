@@ -32,6 +32,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -97,8 +98,6 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Tem certeza que deseja excluir ${selectedLeadIds.length} contatos?`)) return;
-
     setIsDeleting(true);
     try {
       const results = await Promise.all(selectedLeadIds.map(id => leadsService.deleteLead(id)));
@@ -112,6 +111,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
         onLeadsUpdate(filteredLeads.filter(l => !selectedLeadIds.includes(l.id)));
       }
       setSelectedLeadIds([]);
+      setShowBulkDeleteConfirm(false);
     } catch (error) {
       console.error('Error in bulk delete:', error);
     } finally {
@@ -352,7 +352,39 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
         </div>
       )}
 
-      {/* Modal de Confirmação de Exclusão Individual */}
+      {/* Modal de Confirmação de Exclusão em Massa */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0c0c0e] border border-zinc-800 rounded-[2rem] w-full max-w-sm p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="p-4 bg-rose-500/10 rounded-full border border-rose-500/20">
+                <AlertTriangle size={32} className="text-rose-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white uppercase tracking-widest">Excluir {selectedLeadIds.length} Contatos?</h3>
+                <p className="text-zinc-500 text-xs mt-2 leading-relaxed">
+                  Tem certeza que deseja excluir os contatos selecionados? Esta ação é irreversível e removerá todos os dados permanentemente.
+                </p>
+              </div>
+              <div className="flex w-full gap-3 mt-4">
+                <button
+                  onClick={() => setShowBulkDeleteConfirm(false)}
+                  className="flex-1 py-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={isDeleting}
+                  className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-rose-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? <Loader2 size={12} className="animate-spin" /> : "Confirmar Exclusão"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {leadToDelete && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0c0c0e] border border-zinc-800 rounded-[2rem] w-full max-w-sm p-8 shadow-2xl animate-in zoom-in-95 duration-200">
@@ -446,7 +478,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                 </div>
 
                 <button
-                  onClick={handleBulkDelete}
+                  onClick={() => setShowBulkDeleteConfirm(true)}
                   className="flex items-center gap-2 px-4 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] font-bold text-rose-400 hover:bg-rose-500 hover:text-white transition-all active:scale-95"
                 >
                   <Trash2 size={12} />
