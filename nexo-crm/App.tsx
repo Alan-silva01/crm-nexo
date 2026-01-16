@@ -63,56 +63,73 @@ const AppContent: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Restaurar leads do cache para evitar flash de tela vazia
-  const [leads, setLeads] = useState<Lead[]>(() => {
-    try {
-      const cached = localStorage.getItem('nero_leads_cache');
-      if (cached) {
-        const data = JSON.parse(cached);
-        console.log('App: Restored leads from cache:', data.length);
-        return data;
-      }
-    } catch (e) { }
-    return [];
-  });
+  // Nota: O cache é por effectiveUserId, então não podemos restaurar até saber quem é o usuário
+  const [leads, setLeads] = useState<Lead[]>([]);
 
-  const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>(() => {
-    try {
-      const cached = localStorage.getItem('nero_history_cache');
-      if (cached) {
-        return JSON.parse(cached);
+  // Restaurar leads do cache quando effectiveUserId estiver disponível
+  useEffect(() => {
+    if (effectiveUserId) {
+      try {
+        const cached = localStorage.getItem(`nero_leads_cache_${effectiveUserId}`);
+        if (cached) {
+          const data = JSON.parse(cached);
+          console.log('App: Restored leads from user-specific cache:', data.length);
+          if (data.length > 0 && leads.length === 0) {
+            setLeads(data);
+          }
+        }
+      } catch (e) {
+        console.error('App: Error restoring leads cache:', e);
       }
-    } catch (e) { }
-    return {};
-  });
+    }
+  }, [effectiveUserId]);
+
+  const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   // Restaurar columns do cache para evitar piscar no Kanban
-  const [columns, setColumns] = useState<any[]>(() => {
-    try {
-      const cached = localStorage.getItem('nero_columns_cache');
-      if (cached) {
-        return JSON.parse(cached);
+  const [columns, setColumns] = useState<any[]>([]);
+
+  // Restaurar history e columns quando effectiveUserId estiver disponível
+  useEffect(() => {
+    if (effectiveUserId) {
+      try {
+        const cachedHistory = localStorage.getItem(`nero_history_cache_${effectiveUserId}`);
+        if (cachedHistory) {
+          setLeadsHistory(JSON.parse(cachedHistory));
+        }
+        const cachedColumns = localStorage.getItem(`nero_columns_cache_${effectiveUserId}`);
+        if (cachedColumns) {
+          setColumns(JSON.parse(cachedColumns));
+        }
+      } catch (e) {
+        console.error('App: Error restoring history/columns cache:', e);
       }
-    } catch (e) { }
-    return [];
-  });
+    }
+  }, [effectiveUserId]);
 
   const [notifications, setNotifications] = useState<LeadColumnHistory[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Restaurar profile do cache para evitar delay no nome da empresa
-  const [profile, setProfile] = useState<any>(() => {
-    try {
-      const cached = localStorage.getItem('nero_profile_cache');
-      if (cached) {
-        const data = JSON.parse(cached);
-        console.log('App: Restored profile from cache:', data.company_name);
-        return data;
+  // Também é user-specific para atendentes verem o profile do admin correto
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (effectiveUserId) {
+      try {
+        const cached = localStorage.getItem(`nero_profile_cache_${effectiveUserId}`);
+        if (cached) {
+          const data = JSON.parse(cached);
+          console.log('App: Restored profile from user-specific cache:', data.company_name);
+          setProfile(data);
+        }
+      } catch (e) {
+        console.error('App: Error restoring profile cache:', e);
       }
-    } catch (e) { }
-    return null;
-  });
+    }
+  }, [effectiveUserId]);
 
   const [externalSelectedLead, setExternalSelectedLead] = useState<Lead | null>(null);
 
@@ -158,8 +175,8 @@ const AppContent: React.FC = () => {
             console.error(`[${rid}] Error fetching columns:`, colsError);
           } else if (cols && cols.length > 0) {
             setColumns(cols);
-            // Salvar no cache para carregamento instantâneo
-            localStorage.setItem('nero_columns_cache', JSON.stringify(cols));
+            // Salvar no cache para carregamento instantâneo (user-specific)
+            localStorage.setItem(`nero_columns_cache_${effectiveUserId}`, JSON.stringify(cols));
           } else {
             console.log(`[${rid}] No columns found, setting defaults.`);
             setColumns([
@@ -186,8 +203,8 @@ const AppContent: React.FC = () => {
           const fetchedLeads = await leadsService.fetchLeads(effectiveUserId);
           console.log(`[${rid}] fetchLeads returned:`, fetchedLeads);
           setLeads(fetchedLeads);
-          // Salvar no cache SEM dados sensíveis (CPF, telefone completo)
-          localStorage.setItem('nero_leads_cache', JSON.stringify(sanitizeForCache(fetchedLeads)));
+          // Salvar no cache ESPECÍFICO DO USUÁRIO (por effectiveUserId)
+          localStorage.setItem(`nero_leads_cache_${effectiveUserId}`, JSON.stringify(sanitizeForCache(fetchedLeads)));
           console.log(`[${rid}] App: Fetched leads count: ${fetchedLeads.length}`);
         } catch (e) {
           console.error(`[${rid}] CRITICAL: Leads fetch crashed:`, e);
@@ -204,8 +221,8 @@ const AppContent: React.FC = () => {
             return acc;
           }, {});
           setLeadsHistory(grouped);
-          // Salvar history no cache
-          localStorage.setItem('nero_history_cache', JSON.stringify(grouped));
+          // Salvar history no cache (user-specific)
+          localStorage.setItem(`nero_history_cache_${effectiveUserId}`, JSON.stringify(grouped));
           setNotifications(history.slice(0, 5));
           console.log(`[${rid}] Fetched ${history.length} history items.`);
         } catch (e) {
@@ -237,8 +254,8 @@ const AppContent: React.FC = () => {
               ...profileData,
               logged_user_name: loggedName
             });
-            // Salvar no cache para evitar delay na próxima vez
-            localStorage.setItem('nero_profile_cache', JSON.stringify({
+            // Salvar no cache para evitar delay na próxima vez (user-specific)
+            localStorage.setItem(`nero_profile_cache_${effectiveUserId}`, JSON.stringify({
               ...profileData,
               logged_user_name: loggedName
             }));
