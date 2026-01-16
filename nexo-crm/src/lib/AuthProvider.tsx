@@ -189,13 +189,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const signOut = async () => {
-        await supabase.auth.signOut();
-        // Clear all caches and reload to ensure a fresh state
-        localStorage.clear();
-        setUserType(null);
-        setEffectiveUserId(null);
-        setAtendenteInfo(null);
-        window.location.href = '/';
+        console.log('AuthProvider: signOut initiated');
+        try {
+            // Limpeza rápida local primeiro para feedback instantâneo
+            localStorage.clear();
+            setUserType(null);
+            setEffectiveUserId(null);
+            setAtendenteInfo(null);
+
+            // Logout no Supabase (pode falhar se offline, então ignoramos erro)
+            await supabase.auth.signOut();
+        } catch (e) {
+            console.error('AuthProvider: error during signOut, proceeding with local cleanup:', e);
+        } finally {
+            // Garantir redirecionamento
+            window.location.href = '/';
+        }
         return { error: null };
     };
 

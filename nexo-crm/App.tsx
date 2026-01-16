@@ -134,6 +134,14 @@ const AppContent: React.FC = () => {
   const [externalSelectedLead, setExternalSelectedLead] = useState<Lead | null>(null);
 
   // Fetch columns and leads on session change
+  console.log('[AppContent] render state:', {
+    loading,
+    hasSession: !!session,
+    userId: user?.id,
+    effectiveUserId,
+    userType
+  });
+
   useEffect(() => {
     console.log('App useEffect [session, effectiveUserId]:', {
       hasSession: !!session,

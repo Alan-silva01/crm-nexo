@@ -25,6 +25,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
@@ -44,11 +45,12 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
 
     try {
       if (mode === 'login') {
         if (password.length < 6) {
-          showModal('warning', 'Senha Insegura', 'Sua senha deve conter pelo menos 6 caracteres para garantir a segurança da sua conta.');
+          setErrorMessage('Sua senha deve conter pelo menos 6 caracteres.');
           setIsLoading(false);
           return;
         }
@@ -57,7 +59,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
         if (error) {
           console.error('Login error:', error);
-          showModal('error', 'Falha no Acesso', error.message || 'E-mail ou senha incorretos. Por favor, verifique suas credenciais e tente novamente.');
+          setErrorMessage('E-mail ou senha incorretos. Verifique suas credenciais.');
           setIsLoading(false);
           return;
         }
@@ -67,7 +69,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         }
       } else if (mode === 'register') {
         if (password.length < 6) {
-          showModal('warning', 'Senha Insegura', 'Sua senha deve conter pelo menos 6 caracteres para garantir a segurança da sua conta.');
+          setErrorMessage('Sua senha deve conter pelo menos 6 caracteres.');
           setIsLoading(false);
           return;
         }
@@ -77,9 +79,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         if (error) {
           console.error('Signup error:', error);
           if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
-            showModal('warning', 'E-mail já Cadastrado', 'Este endereço de e-mail já está vinculado a uma conta Nero. Tente recuperar sua senha.');
+            setErrorMessage('Este e-mail já está vinculado a uma conta Nero.');
           } else {
-            showModal('error', 'Erro no Cadastro', error.message || 'Não foi possível criar sua conta. Tente novamente.');
+            setErrorMessage(error.message || 'Não foi possível criar sua conta. Tente novamente.');
           }
           setIsLoading(false);
           return;
@@ -89,7 +91,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         setMode('login');
       } else if (mode === 'recover') {
         if (!email.includes('@')) {
-          showModal('error', 'E-mail Inválido', 'Por favor, insira um endereço de e-mail válido para receber o link de recuperação.');
+          setErrorMessage('Por favor, insira um endereço de e-mail válido.');
           setIsLoading(false);
           return;
         }
@@ -100,7 +102,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
         if (error) {
           console.error('Password reset error:', error);
-          showModal('error', 'Erro ao Enviar', error.message || 'Não foi possível enviar o e-mail de recuperação.');
+          setErrorMessage(error.message || 'Não foi possível enviar o e-mail de recuperação.');
           setIsLoading(false);
           return;
         }
@@ -110,7 +112,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       }
     } catch (err) {
       console.error('Auth error:', err);
-      showModal('error', 'Erro Inesperado', 'Ocorreu um erro inesperado. Por favor, tente novamente.');
+      setErrorMessage('Ocorreu um erro inesperado. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -220,6 +222,13 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                     className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-zinc-700"
                   />
                 </div>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="flex items-center gap-2 text-rose-500 text-[11px] font-medium bg-rose-500/10 p-3 rounded-xl border border-rose-500/20 animate-in fade-in slide-in-from-top-1">
+                <AlertCircle size={14} />
+                <span>{errorMessage}</span>
               </div>
             )}
 

@@ -50,8 +50,15 @@ export const atendentesService = {
                         atendenteInfo: atendenteFromDb as Atendente
                     };
                 }
-                // Fallback: usar metadata se DB falhar
-                console.log(`[${requestId}] DB query failed, using metadata only (no atendenteInfo.id)`);
+
+                // Se metadata diz que é atendente mas o DB não retornou nada, 
+                // pode ser erro de RLS ou latência. VAMOS CONFIAR NO METADATA
+                // para evitar que o atendente perca os dados de admin no refresh.
+                console.log(`[${requestId}] DB query returned nothing for metadata-indicated atendente, TRUSTING METADATA.`);
+                return {
+                    type: 'atendente' as const,
+                    effectiveUserId: userMetadata.admin_id as string
+                };
             }
 
             // Query única, sem retry, com timeout de 3 segundos
