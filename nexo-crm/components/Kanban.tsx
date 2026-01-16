@@ -385,10 +385,10 @@ const Kanban: React.FC<KanbanProps> = ({
 
   return (
     <div className="h-full flex flex-col p-4 2xl:p-6 overflow-y-auto relative custom-scrollbar [@media(max-height:850px)]:p-3">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-4">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-3 [@media(max-height:800px)]:mb-2 [@media(max-height:800px)]:gap-1">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Kanban de Leads</h1>
-          <p className="text-zinc-500 text-xs">Gerencie o fluxo de atendimento com precisão e agilidade.</p>
+          <h1 className="text-lg [@media(max-height:800px)]:text-base font-semibold tracking-tight">Kanban de Leads</h1>
+          <p className="text-zinc-500 text-xs [@media(max-height:800px)]:hidden">Gerencie o fluxo de atendimento com precisão e agilidade.</p>
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -455,7 +455,7 @@ const Kanban: React.FC<KanbanProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 space-y-4 kanban-column overflow-y-auto pr-2 custom-scrollbar min-h-0">
+            <div className="flex-1 space-y-3 [@media(max-height:800px)]:space-y-2 kanban-column overflow-y-auto pr-2 custom-scrollbar min-h-0">
               {filteredLeads.filter(lead => lead.status?.trim().toUpperCase() === col.name?.trim().toUpperCase()).map((lead) => {
                 const borderColor = BORDER_COLORS[parseInt(lead.id.slice(0, 8), 16) % BORDER_COLORS.length];
                 return (
@@ -497,212 +497,216 @@ const Kanban: React.FC<KanbanProps> = ({
                       </div>
 
                       {lead.last_message && (
-                        <div className="bg-zinc-50 dark:bg-zinc-900/30 rounded-xl p-3 border border-zinc-100 dark:border-zinc-800/30 mb-4">
-                          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 line-clamp-2 italic leading-relaxed">
+                        <div className="bg-zinc-50 dark:bg-zinc-900/30 rounded-xl p-2 [@media(max-height:800px)]:p-1.5 border border-zinc-100 dark:border-zinc-800/30 mb-3 [@media(max-height:800px)]:mb-2 [@media(max-height:800px)]:hidden">
+                          <p className="text-[11px] [@media(max-height:800px)]:text-[10px] text-zinc-600 dark:text-zinc-400 line-clamp-2 italic leading-relaxed">
                             "{lead.last_message}"
                           </p>
                         </div>
                       )}
 
-                      {/* Dados Customizados Dinâmicos */}
-                      {lead.dados && Object.keys(lead.dados).length > 0 && (() => {
-                        const d = lead.dados as Record<string, any>;
-                        const hasValue = (val: any) => val !== null && val !== undefined && String(val).trim() !== '';
+                      {/* Dados Customizados Dinâmicos - Hidden on small heights */}
+                      <div className="[@media(max-height:800px)]:hidden">
+                        {lead.dados && Object.keys(lead.dados).length > 0 && (() => {
+                          const d = lead.dados as Record<string, any>;
+                          const hasValue = (val: any) => val !== null && val !== undefined && String(val).trim() !== '';
 
-                        // Campos para pular (já estão no cabeçalho ou são reservados)
-                        const skipFields = ['nome', 'name', 'email', 'whatsapp', 'phone', 'empresa', 'company_name', 'id', 'observacoes', 'observação', 'status_venda', 'agendamentos', 'consultas', 'customer_id'];
+                          // Campos para pular (já estão no cabeçalho ou são reservados)
+                          const skipFields = ['nome', 'name', 'email', 'whatsapp', 'phone', 'empresa', 'company_name', 'id', 'observacoes', 'observação', 'status_venda', 'agendamentos', 'consultas', 'customer_id'];
 
-                        // Mapeamento de ícones por palavra-chave
-                        const getIcon = (key: string) => {
-                          const k = key.toLowerCase();
-                          // Veículos
-                          if (k.includes('moto') || k.includes('bike')) return { icon: Bike, color: 'text-orange-400' };
-                          if (k.includes('veiculo') || k.includes('carro') || k.includes('modelo')) return { icon: Car, color: 'text-amber-400' };
-                          if (k.includes('placa')) return { icon: MoreHorizontal, color: 'text-zinc-400' };
-                          // Localização
-                          if (k.includes('cidade') || k.includes('bairro') || k.includes('endereco') || k.includes('local')) return { icon: MapPin, color: 'text-emerald-400' };
-                          // Usuário/Tipo
-                          if (k.includes('usuario') || k.includes('genero') || k.includes('uso') || k.includes('area')) return { icon: Users, color: 'text-blue-400' };
-                          if (k.includes('tipo') && !k.includes('veiculo')) return { icon: Users, color: 'text-blue-400' };
-                          // Preocupação/Segurança (corrigido: era Phone, agora é Shield)
-                          if (k.includes('preocupacao') || k.includes('seguranca') || k.includes('roubo') || k.includes('protecao')) return { icon: Shield, color: 'text-rose-400' };
-                          if (k.includes('ajuda') || k.includes('problema') || k.includes('desafio')) return { icon: AlertTriangle, color: 'text-amber-400' };
-                          // Documentos - CPF mascarado, ícone de documento
-                          if (k.includes('cpf') || k.includes('cnpj') || k.includes('documento')) return { icon: FileText, color: 'text-zinc-400' };
-                          if (k.includes('customer') || k.includes('cliente')) return { icon: Hash, color: 'text-zinc-500' };
-                          // Jurídico
-                          if (k.includes('processo') || k.includes('direito') || k.includes('justiça')) return { icon: Scale, color: 'text-indigo-400' };
-                          // Saúde
-                          if (k.includes('clinica') || k.includes('medico') || k.includes('saude') || k.includes('paciente')) return { icon: Stethoscope, color: 'text-emerald-400' };
-                          // Vendas/Compras
-                          if (k.includes('loja') || k.includes('venda') || k.includes('produto') || k.includes('compra')) return { icon: ShoppingBag, color: 'text-amber-400' };
-                          // Financeiro
-                          if (k.includes('mensalidade') || k.includes('faturamento') || k.includes('valor') || k.includes('preco') || k.includes('preço')) return { icon: DollarSign, color: 'text-emerald-400' };
-                          // Pagamento
-                          if (k.includes('pagamento') || k.includes('cartao') || k.includes('pix')) return { icon: CreditCard, color: 'text-violet-400' };
-                          return { icon: Layout, color: 'text-indigo-400' };
-                        };
+                          // Mapeamento de ícones por palavra-chave
+                          const getIcon = (key: string) => {
+                            const k = key.toLowerCase();
+                            // Veículos
+                            if (k.includes('moto') || k.includes('bike')) return { icon: Bike, color: 'text-orange-400' };
+                            if (k.includes('veiculo') || k.includes('carro') || k.includes('modelo')) return { icon: Car, color: 'text-amber-400' };
+                            if (k.includes('placa')) return { icon: MoreHorizontal, color: 'text-zinc-400' };
+                            // Localização
+                            if (k.includes('cidade') || k.includes('bairro') || k.includes('endereco') || k.includes('local')) return { icon: MapPin, color: 'text-emerald-400' };
+                            // Usuário/Tipo
+                            if (k.includes('usuario') || k.includes('genero') || k.includes('uso') || k.includes('area')) return { icon: Users, color: 'text-blue-400' };
+                            if (k.includes('tipo') && !k.includes('veiculo')) return { icon: Users, color: 'text-blue-400' };
+                            // Preocupação/Segurança (corrigido: era Phone, agora é Shield)
+                            if (k.includes('preocupacao') || k.includes('seguranca') || k.includes('roubo') || k.includes('protecao')) return { icon: Shield, color: 'text-rose-400' };
+                            if (k.includes('ajuda') || k.includes('problema') || k.includes('desafio')) return { icon: AlertTriangle, color: 'text-amber-400' };
+                            // Documentos - CPF mascarado, ícone de documento
+                            if (k.includes('cpf') || k.includes('cnpj') || k.includes('documento')) return { icon: FileText, color: 'text-zinc-400' };
+                            if (k.includes('customer') || k.includes('cliente')) return { icon: Hash, color: 'text-zinc-500' };
+                            // Jurídico
+                            if (k.includes('processo') || k.includes('direito') || k.includes('justiça')) return { icon: Scale, color: 'text-indigo-400' };
+                            // Saúde
+                            if (k.includes('clinica') || k.includes('medico') || k.includes('saude') || k.includes('paciente')) return { icon: Stethoscope, color: 'text-emerald-400' };
+                            // Vendas/Compras
+                            if (k.includes('loja') || k.includes('venda') || k.includes('produto') || k.includes('compra')) return { icon: ShoppingBag, color: 'text-amber-400' };
+                            // Financeiro
+                            if (k.includes('mensalidade') || k.includes('faturamento') || k.includes('valor') || k.includes('preco') || k.includes('preço')) return { icon: DollarSign, color: 'text-emerald-400' };
+                            // Pagamento
+                            if (k.includes('pagamento') || k.includes('cartao') || k.includes('pix')) return { icon: CreditCard, color: 'text-violet-400' };
+                            return { icon: Layout, color: 'text-indigo-400' };
+                          };
 
-                        // Formatar Label (snake_case to Title Case)
-                        const formatLabel = (key: string) => {
-                          return key
-                            .split('_')
-                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                            .join(' ');
-                        };
+                          // Formatar Label (snake_case to Title Case)
+                          const formatLabel = (key: string) => {
+                            return key
+                              .split('_')
+                              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                              .join(' ');
+                          };
 
-                        const visibleKeys = Object.keys(d).filter(key => {
-                          return !skipFields.includes(key.toLowerCase()) && hasValue(d[key]);
-                        });
+                          const visibleKeys = Object.keys(d).filter(key => {
+                            return !skipFields.includes(key.toLowerCase()) && hasValue(d[key]);
+                          });
 
-                        const obs = hasValue(d.observacoes) ? String(d.observacoes) : (hasValue(d.observação) ? String(d.observação) : null);
-                        const statusVenda = hasValue(d.status_venda) ? String(d.status_venda) : null;
-                        const hasConsultas = d.consultas && typeof d.consultas === 'object' && Object.keys(d.consultas).length > 0;
-                        const hasAgendamentos = d.agendamentos && typeof d.agendamentos === 'object' && Object.keys(d.agendamentos).length > 0;
+                          const obs = hasValue(d.observacoes) ? String(d.observacoes) : (hasValue(d.observação) ? String(d.observação) : null);
+                          const statusVenda = hasValue(d.status_venda) ? String(d.status_venda) : null;
+                          const hasConsultas = d.consultas && typeof d.consultas === 'object' && Object.keys(d.consultas).length > 0;
+                          const hasAgendamentos = d.agendamentos && typeof d.agendamentos === 'object' && Object.keys(d.agendamentos).length > 0;
 
-                        // Lógica inteligente para consultas
-                        let consultaStatus: 'futura' | 'passada' | 'multiplas' | null = null;
-                        let proximaConsultaData: Date | null = null;
+                          // Lógica inteligente para consultas
+                          let consultaStatus: 'futura' | 'passada' | 'multiplas' | null = null;
+                          let proximaConsultaData: Date | null = null;
 
-                        if (hasConsultas) {
-                          const consultas = Object.values(d.consultas) as any[];
-                          const now = new Date();
+                          if (hasConsultas) {
+                            const consultas = Object.values(d.consultas) as any[];
+                            const now = new Date();
 
-                          if (consultas.length > 1) {
-                            consultaStatus = 'multiplas';
-                          } else if (consultas.length === 1) {
-                            const consulta = consultas[0];
-                            if (consulta.dataHora) {
-                              const dataConsulta = new Date(consulta.dataHora);
-                              proximaConsultaData = dataConsulta;
-                              consultaStatus = dataConsulta > now ? 'futura' : 'passada';
+                            if (consultas.length > 1) {
+                              consultaStatus = 'multiplas';
+                            } else if (consultas.length === 1) {
+                              const consulta = consultas[0];
+                              if (consulta.dataHora) {
+                                const dataConsulta = new Date(consulta.dataHora);
+                                proximaConsultaData = dataConsulta;
+                                consultaStatus = dataConsulta > now ? 'futura' : 'passada';
+                              }
                             }
                           }
-                        }
 
-                        if (visibleKeys.length === 0 && !obs && !statusVenda && !hasConsultas) return null;
+                          if (visibleKeys.length === 0 && !obs && !statusVenda && !hasConsultas) return null;
 
-                        return (
-                          <div className="bg-zinc-50 dark:bg-zinc-900/40 rounded-xl 2xl:rounded-2xl p-3 2xl:p-4 border border-zinc-100 dark:border-zinc-800/30 mb-3 2xl:mb-4 space-y-2 2xl:space-y-3 shadow-inner dark:shadow-none [@media(max-height:850px)]:p-2 [@media(max-height:850px)]:mb-2">
-                            {consultaStatus === 'futura' && proximaConsultaData && (
-                              <div className="flex flex-col gap-1 mb-2">
-                                <span className="text-[10px] px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg font-black uppercase tracking-widest border border-blue-500/20 shadow-sm inline-block w-fit">
-                                  📅 Tem consulta marcada
-                                </span>
-                                <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-medium ml-1">
-                                  {proximaConsultaData.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} às {proximaConsultaData.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                              </div>
-                            )}
-                            {(consultaStatus === 'passada' || consultaStatus === 'multiplas') && (
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="text-[10px] px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg font-black uppercase tracking-widest border border-emerald-500/20 shadow-sm">
-                                  ✅ Já fez consultas conosco
-                                </span>
-                              </div>
-                            )}
+                          return (
+                            <div className="bg-zinc-50 dark:bg-zinc-900/40 rounded-xl 2xl:rounded-2xl p-3 2xl:p-4 border border-zinc-100 dark:border-zinc-800/30 mb-3 2xl:mb-4 space-y-2 2xl:space-y-3 shadow-inner dark:shadow-none [@media(max-height:850px)]:p-2 [@media(max-height:850px)]:mb-2">
+                              {consultaStatus === 'futura' && proximaConsultaData && (
+                                <div className="flex flex-col gap-1 mb-2">
+                                  <span className="text-[10px] px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg font-black uppercase tracking-widest border border-blue-500/20 shadow-sm inline-block w-fit">
+                                    📅 Tem consulta marcada
+                                  </span>
+                                  <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-medium ml-1">
+                                    {proximaConsultaData.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} às {proximaConsultaData.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              )}
+                              {(consultaStatus === 'passada' || consultaStatus === 'multiplas') && (
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-[10px] px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg font-black uppercase tracking-widest border border-emerald-500/20 shadow-sm">
+                                    ✅ Já fez consultas conosco
+                                  </span>
+                                </div>
+                              )}
 
-                            {visibleKeys.length > 0 && (
-                              <div className="grid grid-cols-2 gap-3">
-                                {visibleKeys.map(key => {
-                                  const config = getIcon(key);
-                                  const value = d[key];
-                                  const k = key.toLowerCase();
+                              {visibleKeys.length > 0 && (
+                                <div className="grid grid-cols-2 gap-3">
+                                  {visibleKeys.map(key => {
+                                    const config = getIcon(key);
+                                    const value = d[key];
+                                    const k = key.toLowerCase();
 
-                                  // Mascarar CPF com asteriscos (***.***.***-**)
-                                  let displayValue: string;
-                                  if (k.includes('cpf')) {
-                                    displayValue = '***.***.***-**';
-                                  } else {
-                                    displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
-                                  }
+                                    // Mascarar CPF com asteriscos (***.***.***-**)
+                                    let displayValue: string;
+                                    if (k.includes('cpf')) {
+                                      displayValue = '***.***.***-**';
+                                    } else {
+                                      displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                                    }
 
-                                  // Usar emoji para moto em vez de ícone
-                                  const isMoto = k.includes('moto') || (k.includes('tipo') && k.includes('veiculo') && String(value).toLowerCase().includes('moto'));
+                                    // Usar emoji para moto em vez de ícone
+                                    const isMoto = k.includes('moto') || (k.includes('tipo') && k.includes('veiculo') && String(value).toLowerCase().includes('moto'));
+
+                                    return (
+                                      <div key={key} className="flex items-center gap-2 overflow-hidden">
+                                        {isMoto ? (
+                                          <span className="text-[12px]">🏍️</span>
+                                        ) : (
+                                          <config.icon size={12} className={`${config.color} shrink-0`} />
+                                        )}
+                                        <div className="flex flex-col">
+                                          <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter opacity-70">{formatLabel(key)}</span>
+                                          <span className="text-[10px] text-zinc-800 dark:text-zinc-300 font-bold truncate leading-tight">
+                                            {displayValue}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {obs && (
+                                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800/40">
+                                  <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter block mb-1">Observações</span>
+                                  <p className="text-[10px] text-zinc-600 dark:text-zinc-400 leading-relaxed line-clamp-3 italic">
+                                    "{obs}"
+                                  </p>
+                                </div>
+                              )}
+
+                              {statusVenda && (
+                                <div className="pt-2">
+                                  <span className="text-[9px] px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg font-black uppercase tracking-widest border border-indigo-500/20">
+                                    {statusVenda.replace(/_/g, ' ')}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Horizontal Timeline - Hidden on small heights */}
+                      <div className="[@media(max-height:800px)]:hidden">
+                        {(leadsHistory[lead.id] || []).length > 0 && (
+                          <div className="mt-3 [@media(max-height:800px)]:mt-2 mb-4 [@media(max-height:800px)]:mb-2 px-1">
+                            <div className="flex items-center gap-2 mb-3">
+                              <GitCommit size={12} className="text-zinc-600" />
+                              <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Jornada do Lead</span>
+                            </div>
+                            <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                              <div className="flex items-center gap-2 min-w-max">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex flex-col items-center gap-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-zinc-800 border-2 border-zinc-700 shadow-inner"></div>
+                                    <span className="text-[8px] text-zinc-600 font-bold uppercase">Entrada</span>
+                                  </div>
+                                  <div className="w-6 h-[2px] bg-gradient-to-r from-zinc-800 to-zinc-800/20 mt-[-14px]"></div>
+                                </div>
+
+                                {(leadsHistory[lead.id] || []).slice().reverse().map((step, idx, arr) => {
+                                  const stepColIndex = columns.findIndex(c => c.id === step.to_column_id);
+                                  const dotColor = stepColIndex !== -1 ? BORDER_COLORS[stepColIndex % BORDER_COLORS.length] : '#52525b';
 
                                   return (
-                                    <div key={key} className="flex items-center gap-2 overflow-hidden">
-                                      {isMoto ? (
-                                        <span className="text-[12px]">🏍️</span>
-                                      ) : (
-                                        <config.icon size={12} className={`${config.color} shrink-0`} />
-                                      )}
-                                      <div className="flex flex-col">
-                                        <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter opacity-70">{formatLabel(key)}</span>
-                                        <span className="text-[10px] text-zinc-800 dark:text-zinc-300 font-bold truncate leading-tight">
-                                          {displayValue}
+                                    <React.Fragment key={step.id}>
+                                      <div className="flex flex-col items-center gap-1.5">
+                                        <div
+                                          className="w-2.5 h-2.5 rounded-full border-2 border-zinc-900 shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                                          style={{ backgroundColor: dotColor }}
+                                        ></div>
+                                        <span className="text-[8px] text-zinc-400 font-bold uppercase truncate max-w-[65px]">
+                                          {step.to_column?.name || 'Status'}
                                         </span>
                                       </div>
-                                    </div>
+                                      {idx < arr.length - 1 && (
+                                        <div className="w-6 h-[2px] bg-zinc-800/50 mt-[-14px]"></div>
+                                      )}
+                                    </React.Fragment>
                                   );
                                 })}
                               </div>
-                            )}
-
-                            {obs && (
-                              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800/40">
-                                <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter block mb-1">Observações</span>
-                                <p className="text-[10px] text-zinc-600 dark:text-zinc-400 leading-relaxed line-clamp-3 italic">
-                                  "{obs}"
-                                </p>
-                              </div>
-                            )}
-
-                            {statusVenda && (
-                              <div className="pt-2">
-                                <span className="text-[9px] px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg font-black uppercase tracking-widest border border-indigo-500/20">
-                                  {statusVenda.replace(/_/g, ' ')}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-
-                      {/* Horizontal Timeline */}
-                      {(leadsHistory[lead.id] || []).length > 0 && (
-                        <div className="mt-4 mb-5 px-1">
-                          <div className="flex items-center gap-2 mb-3">
-                            <GitCommit size={12} className="text-zinc-600" />
-                            <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Jornada do Lead</span>
-                          </div>
-                          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                            <div className="flex items-center gap-2 min-w-max">
-                              <div className="flex items-center gap-2">
-                                <div className="flex flex-col items-center gap-1.5">
-                                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-800 border-2 border-zinc-700 shadow-inner"></div>
-                                  <span className="text-[8px] text-zinc-600 font-bold uppercase">Entrada</span>
-                                </div>
-                                <div className="w-6 h-[2px] bg-gradient-to-r from-zinc-800 to-zinc-800/20 mt-[-14px]"></div>
-                              </div>
-
-                              {(leadsHistory[lead.id] || []).slice().reverse().map((step, idx, arr) => {
-                                const stepColIndex = columns.findIndex(c => c.id === step.to_column_id);
-                                const dotColor = stepColIndex !== -1 ? BORDER_COLORS[stepColIndex % BORDER_COLORS.length] : '#52525b';
-
-                                return (
-                                  <React.Fragment key={step.id}>
-                                    <div className="flex flex-col items-center gap-1.5">
-                                      <div
-                                        className="w-2.5 h-2.5 rounded-full border-2 border-zinc-900 shadow-[0_0_10px_rgba(0,0,0,0.5)]"
-                                        style={{ backgroundColor: dotColor }}
-                                      ></div>
-                                      <span className="text-[8px] text-zinc-400 font-bold uppercase truncate max-w-[65px]">
-                                        {step.to_column?.name || 'Status'}
-                                      </span>
-                                    </div>
-                                    {idx < arr.length - 1 && (
-                                      <div className="w-6 h-[2px] bg-zinc-800/50 mt-[-14px]"></div>
-                                    )}
-                                  </React.Fragment>
-                                );
-                              })}
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
 
-                      <div className="flex items-center justify-between mt-auto pt-4 border-t border-zinc-800/30">
+                      <div className="flex items-center justify-between mt-auto pt-3 [@media(max-height:800px)]:pt-2 border-t border-zinc-800/30">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-1.5 text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/10">
                             <MessageSquare size={12} />

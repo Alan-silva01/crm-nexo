@@ -51,20 +51,20 @@ const DashboardClock = () => {
 };
 
 const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) => (
-  <div className="bg-[#0c0c0e] border border-zinc-800/50 p-4 rounded-[1.5rem] shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316] hover:border-zinc-700/50 transition-all group">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`p-2.5 rounded-xl ${color} bg-opacity-10 text-${color.split('-')[1]}-400 shadow-inner`}>
-        <Icon size={18} />
+  <div className="bg-[#0c0c0e] border border-zinc-800/50 p-4 [@media(max-height:800px)]:p-2.5 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316] hover:border-zinc-700/50 transition-all group">
+    <div className="flex justify-between items-start mb-3 [@media(max-height:800px)]:mb-2">
+      <div className={`p-2 [@media(max-height:800px)]:p-1.5 rounded-xl [@media(max-height:800px)]:rounded-lg ${color} bg-opacity-10 text-${color.split('-')[1]}-400 shadow-inner`}>
+        <Icon size={16} className="[@media(max-height:800px)]:w-3.5 [@media(max-height:800px)]:h-3.5" />
       </div>
-      <button className="text-zinc-600 hover:text-zinc-400 p-1 hover:bg-zinc-800/50 rounded-lg transition-colors">
-        <MoreHorizontal size={16} />
+      <button className="text-zinc-600 hover:text-zinc-400 p-1 hover:bg-zinc-800/50 rounded-lg transition-colors [@media(max-height:800px)]:hidden">
+        <MoreHorizontal size={14} />
       </button>
     </div>
     <div>
-      <p className="text-zinc-500 text-[9px] uppercase font-bold tracking-widest mb-1.5">{title}</p>
+      <p className="text-zinc-500 text-[9px] [@media(max-height:800px)]:text-[8px] uppercase font-bold tracking-widest mb-1">{title}</p>
       <div className="flex items-end gap-2">
-        <h3 className="text-2xl font-bold tracking-tight">{value}</h3>
-        <span className={`flex items-center text-[10px] mb-1 font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'} px-2 py-0.5 bg-zinc-900/50 rounded-full border border-zinc-800/50`}>
+        <h3 className="text-xl [@media(max-height:800px)]:text-lg font-bold tracking-tight">{value}</h3>
+        <span className={`flex items-center text-[10px] [@media(max-height:800px)]:text-[9px] mb-0.5 font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'} px-1.5 py-0.5 bg-zinc-900/50 rounded-full border border-zinc-800/50`}>
           {isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
           {change}
         </span>
@@ -278,10 +278,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
 
   return (
     <div className="p-4 2xl:p-6 h-full flex flex-col space-y-3 2xl:space-y-4 overflow-hidden [@media(max-height:850px)]:p-3 [@media(max-height:850px)]:space-y-2">
-      <header className="flex justify-between items-center shrink-0">
+      <header className="flex justify-between items-center shrink-0 [@media(max-height:800px)]:mb-1">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Dashboard de Performance</h1>
-          <p className="text-zinc-500 text-xs">Visão geral em tempo real dos seus leads e conversões.</p>
+          <h1 className="text-xl [@media(max-height:800px)]:text-lg font-bold tracking-tight">Dashboard de Performance</h1>
+          <p className="text-zinc-500 text-xs [@media(max-height:800px)]:text-[10px] [@media(max-height:800px)]:hidden">Visão geral em tempo real dos seus leads e conversões.</p>
         </div>
         <div className="flex gap-4">
           <DashboardClock />
@@ -303,10 +303,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
-        <div className="col-span-2 bg-[#0c0c0e] border border-zinc-800/50 p-6 rounded-[2rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
-          <div className="flex justify-between items-center mb-6 shrink-0">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2 border-l-4 border-indigo-500">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 [@media(max-height:800px)]:gap-3 flex-1 min-h-0">
+        <div className="col-span-2 bg-[#0c0c0e] border border-zinc-800/50 p-4 [@media(max-height:800px)]:p-3 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
+          <div className="flex justify-between items-center mb-4 [@media(max-height:800px)]:mb-2 shrink-0">
+            <h3 className="text-[10px] [@media(max-height:800px)]:text-[9px] font-bold text-zinc-400 uppercase tracking-widest pl-2 border-l-4 border-indigo-500">
               Fluxo Estratégico
             </h3>
             <div className="flex items-center gap-4">
@@ -358,11 +358,11 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
           </div>
         </div>
 
-        <div className="bg-[#0c0c0e] border border-zinc-800/50 p-6 rounded-[2rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
-          <h3 className="text-xs font-bold text-zinc-400 mb-4 uppercase tracking-widest pl-2 border-l-4 border-indigo-500 shrink-0">
+        <div className="bg-[#0c0c0e] border border-zinc-800/50 p-4 [@media(max-height:800px)]:p-3 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
+          <h3 className="text-[10px] [@media(max-height:800px)]:text-[9px] font-bold text-zinc-400 mb-2 uppercase tracking-widest pl-2 border-l-4 border-indigo-500 shrink-0">
             Distribuição por Status
           </h3>
-          <div className="flex-1 w-full min-h-0" style={{ minHeight: '150px' }}>
+          <div className="flex-1 w-full min-h-0" style={{ minHeight: '120px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -407,7 +407,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
           </div>
 
           {/* Custom Grid Legend - Two equal columns with scroll if many items */}
-          <div className="mt-2 shrink-0 max-h-32 overflow-y-auto custom-scrollbar pr-1">
+          <div className="mt-1 shrink-0 max-h-24 [@media(max-height:800px)]:max-h-16 overflow-y-auto custom-scrollbar pr-1">
             <div className="flex">
               {/* Left column - centered in its 50% */}
               <div className="w-1/2 flex justify-center border-r border-zinc-800/20">
@@ -447,18 +447,18 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
             </div>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-zinc-800/50 flex justify-between shrink-0">
+          <div className="mt-2 [@media(max-height:800px)]:mt-1 pt-2 [@media(max-height:800px)]:pt-1 border-t border-zinc-800/50 flex justify-between shrink-0">
             <div className="text-center group">
-              <p className="text-[9px] text-zinc-500 uppercase tracking-tighter font-bold">Conv.</p>
-              <p className="text-lg font-bold text-emerald-400">{conversionRate}%</p>
+              <p className="text-[9px] [@media(max-height:800px)]:text-[8px] text-zinc-500 uppercase tracking-tighter font-bold">Conv.</p>
+              <p className="text-base [@media(max-height:800px)]:text-sm font-bold text-emerald-400">{conversionRate}%</p>
             </div>
             <div className="text-center group">
-              <p className="text-[9px] text-zinc-500 uppercase tracking-tighter font-bold">Rejeição</p>
-              <p className="text-lg font-bold text-rose-400">{rejectionRate}%</p>
+              <p className="text-[9px] [@media(max-height:800px)]:text-[8px] text-zinc-500 uppercase tracking-tighter font-bold">Rejeição</p>
+              <p className="text-base [@media(max-height:800px)]:text-sm font-bold text-rose-400">{rejectionRate}%</p>
             </div>
             <div className="text-center group">
-              <p className="text-[9px] text-zinc-500 uppercase tracking-tighter font-bold">Tempo</p>
-              <p className="text-lg font-bold text-indigo-400">{responseTime}s</p>
+              <p className="text-[9px] [@media(max-height:800px)]:text-[8px] text-zinc-500 uppercase tracking-tighter font-bold">Tempo</p>
+              <p className="text-base [@media(max-height:800px)]:text-sm font-bold text-indigo-400">{responseTime}s</p>
             </div>
           </div>
         </div>
