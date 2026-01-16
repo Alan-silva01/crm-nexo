@@ -1,10 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#6366f1"/>
-      <stop offset="100%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#4f46e5"/>
     </linearGradient>
   </defs>
-  <rect width="32" height="32" rx="6" fill="#09090b"/>
-  <text x="16" y="23" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="url(#grad)" text-anchor="middle">N</text>
+  <rect width="32" height="32" rx="10" fill="url(#shieldGrad)"/>
+  <path d="M16 7L9 10V16C9 21 16 25 16 25C16 25 23 21 23 16V10L16 7Z" fill="white" fill-opacity="0.2"/>
+  <path d="M16 9L11 11V16C11 19.5 16 23 16 23C16 23 21 19.5 21 16V11L16 9Z" fill="white"/>
+  <path d="M16 12L13.5 13V16C13.5 18 16 20.5 16 20.5V12Z" fill="white" fill-opacity="0.5"/>
 </svg>

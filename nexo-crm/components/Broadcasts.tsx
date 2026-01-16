@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // v2
 import { Send, Image as ImageIcon, Music, Clock, Calendar as CalendarIcon, AlertCircle, Loader2, CheckCircle2, Save, Trash2, FileText, Mic, X } from 'lucide-react';
 import AudioRecorder from './AudioRecorder';
 import { Lead } from '../types';
@@ -294,47 +294,57 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
                                 )}
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-4">
                                 <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                                     <Music size={12} className="text-indigo-400" />
-                                    Áudio (Opcional)
+                                    Conteúdo em Áudio (Opcional)
                                 </label>
-                                <div className="relative group">
-                                    <input
-                                        type="file"
-                                        accept="audio/*"
-                                        onChange={handleAudioChange}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                    />
-                                    <div className="px-4 py-3 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl border-dashed flex items-center gap-3 transition-colors group-hover:border-indigo-500/50">
-                                        <div className="p-2 bg-zinc-800 rounded-lg text-zinc-400">
-                                            <Music size={14} />
+
+                                {!isRecordingAudio && !selectedAudio ? (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="relative group">
+                                            <input
+                                                type="file"
+                                                accept="audio/*"
+                                                onChange={handleAudioChange}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            />
+                                            <div className="h-24 px-4 flex flex-col items-center justify-center gap-2 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl border-dashed transition-all group-hover:bg-zinc-800/40 group-hover:border-indigo-500/50">
+                                                <div className="p-2 bg-zinc-800/50 rounded-xl text-zinc-500 group-hover:text-indigo-400 transition-colors">
+                                                    <Music size={18} />
+                                                </div>
+                                                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Subir Arquivo</span>
+                                            </div>
                                         </div>
-                                        <span className="text-xs text-zinc-500 truncate">
-                                            {selectedAudio ? selectedAudio.name : 'Selecionar áudio...'}
-                                        </span>
-                                        {selectedAudio && (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); setSelectedAudio(null); }}
-                                                className="ml-auto p-1 hover:bg-zinc-800 rounded-md text-zinc-500 hover:text-rose-500 transition-colors"
-                                            >
-                                                <X size={14} />
-                                            </button>
-                                        )}
+
+                                        <button
+                                            onClick={() => setIsRecordingAudio(true)}
+                                            className="h-24 px-4 flex flex-col items-center justify-center gap-2 bg-indigo-600/5 border border-indigo-500/20 rounded-2xl border-dashed transition-all hover:bg-indigo-600/10 hover:border-indigo-500/40 group"
+                                        >
+                                            <div className="p-2 bg-indigo-600/10 rounded-xl text-indigo-400 group-hover:scale-110 transition-transform">
+                                                <Mic size={18} />
+                                            </div>
+                                            <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Gravar Agora</span>
+                                        </button>
                                     </div>
-                                </div>
-
-                                {!isRecordingAudio && !selectedAudio && (
-                                    <button
-                                        onClick={() => setIsRecordingAudio(true)}
-                                        className="w-full px-4 py-3 bg-indigo-600/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center gap-3 text-indigo-400 hover:bg-indigo-600/20 transition-all font-bold uppercase tracking-widest text-[10px]"
-                                    >
-                                        <Mic size={14} />
-                                        Gravar Áudio agora
-                                    </button>
-                                )}
-
-                                {isRecordingAudio && (
+                                ) : selectedAudio ? (
+                                    <div className="px-4 py-3 bg-indigo-600/10 border border-indigo-500/20 rounded-2xl flex items-center gap-3 animate-in zoom-in-95">
+                                        <div className="p-2 bg-indigo-600/20 rounded-xl text-indigo-400">
+                                            <Music size={16} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest truncate">Áudio Selecionado</p>
+                                            <p className="text-xs text-zinc-400 truncate">{selectedAudio.name}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setSelectedAudio(null)}
+                                            className="p-2 hover:bg-zinc-800 rounded-xl text-zinc-500 hover:text-rose-500 transition-all"
+                                            title="Remover Áudio"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
                                     <AudioRecorder
                                         onRecordComplete={(file) => {
                                             setSelectedAudio(file);
