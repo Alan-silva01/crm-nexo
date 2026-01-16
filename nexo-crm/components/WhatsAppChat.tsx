@@ -188,6 +188,9 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       return;
     }
 
+    console.log('[WhatsAppChat] propChatTableName:', propChatTableName);
+    console.log('[WhatsAppChat] userType:', userType);
+
     if (!selectedChat?.phone) {
       console.log('[WhatsAppChat] ⏳ BLOCKED: No selectedChat phone');
       setSdrMessages([]);
@@ -208,21 +211,46 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       console.log('[WhatsAppChat] Proceeding with effectiveUserId available');
 
       // Usar chatTableName passado pelo App.tsx (evita RPC que pode travar)
-      let chatTableName = propChatTableName || 'chats_sdr';
+      let chatTableName = propChatTableName || '';
 
       if (propChatTableName) {
         console.log('[WhatsAppChat] ✅ Using chatTableName from props:', chatTableName);
       } else {
-        // Fallback: buscar via RPC se não foi passado
+        // Fallback 1: buscar via RPC se não foi passado
         console.log('[WhatsAppChat] No propChatTableName, trying RPC...');
         try {
           const { data: profileData, error: rpcError } = await supabase.rpc('get_effective_profile');
           if (!rpcError && profileData && profileData.length > 0) {
-            chatTableName = profileData[0].chat_table_name || 'chats_sdr';
+            chatTableName = profileData[0].chat_table_name || '';
             console.log('[WhatsAppChat] ✅ Chat table from RPC:', chatTableName);
           }
         } catch (e) {
           console.error('[WhatsAppChat] RPC failed:', e);
+        }
+
+        // Fallback 2: Se RPC falhou e temos effectiveUserId, buscar direto do profile
+        if (!chatTableName && effectiveUserId) {
+          console.log('[WhatsAppChat] Trying direct profile query for effectiveUserId:', effectiveUserId);
+          try {
+            const { data: profileDirect, error: profileError } = await supabase
+              .from('profiles')
+              .select('chat_table_name')
+              .eq('id', effectiveUserId)
+              .single();
+
+            if (!profileError && profileDirect?.chat_table_name) {
+              chatTableName = profileDirect.chat_table_name;
+              console.log('[WhatsAppChat] ✅ Chat table from direct query:', chatTableName);
+            }
+          } catch (e) {
+            console.error('[WhatsAppChat] Direct profile query failed:', e);
+          }
+        }
+
+        // Fallback 3: usar tabela padrão
+        if (!chatTableName) {
+          chatTableName = 'chats_sdr';
+          console.warn('[WhatsAppChat] ⚠️ Using default table: chats_sdr');
         }
       }
 
@@ -341,7 +369,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         supabase.removeChannel(subscription);
       }
     };
-  }, [selectedChat?.phone, effectiveUserId]);
+  }, [selectedChat?.phone, effectiveUserId, propChatTableName]);
 
   // Auto-scroll to bottom
   useEffect(() => {

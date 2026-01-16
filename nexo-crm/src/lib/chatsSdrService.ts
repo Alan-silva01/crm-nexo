@@ -126,7 +126,7 @@ export const chatsSdrService = {
         }
 
         const phoneNumbers = extractNumbers(phone);
-        console.log('Fetching chats from table:', tableName, 'for phone:', phone, 'limit:', limit, 'offset:', offset);
+        console.log('[chatsSdrService] Fetching chats from table:', tableName, 'for phone:', phone, 'limit:', limit, 'offset:', offset);
 
         // 2. Buscar chats da tabela específica do usuário com paginação
         // Ordenamos por ID descendente para pegar os mais recentes primeiro
@@ -137,8 +137,11 @@ export const chatsSdrService = {
             .order('id', { ascending: false })
             .range(offset, offset + limit - 1);
 
+        console.log('[chatsSdrService] Query 1 (exact match) result:', { found: data?.length || 0, error: error?.message });
+
         // Se não encontrar, tenta por números
         if ((!data || data.length === 0) && phoneNumbers) {
+            console.log('[chatsSdrService] Trying query 2 (like match) with:', phoneNumbers);
             const result = await supabase
                 .from(tableName)
                 .select('*', { count: 'exact' })
@@ -148,12 +151,13 @@ export const chatsSdrService = {
             data = result.data;
             error = result.error;
             count = result.count;
+            console.log('[chatsSdrService] Query 2 result:', { found: data?.length || 0, error: error?.message });
         }
 
-        console.log('Chats found:', data?.length || 0, 'Total count:', count, error ? `Error: ${error.message}` : '');
+        console.log('[chatsSdrService] Final - Chats found:', data?.length || 0, 'Total count:', count, error ? `Error: ${error.message}` : '');
 
         if (error) {
-            console.error('Error fetching chats:', error);
+            console.error('[chatsSdrService] Error fetching chats:', error);
             return { messages: [], hasMore: false };
         }
 
