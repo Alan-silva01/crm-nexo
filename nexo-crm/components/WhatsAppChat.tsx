@@ -176,7 +176,13 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
   // Fetch SDR messages when chat changes (with Cache and Realtime)
   useEffect(() => {
-    console.log('[WhatsAppChat] useEffect triggered. selectedChat:', selectedChat?.name, 'phone:', selectedChat?.phone, 'leads count:', leads.length);
+    console.log('[WhatsAppChat] useEffect triggered. selectedChat:', selectedChat?.name, 'phone:', selectedChat?.phone, 'leads count:', leads.length, 'effectiveUserId:', effectiveUserId);
+
+    // Aguardar auth estar pronta (effectiveUserId disponível)
+    if (!effectiveUserId) {
+      console.log('[WhatsAppChat] Waiting for auth to be ready (effectiveUserId is null)');
+      return;
+    }
 
     if (!selectedChat?.phone) {
       console.log('[WhatsAppChat] No selectedChat or no phone, clearing messages');
@@ -327,7 +333,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         supabase.removeChannel(subscription);
       }
     };
-  }, [selectedChat?.phone]);
+  }, [selectedChat?.phone, effectiveUserId]);
 
   // Auto-scroll to bottom
   useEffect(() => {
