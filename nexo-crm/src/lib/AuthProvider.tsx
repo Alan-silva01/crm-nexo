@@ -189,11 +189,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
         });
 
-        // Fallback imediato
+        // Initialize session
         supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
             if (isMounted && !initialized) {
                 initializeAuth(initialSession);
             }
+        }).catch(err => {
+            console.error('AuthProvider: getSession error:', err);
+            if (isMounted) setLoading(false);
         });
 
         return () => {

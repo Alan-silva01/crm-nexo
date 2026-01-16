@@ -107,7 +107,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const MESSAGE_PAGE_SIZE = 50;
 
   // Tenant Users (atendentes)
-  const { userType, atendenteInfo, effectiveUserId, tenantId, userInfo, signOut } = useAuth();
+  const { userType, atendenteInfo, effectiveUserId, tenantId, userInfo, signOut, session } = useAuth();
   const [tenantMembers, setTenantMembers] = useState<TenantUser[]>([]);
   const [showAssignDropdown, setShowAssignDropdown] = useState(false);
   const [currentAssignment, setCurrentAssignment] = useState<TenantUser | null>(null);
@@ -202,29 +202,17 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     let subscription: any = null;
 
     const fetchMessages = async () => {
+      const startTimeFetch = Date.now();
       console.log('[WhatsAppChat] 📞 fetchMessages() CALLED');
 
-      // IMPORTANTE: Aguardar sessão estar completamente restaurada após refresh
-      // Isso garante que auth.uid() funcione no lado do servidor (RLS)
-      let sessionReady = false;
-      let retries = 5;
-      while (!sessionReady && retries > 0) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          sessionReady = true;
-          console.log('[WhatsAppChat] ✅ Session ready, access_token available');
-        } else {
-          retries--;
-          console.log('[WhatsAppChat] ⏳ Waiting for session...', 5 - retries, '/5');
-          await new Promise(r => setTimeout(r, 300));
-        }
-      }
-
-      if (!sessionReady) {
-        console.error('[WhatsAppChat] ❌ Session not ready after retries!');
-        setLoadingMessages(false);
+      // IMPORTANTE: Usar a sessão do contexto que já foi validada
+      if (!session?.access_token) {
+        console.log('[WhatsAppChat] ⏳ Session not ready in context, skipping fetchMessages');
+        if (isMounted) setLoadingMessages(false);
         return;
       }
+
+      console.log('[WhatsAppChat] ✅ Session available (user: ' + session.user.id + ')');
 
       const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
       const cacheKey = phoneNumbers || selectedChat.phone;

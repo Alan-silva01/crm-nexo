@@ -209,26 +209,13 @@ const AppContent: React.FC = () => {
         const rid = Math.random().toString(36).substring(7);
         console.log(`[${rid}] App fetchData starting for ${effectiveUserId}...`);
 
-        // CRITICAL: Aguardar sessão estar 100% pronta antes de fazer queries
-        // Isso previne falhas de RLS que dependem de auth.uid()
-        let sessionReady = false;
-        let retries = 10;
-        while (!sessionReady && retries > 0) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.access_token && session?.user?.id) {
-            sessionReady = true;
-            console.log(`[${rid}] ✅ Session ready (user: ${session.user.id})`);
-          } else {
-            retries--;
-            console.log(`[${rid}] ⏳ Waiting for session... (${10 - retries}/10)`);
-            await new Promise(r => setTimeout(r, 300));
-          }
-        }
-
-        if (!sessionReady) {
-          console.error(`[${rid}] ❌ Session not ready after retries, aborting fetchData`);
+        // Usar a sessão do contexto que já foi validada pelo AuthProvider
+        if (!session?.access_token) {
+          console.log(`[${rid}] ⏳ Session not ready in context, waiting for next render...`);
           return;
         }
+
+        console.log(`[${rid}] ✅ Session confirmed available (user: ${session.user.id})`);
 
         // Fetch columns
         try {

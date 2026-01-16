@@ -64,23 +64,14 @@ export const tenantService = {
             let targetUserId = userId;
 
             if (!targetUserId) {
-                // Aguardar sessão estabilizar com retry
-                let sessionRetries = 5;
-                while (sessionRetries > 0) {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (session?.user) {
-                        targetUserId = session.user.id;
-                        break;
-                    }
-                    sessionRetries--;
-                    if (sessionRetries > 0) {
-                        console.log(`[${requestId}] Waiting for session... (${5 - sessionRetries}/5)`);
-                        await new Promise(r => setTimeout(r, 300));
-                    }
+                // Tenta pegar a sessão uma vez sem loop infinito
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user) {
+                    targetUserId = session.user.id;
                 }
 
                 if (!targetUserId) {
-                    console.log(`[${requestId}] No session found after retries`);
+                    console.log(`[${requestId}] No targetUserId found, skipping.`);
                     return null;
                 }
             }
