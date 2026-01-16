@@ -136,8 +136,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
       <div className="w-full max-w-md z-10">
         <div className="flex justify-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center shadow-2xl shadow-indigo-600/20">
-            <img src="/favicon.svg" alt="Nero Logo" className="w-8 h-8" />
+          <div className="bg-transparent">
+            <img src="/favicon.svg" alt="Nero Logo" className="w-12 h-12" />
           </div>
         </div>
 
