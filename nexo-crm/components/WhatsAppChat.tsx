@@ -203,24 +203,31 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const cacheKey = phoneNumbers || selectedChat.phone;
       console.log('[WhatsAppChat] cacheKey:', cacheKey);
 
-      // 0. Aguardar sessão Supabase estar disponível
-      console.log('[WhatsAppChat] Step 0: Waiting for Supabase session...');
-      let user = null;
-      let sessionRetries = 15;
-      while (!user && sessionRetries > 0) {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (authUser) {
-          user = authUser;
-          console.log('[WhatsAppChat] ✅ Session ready! User:', user.email);
-          break;
+      // Pequeno delay para deixar Supabase inicializar
+      await new Promise(r => setTimeout(r, 100));
+
+      // 0. Aguardar sessão Supabase usando getSession (mais rápido que getUser)
+      console.log('[WhatsAppChat] Step 0: Checking Supabase session...');
+      let session = null;
+      let sessionRetries = 20;
+      while (!session && sessionRetries > 0) {
+        try {
+          const { data } = await supabase.auth.getSession();
+          if (data.session) {
+            session = data.session;
+            console.log('[WhatsAppChat] ✅ Session ready! User:', session.user?.email);
+            break;
+          }
+        } catch (e) {
+          console.error('[WhatsAppChat] getSession error:', e);
         }
         sessionRetries--;
-        console.log(`[WhatsAppChat] ⏳ Session not ready, retry ${15 - sessionRetries}/15...`);
-        await new Promise(r => setTimeout(r, 400));
+        console.log(`[WhatsAppChat] ⏳ Session not ready, retry ${20 - sessionRetries}/20...`);
+        await new Promise(r => setTimeout(r, 300));
       }
 
-      if (!user) {
-        console.error('[WhatsAppChat] ❌ CRITICAL: No auth user after 15 retries!');
+      if (!session) {
+        console.error('[WhatsAppChat] ❌ CRITICAL: No session after 20 retries!');
         if (isMounted) setLoadingMessages(false);
         return;
       }
