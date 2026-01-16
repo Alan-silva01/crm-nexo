@@ -90,7 +90,34 @@ const AppContent: React.FC = () => {
   const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
-  // Restaurar columns do cache para evitar piscar no Kanban
+  // Load persisted selected chat when effectiveUserId is known
+  useEffect(() => {
+    if (effectiveUserId) {
+      const stored = localStorage.getItem(`nero_selected_chat_${effectiveUserId}`);
+      if (stored) setSelectedChatId(stored);
+    }
+  }, [effectiveUserId]);
+
+  // Persist selected chat per user
+  useEffect(() => {
+    if (selectedChatId && effectiveUserId) {
+      localStorage.setItem(`nero_selected_chat_${effectiveUserId}`, selectedChatId);
+    }
+  }, [selectedChatId, effectiveUserId]);
+
+  // If no chat selected yet and leads are loaded, select first lead
+  useEffect(() => {
+    if (!selectedChatId && leads.length > 0) {
+      setSelectedChatId(leads[0].id);
+    }
+  }, [leads, selectedChatId]);
+
+  // Reset selectedChatId if leads become empty
+  useEffect(() => {
+    if (leads.length === 0) {
+      setSelectedChatId(null);
+    }
+  }, [leads]);
   const [columns, setColumns] = useState<any[]>([]);
 
   // Restaurar history e columns quando effectiveUserId estiver disponível
