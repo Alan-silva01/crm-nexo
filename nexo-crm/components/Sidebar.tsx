@@ -13,7 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
-  Send
+  Send,
+  Tag
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -35,6 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
     { id: 'leads', icon: Users, label: 'Contatos' },
     { id: 'chats', icon: MessageSquare, label: 'Conversas' },
     { id: 'calendar', icon: Calendar, label: 'Calendário' },
+    { id: 'etiquetas', icon: Tag, label: 'Etiquetas' },
     { id: 'broadcasts', icon: Send, label: 'Disparos', permission: profile?.disparos },
     { id: 'analytics', icon: BarChart3, label: 'Relatórios' },
   ].filter(item => item.permission !== false);

@@ -8,6 +8,7 @@ import CalendarPage from './components/Calendar';
 import WhatsAppChat from './components/WhatsAppChat';
 import DetailedAnalytics from './components/DetailedAnalytics';
 import Broadcasts from './components/Broadcasts';
+import Labels from './components/Labels';
 import Settings from './components/Settings';
 import UserAvatar from './components/UserAvatar';
 import Auth from './components/Auth';
@@ -618,6 +619,8 @@ const AppContent: React.FC = () => {
         );
       case 'analytics':
         return <DetailedAnalytics leads={leads} onAction={handleAnalysisAction} />;
+      case 'etiquetas':
+        return <Labels />;
       case 'broadcasts':
         // Only redirect if profile is loaded AND disparos is explicitly false
         if (profile && profile.disparos === false) {

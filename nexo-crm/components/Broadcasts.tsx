@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Send, Image as ImageIcon, Music, Clock, Calendar as CalendarIcon, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { Lead } from '../types';
+import { tagsService, Tag } from '../src/lib/tagsService';
 
 interface BroadcastsProps {
     leads: Lead[];
@@ -17,6 +18,16 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [isSending, setIsSending] = useState(false);
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+
+    useEffect(() => {
+        loadTags();
+    }, []);
+
+    const loadTags = async () => {
+        const tags = await tagsService.listTags();
+        setAvailableTags(tags);
+    };
 
     const handleTagToggle = (tag: string) => {
         setSelectedTags(prev =>
@@ -226,18 +237,22 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                                 Filtrar por Etiquetas (Opcional)
                             </label>
                             <div className="flex flex-wrap gap-2">
-                                {['cliente', 'lead', 'agendado', 'sem interesse', 'importante', 'parceiro'].map((tag) => (
+                                {availableTags.map((tag) => (
                                     <button
-                                        key={tag}
-                                        onClick={() => handleTagToggle(tag)}
-                                        className={`px-4 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all ${selectedTags.includes(tag)
+                                        key={tag.id}
+                                        onClick={() => handleTagToggle(tag.name)}
+                                        className={`px-4 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all ${selectedTags.includes(tag.name)
                                             ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20'
                                             : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:border-indigo-500/30'
                                             }`}
+                                        style={selectedTags.includes(tag.name) ? { backgroundColor: tag.color, borderColor: tag.color } : {}}
                                     >
-                                        {tag}
+                                        {tag.name}
                                     </button>
                                 ))}
+                                {availableTags.length === 0 && (
+                                    <p className="text-[10px] text-zinc-600 italic">Crie etiquetas na aba "Etiquetas" para filtrar disparos.</p>
+                                )}
                             </div>
                             <p className="text-[10px] text-zinc-600">Selecione uma ou mais etiquetas para direcionar o disparo.</p>
                         </div>
