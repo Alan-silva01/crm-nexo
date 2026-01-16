@@ -203,12 +203,33 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     const fetchMessages = async () => {
       console.log('[WhatsAppChat] 📞 fetchMessages() CALLED');
 
+      // IMPORTANTE: Aguardar sessão estar completamente restaurada após refresh
+      // Isso garante que auth.uid() funcione no lado do servidor (RLS)
+      let sessionReady = false;
+      let retries = 5;
+      while (!sessionReady && retries > 0) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          sessionReady = true;
+          console.log('[WhatsAppChat] ✅ Session ready, access_token available');
+        } else {
+          retries--;
+          console.log('[WhatsAppChat] ⏳ Waiting for session...', 5 - retries, '/5');
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+
+      if (!sessionReady) {
+        console.error('[WhatsAppChat] ❌ Session not ready after retries!');
+        setLoadingMessages(false);
+        return;
+      }
+
       const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
       const cacheKey = phoneNumbers || selectedChat.phone;
       console.log('[WhatsAppChat] cacheKey:', cacheKey);
 
-      // Não esperar sessão - se effectiveUserId está disponível, auth está pronta
-      console.log('[WhatsAppChat] Proceeding with effectiveUserId available');
+      console.log('[WhatsAppChat] Proceeding with session ready');
 
       // Usar chatTableName passado pelo App.tsx (evita RPC que pode travar)
       let chatTableName = propChatTableName || '';
