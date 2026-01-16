@@ -277,7 +277,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
   };
 
   return (
-    <div className="p-6 h-full flex flex-col space-y-4 overflow-hidden">
+    <div className="p-4 2xl:p-6 h-full flex flex-col space-y-3 2xl:space-y-4 overflow-hidden [@media(max-height:850px)]:p-3 [@media(max-height:850px)]:space-y-2">
       <header className="flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Dashboard de Performance</h1>
@@ -287,7 +287,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
           <DashboardClock />
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+            className="flex items-center gap-2 px-4 2xl:px-6 py-2 bg-indigo-600 text-white rounded-xl text-[10px] 2xl:text-xs font-bold hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95 [@media(max-height:850px)]:py-1.5"
           >
             Exportar CSV
           </button>
@@ -295,7 +295,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
       </header>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-3 2xl:gap-4 shrink-0 [@media(max-height:850px)]:gap-2">
         <StatCard title="Total de Leads" value={totalLeads.toLocaleString()} change="+12.5%" isPositive={true} icon={Users} color="bg-blue-500" />
         <StatCard title="Novos Leads (24h)" value={newLeads.toLocaleString()} icon={PhoneCall} color="bg-amber-500" change="+4.2%" isPositive={true} />
         <StatCard title="Aguardando Decisão" value={leadsWaitingDecision.toLocaleString()} change="+5.4%" isPositive={true} icon={TrendingUp} color="bg-indigo-500" />
@@ -362,7 +362,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
           <h3 className="text-xs font-bold text-zinc-400 mb-4 uppercase tracking-widest pl-2 border-l-4 border-indigo-500 shrink-0">
             Distribuição por Status
           </h3>
-          <div className="flex-1 w-full min-h-0" style={{ minHeight: '200px' }}>
+          <div className="flex-1 w-full min-h-0" style={{ minHeight: '150px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

@@ -384,7 +384,7 @@ const Kanban: React.FC<KanbanProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col p-4 overflow-y-auto relative custom-scrollbar">
+    <div className="h-full flex flex-col p-4 2xl:p-6 overflow-y-auto relative custom-scrollbar [@media(max-height:850px)]:p-3">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-4">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Kanban de Leads</h1>
@@ -465,11 +465,11 @@ const Kanban: React.FC<KanbanProps> = ({
                     onDragStart={(e) => onDragStart(e, lead.id)}
                     onDragEnd={onDragEnd}
                     onClick={() => setDetailsModal({ isOpen: true, lead })}
-                    className={`bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/40 rounded-[2rem] cursor-pointer active:cursor-grabbing hover:border-indigo-200 dark:hover:border-zinc-700/50 transition-all duration-300 shadow-[10px_10px_30px_rgba(0,0,0,0.05)] dark:shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316] relative overflow-hidden group/card
+                    className={`bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/40 rounded-[1.5rem] 2xl:rounded-[2rem] cursor-pointer active:cursor-grabbing hover:border-indigo-200 dark:hover:border-zinc-700/50 transition-all duration-300 shadow-[10px_10px_30px_rgba(0,0,0,0.05)] dark:shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316] relative overflow-hidden group/card
                       ${draggingId === lead.id ? 'dragging ring-2 ring-indigo-500/50 scale-[1.02]' : ''}`}
                   >
-                    <div className="p-6">
-                      <div className="flex justify-between items-start mb-4">
+                    <div className="p-4 2xl:p-6 [@media(max-height:850px)]:p-3">
+                      <div className="flex justify-between items-start mb-3 2xl:mb-4 [@media(max-height:850px)]:mb-2">
                         <div className="flex items-center gap-4">
                           <div className="relative">
                             <LetterAvatar name={getLeadDisplayName(lead)} size="lg" />
@@ -583,7 +583,7 @@ const Kanban: React.FC<KanbanProps> = ({
                         if (visibleKeys.length === 0 && !obs && !statusVenda && !hasConsultas) return null;
 
                         return (
-                          <div className="bg-zinc-50 dark:bg-zinc-900/40 rounded-2xl p-4 border border-zinc-100 dark:border-zinc-800/30 mb-4 space-y-3 shadow-inner dark:shadow-none">
+                          <div className="bg-zinc-50 dark:bg-zinc-900/40 rounded-xl 2xl:rounded-2xl p-3 2xl:p-4 border border-zinc-100 dark:border-zinc-800/30 mb-3 2xl:mb-4 space-y-2 2xl:space-y-3 shadow-inner dark:shadow-none [@media(max-height:850px)]:p-2 [@media(max-height:850px)]:mb-2">
                             {consultaStatus === 'futura' && proximaConsultaData && (
                               <div className="flex flex-col gap-1 mb-2">
                                 <span className="text-[10px] px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg font-black uppercase tracking-widest border border-blue-500/20 shadow-sm inline-block w-fit">
