@@ -138,11 +138,27 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
         ...(userType === 'admin' ? [{ id: 'equipe' as const, label: 'Equipe', icon: Users }] : [])
     ];
 
+    const handleClearCache = () => {
+        if (confirm('Isso vai limpar todo o cache do app e recarregar a página. Deseja continuar?')) {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.reload();
+        }
+    };
+
     return (
         <div className="p-8 h-full overflow-y-auto space-y-8 custom-scrollbar">
-            <header>
-                <h1 className="text-2xl font-semibold tracking-tight">Ajustes</h1>
-                <p className="text-zinc-500 text-sm">Gerencie seu perfil e segurança da conta.</p>
+            <header className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-semibold tracking-tight">Ajustes</h1>
+                    <p className="text-zinc-500 text-sm">Gerencie seu perfil e segurança da conta.</p>
+                </div>
+                <button
+                    onClick={handleClearCache}
+                    className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-sm font-medium transition-all"
+                >
+                    Limpar Cache
+                </button>
             </header>
 
             {/* Tabs */}
