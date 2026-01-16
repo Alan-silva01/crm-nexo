@@ -723,6 +723,10 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
             const searchClean = search.replace(/\D/g, '');
 
             return name.includes(search) || (searchClean && phone.includes(searchClean));
+          }).sort((a, b) => {
+            const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
+            const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
+            return timeB - timeA;
           }).map(chat => (
             <button
               key={chat.id}
