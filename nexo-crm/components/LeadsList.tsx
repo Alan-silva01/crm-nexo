@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, Download, UserPlus, Users, Database, Tag as TagIcon, Plus, X, Check, Trash2, Loader2, CheckSquare, Square } from 'lucide-react';
+import { Search, Filter, Download, UserPlus, Users, Database, Tag as TagIcon, Plus, X, Check, Trash2, Loader2, CheckSquare, Square, AlertTriangle } from 'lucide-react';
 import { Lead, getLeadDisplayName } from '../types';
 import { leadsService } from '../src/lib/leadsService';
 import { tagsService, Tag } from '../src/lib/tagsService';
@@ -26,6 +26,8 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
   const [newLead, setNewLead] = useState({ name: '', phone: '' });
   const [isCreating, setIsCreating] = useState(false);
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadTags();
@@ -103,9 +105,27 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
     }
   };
 
+  const handleDeleteIndividual = async () => {
+    if (!leadToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await leadsService.deleteLead(leadToDelete.id);
+      if (onLeadsUpdate) {
+        onLeadsUpdate(filteredLeads.filter(l => l.id !== leadToDelete.id));
+      }
+      setLeadToDelete(null);
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLead.name || !newLead.phone) return;
+    if (isCreating) return; // Prevent multiple clicks
 
     setIsCreating(true);
     try {
@@ -125,12 +145,14 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
         tags: []
       });
 
-      if (created && onLeadsUpdate) {
-        onLeadsUpdate([created, ...filteredLeads]);
+      if (created) {
+        if (onLeadsUpdate) {
+          onLeadsUpdate([created, ...filteredLeads]);
+        }
         setNewLead({ name: '', phone: '' });
         setShowNewLeadForm(false);
-      } else if (!created) {
-        alert('Erro ao criar contato. Verifique os dados.');
+      } else {
+        alert('Erro ao criar contato. Verifique os dados ou se o contato já existe.');
       }
     } catch (error) {
       console.error('Error creating lead:', error);
@@ -197,7 +219,10 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
             Exportar CSV
           </button>
           <button
-            onClick={() => setShowNewLeadForm(true)}
+            onClick={() => {
+              setNewLead({ name: '', phone: '' });
+              setShowNewLeadForm(true);
+            }}
             className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 rounded-xl text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
           >
             <UserPlus size={14} />
@@ -212,7 +237,15 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
           <div className="bg-[#0c0c0e] border border-zinc-800 rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-white uppercase tracking-widest">Novo Contato</h2>
-              <button onClick={() => setShowNewLeadForm(false)} className="text-zinc-500 hover:text-white"><X size={20} /></button>
+              <button
+                onClick={() => {
+                  setShowNewLeadForm(false);
+                  setNewLead({ name: '', phone: '' });
+                }}
+                className="text-zinc-500 hover:text-white"
+              >
+                <X size={20} />
+              </button>
             </div>
             <form onSubmit={handleCreateLead} className="space-y-6">
               <div className="space-y-2">
@@ -224,6 +257,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                   className="w-full px-5 py-3.5 bg-zinc-900/50 border border-zinc-800 rounded-2xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                   placeholder="Ex: João Silva"
                   required
+                  autoFocus
                 />
               </div>
               <div className="space-y-2">
@@ -245,6 +279,40 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                 {isCreating ? <Loader2 size={16} className="animate-spin" /> : <><Check size={16} /> Salvar Contato</>}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      {leadToDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0c0c0e] border border-zinc-800 rounded-[2rem] w-full max-w-sm p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="p-4 bg-rose-500/10 rounded-full border border-rose-500/20">
+                <AlertTriangle size={32} className="text-rose-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white uppercase tracking-widest">Excluir Contato?</h3>
+                <p className="text-zinc-500 text-xs mt-2 leading-relaxed">
+                  Tem certeza que deseja excluir <strong>{getLeadDisplayName(leadToDelete)}</strong>? Esta ação não pode ser desfeita.
+                </p>
+              </div>
+              <div className="flex w-full gap-3 mt-4">
+                <button
+                  onClick={() => setLeadToDelete(null)}
+                  className="flex-1 py-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteIndividual}
+                  disabled={isDeleting}
+                  className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-rose-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? <Loader2 size={12} className="animate-spin" /> : "Excluir"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -465,6 +533,13 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                         className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] font-bold text-zinc-400 hover:text-white hover:border-emerald-500/30 transition-all shadow-lg active:scale-95 uppercase tracking-tighter"
                       >
                         Ver Conversa
+                      </button>
+                      <button
+                        onClick={() => setLeadToDelete(lead)}
+                        className="p-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-500 hover:text-rose-500 hover:border-rose-500/30 transition-all shadow-lg active:scale-95"
+                        title="Excluir Contato"
+                      >
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </td>
