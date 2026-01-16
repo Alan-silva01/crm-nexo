@@ -464,7 +464,16 @@ const AppContent: React.FC = () => {
     const lower = query.toLowerCase();
     const queryDigits = query.replace(/\D/g, '');
 
+    // Check if query exactly matches a tag name (for precise tag filtering)
+    const isExactTagMatch = tags.some(t => t.name.toLowerCase() === lower);
+
     return safeLeads.filter(l => {
+      // If searching for an exact tag, only match leads that have that tag
+      if (isExactTagMatch) {
+        return l.tags && l.tags.some(tag => tag.toLowerCase() === lower);
+      }
+
+      // Otherwise, do general text search
       // 1. Text Search (Name, Email, Status, Company, Last Message)
       const matchesText =
         (l.name && l.name.toLowerCase().includes(lower)) ||
