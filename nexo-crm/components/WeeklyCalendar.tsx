@@ -63,24 +63,24 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onDateChange }) => {
     };
 
     return (
-        <div className="glass rounded-xl p-1.5 2xl:p-2 mb-3 2xl:mb-4 border border-zinc-800/40 w-full overflow-hidden [@media(max-height:850px)]:mb-2 [@media(max-height:850px)]:p-1">
-            <div className="flex items-center justify-between mb-1.5 2xl:mb-2 px-2 [@media(max-height:850px)]:mb-1">
+        <div className="glass rounded-xl p-1.5 2xl:p-2 mb-3 2xl:mb-4 border border-zinc-800/40 w-full overflow-hidden [@media(max-height:800px)]:mb-1 [@media(max-height:800px)]:p-0.5">
+            <div className="flex items-center justify-between mb-1 2xl:mb-2 px-2 [@media(max-height:800px)]:mb-0.5 [@media(max-height:800px)]:px-1">
                 <div className="flex items-center gap-1.5 text-zinc-400">
-                    <CalendarIcon size={12} className="text-indigo-400 opacity-60" />
-                    <span className="text-[10px] 2xl:text-[11px] font-medium tracking-wide first-letter:uppercase">
+                    <CalendarIcon size={12} className="text-indigo-400 opacity-60 [@media(max-height:800px)]:hidden" />
+                    <span className="text-[10px] 2xl:text-[11px] [@media(max-height:800px)]:text-[9px] font-medium tracking-wide first-letter:uppercase">
                         {months[selectedDate.getMonth()]}
                     </span>
-                    <span className="text-[10px] 2xl:text-[11px] font-light opacity-50">{selectedDate.getFullYear()}</span>
+                    <span className="text-[10px] 2xl:text-[11px] [@media(max-height:800px)]:text-[9px] font-light opacity-50">{selectedDate.getFullYear()}</span>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 [@media(max-height:800px)]:gap-1">
                     <button
                         onClick={handleToday}
-                        className="text-[8px] 2xl:text-[9px] font-semibold text-zinc-500 hover:text-indigo-400 transition-colors uppercase tracking-tighter"
+                        className="text-[8px] 2xl:text-[9px] [@media(max-height:800px)]:text-[7px] font-semibold text-zinc-500 hover:text-indigo-400 transition-colors uppercase tracking-tighter"
                     >
                         Hoje
                     </button>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5">
                         <button
                             onClick={handlePrevMonth}
                             className="p-0.5 hover:text-white text-zinc-600 transition-colors"
@@ -97,7 +97,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onDateChange }) => {
                 </div>
             </div>
 
-            <div className="flex items-center justify-between overflow-x-auto no-scrollbar gap-0.5 pb-1 px-1">
+            <div className="flex items-center justify-between overflow-x-auto no-scrollbar gap-0 pb-0.5 px-0.5 [@media(max-height:800px)]:pb-0">
                 {visibleDays.map((date, index) => (
                     <button
                         key={index}
@@ -109,20 +109,20 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onDateChange }) => {
               ${isSelected(date)
                                 ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-500/50 z-10'
                                 : 'hover:bg-zinc-800/30 text-zinc-400'}
-              [@media(max-height:850px)]:h-7 [@media(max-height:850px)]:min-w-[24px]`}
+              [@media(max-height:800px)]:h-5 [@media(max-height:800px)]:min-w-[18px] [@media(max-height:800px)]:rounded-md`}
                     >
-                        <span className={`text-[6px] 2xl:text-[7px] uppercase font-bold tracking-tighter leading-none mb-0.5
+                        <span className={`text-[6px] 2xl:text-[7px] [@media(max-height:800px)]:hidden uppercase font-bold tracking-tighter leading-none mb-0.5
               ${isSelected(date) ? 'text-indigo-100' : 'text-zinc-600'}`}>
                             {daysOfWeek[date.getDay()]}
                         </span>
-                        <span className="text-[10px] 2xl:text-[12px] font-bold leading-none">
+                        <span className="text-[10px] 2xl:text-[12px] [@media(max-height:800px)]:text-[9px] font-bold leading-none">
                             {date.getDate()}
                         </span>
                         {isToday(date) && !isSelected(date) && (
-                            <div className="absolute bottom-0.5 w-1 h-1 bg-indigo-500 rounded-full" />
+                            <div className="absolute bottom-0.5 [@media(max-height:800px)]:bottom-0 w-1 h-1 [@media(max-height:800px)]:w-0.5 [@media(max-height:800px)]:h-0.5 bg-indigo-500 rounded-full" />
                         )}
                         {isToday(date) && isSelected(date) && (
-                            <div className="absolute bottom-0.5 w-1 h-1 bg-white rounded-full" />
+                            <div className="absolute bottom-0.5 [@media(max-height:800px)]:bottom-0 w-1 h-1 [@media(max-height:800px)]:w-0.5 [@media(max-height:800px)]:h-0.5 bg-white rounded-full" />
                         )}
                     </button>
                 ))}
