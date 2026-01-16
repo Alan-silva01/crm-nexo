@@ -37,6 +37,10 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
 
   useEffect(() => {
     loadTags();
+    const unsubscribe = tagsService.subscribeToTags((updatedTags) => {
+      setAvailableTags(updatedTags);
+    });
+    return () => unsubscribe();
   }, []);
 
   const loadTags = async () => {

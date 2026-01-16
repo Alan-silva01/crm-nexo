@@ -9,12 +9,23 @@ export interface Tag {
     created_at?: string;
 }
 
+const TAGS_CACHE_KEY = 'nexo_tags_cache';
+
 export const tagsService = {
     async listTags(): Promise<Tag[]> {
+        // Try to load from cache first
+        const cached = localStorage.getItem(TAGS_CACHE_KEY);
+        if (cached) {
+            try {
+                return JSON.parse(cached);
+            } catch (e) {
+                console.error('Error parsing tags cache:', e);
+            }
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return [];
 
-        // Descobrir effectiveUserId (para atendentes verem tags do admin)
         const userTypeInfo = await atendentesService.getUserTypeInfo();
         const effectiveUserId = userTypeInfo?.effectiveUserId || session.user.id;
 
@@ -29,7 +40,46 @@ export const tagsService = {
             return [];
         }
 
+        // Update cache
+        localStorage.setItem(TAGS_CACHE_KEY, JSON.stringify(data));
         return data as Tag[];
+    },
+
+    subscribeToTags(callback: (tags: Tag[]) => void) {
+        let effectiveUserId: string | null = null;
+
+        const setupSubscription = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) return;
+
+            const userTypeInfo = await atendentesService.getUserTypeInfo();
+            effectiveUserId = userTypeInfo?.effectiveUserId || session.user.id;
+
+            return supabase
+                .channel('tags-changes')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'tags',
+                        filter: `user_id=eq.${effectiveUserId}`
+                    },
+                    async () => {
+                        const updatedTags = await this.listTags();
+                        callback(updatedTags);
+                    }
+                )
+                .subscribe();
+        };
+
+        const subscriptionPromise = setupSubscription();
+
+        return () => {
+            subscriptionPromise.then(channel => {
+                if (channel) supabase.removeChannel(channel);
+            });
+        };
     },
 
     async createTag(name: string, color: string): Promise<Tag | null> {
