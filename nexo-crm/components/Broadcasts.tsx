@@ -14,6 +14,7 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
     const [startDate, setStartDate] = useState('');
     const [startTime, setStartTime] = useState('');
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [imageCaption, setImageCaption] = useState('');
     const [selectedAudio, setSelectedAudio] = useState<File | null>(null);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [isSending, setIsSending] = useState(false);
@@ -102,6 +103,7 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                 config: {
                     mensagem: message,
                     imagem_base64: imageBase64,
+                    imagem_legenda: selectedImage ? imageCaption : '',
                     audio_base64: audioBase64,
                     intervalo_segundos: parseInt(interval) || 30,
                     data_inicio: startDate,
@@ -205,6 +207,23 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile }) => {
                                         </span>
                                     </div>
                                 </div>
+                                {selectedImage && (
+                                    <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
+                                            <Send size={10} className="text-emerald-400" />
+                                            Legenda da Imagem (Caption)
+                                        </label>
+                                        <textarea
+                                            value={imageCaption}
+                                            onChange={(e) => setImageCaption(e.target.value)}
+                                            placeholder="Digite a legenda que aparecerá junto com a imagem..."
+                                            className="w-full h-20 px-4 py-3 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none"
+                                        />
+                                        <p className="text-[9px] text-zinc-600 leading-relaxed">
+                                            💡 <strong>O que é a legenda?</strong> É o texto que aparece logo abaixo da imagem no WhatsApp, como uma descrição. Exemplo: "Confira nossa nova promoção! 🔥"
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-2">
