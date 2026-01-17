@@ -198,6 +198,12 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       return;
     }
 
+    // Aguardar leads estarem carregados (importante para refresh)
+    if (leads.length === 0) {
+      console.log('[WhatsAppChat] ⏳ BLOCKED: Waiting for leads to load from cache');
+      return;
+    }
+
     let isMounted = true;
     let subscription: any = null;
 
@@ -403,7 +409,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         supabase.removeChannel(subscription);
       }
     };
-  }, [selectedChat?.phone, effectiveUserId, propChatTableName, session?.access_token]);
+  }, [selectedChat?.phone, effectiveUserId, propChatTableName, session?.access_token, leads.length]);
 
   // Auto-scroll to bottom
   useEffect(() => {
