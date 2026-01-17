@@ -217,6 +217,14 @@ const AppContent: React.FC = () => {
 
         console.log(`[${rid}] ✅ Session confirmed available (user: ${session.user.id})`);
 
+        // Re-validate session to ensure token is fresh (important on page refresh)
+        const { data: { session: freshSession } } = await supabase.auth.getSession();
+        if (!freshSession?.access_token) {
+          console.log(`[${rid}] ⏳ Session token not fresh yet, will retry on next render...`);
+          return;
+        }
+        console.log(`[${rid}] ✅ Session token validated and fresh`);
+
         // Fetch columns
         try {
           console.log(`[${rid}] Fetching columns...`);
@@ -350,7 +358,7 @@ const AppContent: React.FC = () => {
 
       fetchData();
     }
-  }, [session, effectiveUserId]);
+  }, [session?.access_token, effectiveUserId]);
 
   // Realtime subscription for leads
   useEffect(() => {
