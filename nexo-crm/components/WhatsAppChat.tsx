@@ -205,17 +205,32 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       const startTimeFetch = Date.now();
       console.log('[WhatsAppChat] 📞 fetchMessages() CALLED');
 
-      // 1. IMPORTANTE: Usar a sessão do contexto que já foi validada
-      if (!session?.access_token) {
-        console.log('[WhatsAppChat] ⏳ Session not ready or access_token missing, skipping fetchMessages');
+      // 1. IMPORTANTE: Aguardar sessão estar REALMENTE pronta com retry
+      let freshSession = null;
+      let sessionRetries = 10;
+
+      while (!freshSession?.access_token && sessionRetries > 0) {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s?.access_token) {
+          freshSession = s;
+          break;
+        }
+        sessionRetries--;
+        if (sessionRetries > 0) {
+          console.log(`[WhatsAppChat] ⏳ Waiting for valid session... (${10 - sessionRetries}/10)`);
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+
+      if (!freshSession?.access_token) {
+        console.log('[WhatsAppChat] ❌ Session never became valid after 10 retries');
         if (isMounted) {
           setLoadingMessages(false);
-          // Opcional: setSdrMessages([]) se quiser limpar, mas melhor manter o que tem (ou nada) até carregar
         }
         return;
       }
 
-      console.log('[WhatsAppChat] ✅ Session available (user: ' + session.user.id + ')');
+      console.log('[WhatsAppChat] ✅ Session validated fresh (user: ' + freshSession.user.id + ')');
 
       const phoneNumbers = selectedChat.phone.replace(/\D/g, '');
       const cacheKey = phoneNumbers || selectedChat.phone;
