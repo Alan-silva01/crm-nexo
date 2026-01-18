@@ -42,32 +42,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [effectiveUserId, setEffectiveUserId] = useState<string | null>(null);
     const [atendenteInfo, setAtendenteInfo] = useState<Atendente | null>(null);
 
-    const fetchUserInfo = async (userId: string) => {
+    const fetchUserInfo = async (userId: string): Promise<CurrentUserInfo | null> => {
         try {
-            console.log('Fetching user info for:', userId);
+            console.log('AuthProvider: Fetching user info for:', userId);
 
-            // 1. Tentar pegar do cache primeiro
+            // 1. PRIORIDADE: Restaurar do cache IMEDIATAMENTE se existir
             const cached = localStorage.getItem(`auth_tenant_user_${userId}`);
             if (cached) {
                 try {
-                    const info = JSON.parse(cached) as CurrentUserInfo;
-                    console.log('Using cached user info:', info.role, info.tenantName);
-                    updateUserState(info);
+                    const cachedInfo = JSON.parse(cached) as CurrentUserInfo;
+                    console.log('AuthProvider: ✅ CACHE HIT - Restoring immediately:', cachedInfo.role, cachedInfo.tenantName);
+                    updateUserState(cachedInfo);
+
+                    // Buscar do banco em BACKGROUND (não bloqueia retorno)
+                    tenantService.getCurrentUserInfo(userId).then(freshInfo => {
+                        if (freshInfo) {
+                            console.log('AuthProvider: 🔄 Background refresh complete:', freshInfo.role);
+                            updateUserState(freshInfo);
+                            localStorage.setItem(`auth_tenant_user_${userId}`, JSON.stringify(freshInfo));
+                        }
+                    }).catch(e => {
+                        console.warn('AuthProvider: Background refresh failed (using cache):', e);
+                    });
+
+                    return cachedInfo; // Retorna cache imediatamente!
                 } catch (e) {
-                    console.error('Error parsing cached user info:', e);
+                    console.error('AuthProvider: Error parsing cached user info:', e);
                 }
             }
 
-            // 2. Buscar do banco para garantir que está atualizado
+            // 2. Sem cache: Buscar do banco (bloqueia)
+            console.log('AuthProvider: ⏳ No cache, fetching from DB...');
             const info = await tenantService.getCurrentUserInfo(userId);
             if (info) {
-                console.log('Fetched user info from DB:', info.role, info.tenantName);
+                console.log('AuthProvider: ✅ Fetched from DB:', info.role, info.tenantName);
                 updateUserState(info);
                 localStorage.setItem(`auth_tenant_user_${userId}`, JSON.stringify(info));
                 return info;
             }
         } catch (e) {
-            console.error('Error in fetchUserInfo:', e);
+            console.error('AuthProvider: Error in fetchUserInfo:', e);
         }
         return null;
     };
@@ -126,32 +140,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     setSession(currSession);
                     setUser(currSession.user);
 
-                    // RESTAURAR DO CACHE IMEDIATAMENTE
-                    const cached = localStorage.getItem(`auth_tenant_user_${currSession.user.id}`);
-                    if (cached) {
-                        try {
-                            const cachedInfo = JSON.parse(cached) as CurrentUserInfo;
-                            console.log('AuthProvider: Restoring from cache:', cachedInfo.role, cachedInfo.tenantName);
-                            updateUserState(cachedInfo);
-                            setLoading(false);
-                        } catch (e) {
-                            console.error('AuthProvider: Error parsing cached user info:', e);
+                    // Buscar info do usuário do banco (ou cache se existir)
+                    // CRÍTICO: Aguardar conclusão antes de liberar loading
+                    const userInfoResult = await fetchUserInfo(currSession.user.id);
+
+                    // Se não encontrou no banco, tentar metadata do usuário (atendentes antigos)
+                    if (!userInfoResult) {
+                        const metaAdminId = currSession.user.user_metadata?.admin_id;
+                        const isAtendente = currSession.user.user_metadata?.is_atendente;
+
+                        if (isAtendente && metaAdminId) {
+                            console.log('AuthProvider: User is an atendente based on metadata. Tenant ID:', metaAdminId);
+                            setUserType('atendente');
+                            setEffectiveUserId(metaAdminId);
                         }
                     }
-
-                    // Verificar metadata do usuário (compatibilidade com atendentes antigos)
-                    const metaAdminId = currSession.user.user_metadata?.admin_id;
-                    const isAtendente = currSession.user.user_metadata?.is_atendente;
-
-                    if (isAtendente && metaAdminId && !cached) {
-                        console.log('AuthProvider: User is an atendente based on metadata. Tenant ID:', metaAdminId);
-                        setUserType('atendente');
-                        setEffectiveUserId(metaAdminId);
-                        setLoading(false);
-                    }
-
-                    // Buscar info completa do banco (em background se já liberamos loading)
-                    await fetchUserInfo(currSession.user.id);
                 } else {
                     console.log('AuthProvider: No active session found.');
                     setSession(null);
@@ -161,10 +164,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 clearTimeout(timer);
             } catch (e) {
                 console.error('AuthProvider initialization error:', e);
-            } finally {
-                console.log('AuthProvider: initialization finished, setting loading false');
-                if (isMounted) setLoading(false);
             }
+            // Garantir que loading seja sempre liberado ao final
+            console.log('AuthProvider: initialization finished, setting loading false');
+            if (isMounted) setLoading(false);
         };
 
         // Listen for changes

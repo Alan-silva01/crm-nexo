@@ -21,26 +21,6 @@ import { leadsService } from './src/lib/leadsService';
 import { tagsService, Tag } from './src/lib/tagsService';
 import { supabase } from './src/lib/supabase';
 
-// Função para remover dados sensíveis antes de salvar no cache
-// O app continua mostrando tudo (vem do banco), só o cache fica sem dados sensíveis
-const sanitizeForCache = (leads: Lead[]) => {
-  return leads.map(lead => {
-    const sanitized = { ...lead };
-    // NÃO mascarar telefone - é necessário para exibição correta no refresh
-    // Remover dados sensíveis do campo 'dados'
-    if (sanitized.dados && typeof sanitized.dados === 'object') {
-      const dadosCopy = { ...sanitized.dados } as Record<string, any>;
-      // Remover CPF, CNPJ e outros dados sensíveis
-      delete dadosCopy.cpf;
-      delete dadosCopy.cnpj;
-      delete dadosCopy.rg;
-      delete dadosCopy.customer_id;
-      sanitized.dados = dadosCopy;
-    }
-    return sanitized;
-  });
-};
-
 const AppContent: React.FC = () => {
   const { user, session, loading, signOut, effectiveUserId, userType } = useAuth();
 
@@ -65,45 +45,8 @@ const AppContent: React.FC = () => {
   const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
 
 
-  // Restaurar leads do cache para evitar flash de tela vazia
-  // Nota: O cache é por effectiveUserId, então não podemos restaurar até saber quem é o usuário
+  // Leads são carregados diretamente do banco - sem cache para evitar dados desatualizados
   const [leads, setLeads] = useState<Lead[]>([]);
-
-  // Restaurar leads do cache quando effectiveUserId estiver disponível
-  useEffect(() => {
-    if (effectiveUserId) {
-      try {
-        const cached = localStorage.getItem(`nero_leads_cache_${effectiveUserId}`);
-        if (cached) {
-          const data = JSON.parse(cached);
-          console.log('App: Restored leads from user-specific cache:', data.length);
-          if (data.length > 0 && leads.length === 0) {
-            setLeads(data);
-          }
-        }
-      } catch (e) {
-        console.error('App: Error restoring leads cache:', e);
-      }
-    }
-  }, [effectiveUserId]);
-
-  // Generic cache fallback: load leads from a non‑user‑specific cache if we don't yet have a user ID
-  useEffect(() => {
-    if (!effectiveUserId && leads.length === 0) {
-      try {
-        const generic = localStorage.getItem('nero_leads_cache_generic');
-        if (generic) {
-          const data = JSON.parse(generic);
-          console.log('App: Restored leads from generic cache:', data.length);
-          if (data.length > 0) {
-            setLeads(data);
-          }
-        }
-      } catch (e) {
-        console.error('App: Error restoring generic leads cache:', e);
-      }
-    }
-  }, []);
 
   const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -154,23 +97,7 @@ const AppContent: React.FC = () => {
   }, [leads]);
   const [columns, setColumns] = useState<any[]>([]);
 
-  // Restaurar history e columns quando effectiveUserId estiver disponível
-  useEffect(() => {
-    if (effectiveUserId) {
-      try {
-        const cachedHistory = localStorage.getItem(`nero_history_cache_${effectiveUserId}`);
-        if (cachedHistory) {
-          setLeadsHistory(JSON.parse(cachedHistory));
-        }
-        const cachedColumns = localStorage.getItem(`nero_columns_cache_${effectiveUserId}`);
-        if (cachedColumns) {
-          setColumns(JSON.parse(cachedColumns));
-        }
-      } catch (e) {
-        console.error('App: Error restoring history/columns cache:', e);
-      }
-    }
-  }, [effectiveUserId]);
+  // History e columns são carregados do banco - sem cache
 
   const [notifications, setNotifications] = useState<LeadColumnHistory[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -182,42 +109,43 @@ const AppContent: React.FC = () => {
     return [];
   });
 
-  // Restaurar tags do cache quando effectiveUserId estiver disponível
-  useEffect(() => {
-    if (effectiveUserId) {
-      try {
-        const cached = localStorage.getItem(`nexo_tags_cache_${effectiveUserId}`);
-        if (cached) {
-          const data = JSON.parse(cached);
-          console.log('App: Restored tags from user-specific cache:', data.length);
-          setTags(data);
-        }
-      } catch (e) {
-        console.error('App: Error restoring tags cache:', e);
-      }
-    }
-  }, [effectiveUserId]);
+  // Tags são carregadas do banco - sem cache
 
   // Restaurar profile do cache para evitar delay no nome da empresa
   // Também é user-specific para atendentes verem o profile do admin correto
   const [profile, setProfile] = useState<any>(null);
 
-  useEffect(() => {
-    if (effectiveUserId) {
-      try {
-        const cached = localStorage.getItem(`nero_profile_cache_${effectiveUserId}`);
-        if (cached) {
-          const data = JSON.parse(cached);
-          console.log('App: Restored profile from user-specific cache:', data.company_name);
-          setProfile(data);
-        }
-      } catch (e) {
-        console.error('App: Error restoring profile cache:', e);
-      }
-    }
-  }, [effectiveUserId]);
+  // Profile é carregado do banco - sem cache
 
   const [externalSelectedLead, setExternalSelectedLead] = useState<Lead | null>(null);
+
+  // RECOVERY: Se tem sessão mas não tem effectiveUserId, tentar buscar novamente
+  // Isso cobre o cenário onde AuthProvider timeout acontece antes de fetchUserInfo completar
+  useEffect(() => {
+    if (!loading && session && !effectiveUserId) {
+      console.log('App: ⚠️ RECOVERY - Session exists but no effectiveUserId, forcing refresh...');
+      // Forçar re-fetch do userInfo
+      const recoveryFetch = async () => {
+        try {
+          const { tenantService } = await import('./src/lib/tenantService');
+          const userInfo = await tenantService.getCurrentUserInfo(session.user.id);
+          if (userInfo) {
+            console.log('App: ✅ RECOVERY SUCCESS - Got effectiveUserId:', userInfo.tenantId);
+            // O AuthProvider vai atualizar via seu próprio cache, mas podemos forçar refresh aqui
+            window.location.reload();
+          } else {
+            console.error('App: ❌ RECOVERY FAILED - No userInfo found');
+          }
+        } catch (e) {
+          console.error('App: ❌ RECOVERY ERROR:', e);
+        }
+      };
+
+      // Aguardar um pouco antes de tentar recovery (para dar tempo ao AuthProvider)
+      const timer = setTimeout(recoveryFetch, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, session, effectiveUserId]);
 
   // Fetch columns and leads on session change
   console.log('[AppContent] render state:', {
@@ -243,21 +171,8 @@ const AppContent: React.FC = () => {
         const rid = Math.random().toString(36).substring(7);
         console.log(`[${rid}] App fetchData starting for ${effectiveUserId}...`);
 
-        // Usar a sessão do contexto que já foi validada pelo AuthProvider
-        if (!session?.access_token) {
-          console.log(`[${rid}] ⏳ Session not ready in context, waiting for next render...`);
-          return;
-        }
-
-        console.log(`[${rid}] ✅ Session confirmed available (user: ${session.user.id})`);
-
-        // Re-validate session to ensure token is fresh (important on page refresh)
-        const { data: { session: freshSession } } = await supabase.auth.getSession();
-        if (!freshSession?.access_token) {
-          console.log(`[${rid}] ⏳ Session token not fresh yet, will retry on next render...`);
-          return;
-        }
-        console.log(`[${rid}] ✅ Session token validated and fresh`);
+        // NOTA: Se chegamos aqui, effectiveUserId está disponível, o que significa
+        // que o AuthProvider já validou a sessão. Prosseguir direto para buscar dados.
 
         // Fetch columns
         try {
@@ -285,8 +200,6 @@ const AppContent: React.FC = () => {
             console.error(`[${rid}] Error fetching columns:`, colsError);
           } else if (cols && cols.length > 0) {
             setColumns(cols);
-            // Salvar no cache para carregamento instantâneo (user-specific)
-            localStorage.setItem(`nero_columns_cache_${effectiveUserId}`, JSON.stringify(cols));
           } else {
             console.log(`[${rid}] No columns found, setting defaults.`);
             setColumns([
@@ -313,8 +226,6 @@ const AppContent: React.FC = () => {
           const fetchedLeads = await leadsService.fetchLeads(effectiveUserId);
           console.log(`[${rid}] fetchLeads returned:`, fetchedLeads);
           setLeads(fetchedLeads);
-          // Salvar no cache ESPECÍFICO DO USUÁRIO (por effectiveUserId)
-          localStorage.setItem(`nero_leads_cache_${effectiveUserId}`, JSON.stringify(sanitizeForCache(fetchedLeads)));
           console.log(`[${rid}] App: Fetched leads count: ${fetchedLeads.length}`);
         } catch (e) {
           console.error(`[${rid}] CRITICAL: Leads fetch crashed:`, e);
@@ -331,8 +242,6 @@ const AppContent: React.FC = () => {
             return acc;
           }, {});
           setLeadsHistory(grouped);
-          // Salvar history no cache (user-specific)
-          localStorage.setItem(`nero_history_cache_${effectiveUserId}`, JSON.stringify(grouped));
           setNotifications(history.slice(0, 5));
           console.log(`[${rid}] Fetched ${history.length} history items.`);
         } catch (e) {
@@ -364,11 +273,6 @@ const AppContent: React.FC = () => {
               ...profileData,
               logged_user_name: loggedName
             });
-            // Salvar no cache para evitar delay na próxima vez (user-specific)
-            localStorage.setItem(`nero_profile_cache_${effectiveUserId}`, JSON.stringify({
-              ...profileData,
-              logged_user_name: loggedName
-            }));
             console.log(`[${rid}] App: Profile loaded: ${profileData.company_name}`);
           } else if (profileError) {
             console.error(`[${rid}] App: Error fetching profile:`, profileError);
@@ -392,7 +296,7 @@ const AppContent: React.FC = () => {
 
       fetchData();
     }
-  }, [session?.access_token, effectiveUserId]);
+  }, [effectiveUserId]); // Simplificado: depende apenas de effectiveUserId
 
   // Realtime subscription for leads
   useEffect(() => {
