@@ -87,6 +87,24 @@ const AppContent: React.FC = () => {
     }
   }, [effectiveUserId]);
 
+  // Generic cache fallback: load leads from a non‑user‑specific cache if we don't yet have a user ID
+  useEffect(() => {
+    if (!effectiveUserId && leads.length === 0) {
+      try {
+        const generic = localStorage.getItem('nero_leads_cache_generic');
+        if (generic) {
+          const data = JSON.parse(generic);
+          console.log('App: Restored leads from generic cache:', data.length);
+          if (data.length > 0) {
+            setLeads(data);
+          }
+        }
+      } catch (e) {
+        console.error('App: Error restoring generic leads cache:', e);
+      }
+    }
+  }, []);
+
   const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
@@ -104,6 +122,22 @@ const AppContent: React.FC = () => {
       localStorage.setItem(`nero_selected_chat_${effectiveUserId}`, selectedChatId);
     }
   }, [selectedChatId, effectiveUserId]);
+
+  // UI helper: button to clear all caches (dev only)
+  const clearAllCaches = () => {
+    const keys = [
+      'nero_leads_cache_generic',
+      ...Object.keys(localStorage).filter(k => k.startsWith('nero_leads_cache_')),
+      ...Object.keys(localStorage).filter(k => k.startsWith('nero_history_cache_')),
+      ...Object.keys(localStorage).filter(k => k.startsWith('nero_columns_cache_')),
+      ...Object.keys(localStorage).filter(k => k.startsWith('nero_tags_cache_')),
+      ...Object.keys(localStorage).filter(k => k.startsWith('nero_profile_cache_')),
+      ...Object.keys(localStorage).filter(k => k.startsWith('nero_selected_chat_')),
+    ];
+    keys.forEach(k => localStorage.removeItem(k));
+    console.log('App: All caches cleared');
+    window.location.reload();
+  };
 
   // If no chat selected yet and leads are loaded, select first lead
   useEffect(() => {
