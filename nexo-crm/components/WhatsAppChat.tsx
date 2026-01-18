@@ -739,7 +739,19 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     );
   };
 
-  // Empty state
+  // Loading while auth not ready - DEVE vir ANTES do empty state para evitar flash
+  if (!effectiveUserId) {
+    return (
+      <div className="h-full flex items-center justify-center bg-[#0b141a]">
+        <div className="text-center p-8">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-zinc-400 text-sm">Carregando sessão...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state - só mostra após confirmar que auth está pronta E leads realmente vieram vazios
   if (leads.length === 0) {
     return (
       <div className="h-full flex items-center justify-center bg-[#0b141a]">
@@ -751,18 +763,6 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
           <p className="text-zinc-500 text-sm max-w-sm">
             Crie leads primeiro para começar a conversar. Vá para o Kanban e clique em "Novo Lead".
           </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Loading while auth not ready
-  if (!effectiveUserId) {
-    return (
-      <div className="h-full flex items-center justify-center bg-[#0b141a]">
-        <div className="text-center p-8">
-          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-zinc-400 text-sm">Carregando sessão...</p>
         </div>
       </div>
     );
