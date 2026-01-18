@@ -159,13 +159,16 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     console.log('App useEffect [session, effectiveUserId]:', {
       hasSession: !!session,
+      hasAccessToken: !!session?.access_token,
       effectiveUserId,
       userType
     });
 
-    // Só busca dados se effectiveUserId está realmente pronto (não vazio/null)
-    if (session && effectiveUserId && effectiveUserId.length > 10) {
-      console.log('App: Fetching data for effectiveUserId:', effectiveUserId);
+    // CRÍTICO: Verificar session.access_token além de effectiveUserId
+    // Isso evita race condition onde o cache restaura effectiveUserId antes
+    // da session do Supabase estar 100% validada (problema comum na Vercel após refresh)
+    if (session?.access_token && effectiveUserId && effectiveUserId.length > 10) {
+      console.log('App: Fetching data for effectiveUserId:', effectiveUserId, '(session validated)');
 
       const fetchData = async () => {
         const rid = Math.random().toString(36).substring(7);
@@ -296,7 +299,7 @@ const AppContent: React.FC = () => {
 
       fetchData();
     }
-  }, [effectiveUserId]); // Simplificado: depende apenas de effectiveUserId
+  }, [effectiveUserId, session?.access_token]); // Depende de ambos para evitar race condition
 
   // Realtime subscription for leads
   useEffect(() => {
