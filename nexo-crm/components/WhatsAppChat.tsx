@@ -103,6 +103,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const [aiPaused, setAiPaused] = useState(false);
   const [messagesCache, setMessagesCache] = useState<Record<string, { messages: SDRMessage[], hasMore: boolean, offset: number }>>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const isFirstLoad = useRef(true);
   const MESSAGE_PAGE_SIZE = 50;
 
@@ -411,20 +412,48 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     };
   }, [selectedChat?.phone, effectiveUserId, propChatTableName, session?.access_token, leads.length]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom when messages load
   useEffect(() => {
-    if (chatContainerRef.current) {
-      const behavior = isFirstLoad.current ? 'instant' : 'smooth';
-      chatContainerRef.current.scrollTo({
-        top: chatContainerRef.current.scrollHeight,
-        behavior: behavior as ScrollBehavior
-      });
+    if (sdrMessages.length > 0 && chatContainerRef.current) {
+      const container = chatContainerRef.current;
 
-      if (sdrMessages.length > 0) {
-        isFirstLoad.current = false;
-      }
+      // Usar requestAnimationFrame + setTimeout para garantir que o DOM foi atualizado
+      const scrollToBottom = () => {
+        if (isFirstLoad.current) {
+          // Scroll instantâneo no primeiro load - usar múltiplas tentativas para garantir
+          container.scrollTop = container.scrollHeight;
+
+          // Segunda tentativa após um pequeno delay para garantir que imagens/conteúdo carregaram
+          setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+          }, 50);
+
+          // Terceira tentativa para casos de conteúdo pesado
+          setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+          }, 150);
+
+          isFirstLoad.current = false;
+        } else {
+          // Scroll suave para novas mensagens
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      };
+
+      // Aguardar o próximo frame de renderização
+      requestAnimationFrame(() => {
+        requestAnimationFrame(scrollToBottom);
+      });
     }
   }, [sdrMessages]);
+
+  // Reset isFirstLoad when changing chats
+  useEffect(() => {
+    isFirstLoad.current = true;
+  }, [selectedChat?.id]);
 
   // Set initial selected chat
   useEffect(() => {
@@ -962,6 +991,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                     </div>
                   )}
                   {sdrMessages.filter(msg => !shouldHideMessage(msg.message.content || '')).map(renderMessage)}
+                  <div ref={messagesEndRef} />
                 </>
               )}
             </div>
