@@ -594,9 +594,10 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         );
 
         // Atualizar lista de leads localmente para mover para o topo
+        const now = new Date().toISOString();
         const updatedLeads = leads.map(lead =>
           lead.id === selectedChat.id
-            ? { ...lead, updated_at: new Date().toISOString(), last_message: messageContent }
+            ? { ...lead, last_message_at: now, last_message: messageContent }
             : lead
         );
         onLeadsUpdate(updatedLeads);
