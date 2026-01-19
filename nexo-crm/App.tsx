@@ -337,11 +337,26 @@ const AppContent: React.FC = () => {
             setLeads(prev => {
               const exists = prev.some(lead => lead.id === (payload.new as Lead).id);
               if (exists) return prev;
+
+              // Se for um novo lead e já vier com notifica_humano, tocar som
+              if ((payload.new as Lead).notifica_humano) {
+                playNotificationSound();
+              }
+
               return [payload.new as Lead, ...prev];
             });
           } else if (payload.eventType === 'UPDATE') {
+            const oldLead = leads.find(l => l.id === payload.new.id);
+            const newLead = payload.new as Lead;
+
+            // Se mudou de false para true, tocar som
+            if (newLead.notifica_humano && (!oldLead || !oldLead.notifica_humano)) {
+              console.log('🚨 Intervenção humana solicitada!');
+              playNotificationSound();
+            }
+
             setLeads(prev => prev.map(lead =>
-              lead.id === payload.new.id ? { ...lead, ...payload.new as Lead } : lead
+              lead.id === payload.new.id ? { ...lead, ...newLead } : lead
             ));
           } else if (payload.eventType === 'DELETE') {
             setLeads(prev => prev.filter(lead => lead.id !== payload.old.id));
@@ -349,6 +364,16 @@ const AppContent: React.FC = () => {
         }
       )
       .subscribe();
+
+    // Função para tocar o som de notificação
+    const playNotificationSound = () => {
+      try {
+        const audio = new Audio('https://jreklrhamersmamdmjna.supabase.co/storage/v1/object/public/audio/Audio%20Clideo.mp3');
+        audio.play().catch(e => console.warn('Browser bloqueou o autoplay do som:', e));
+      } catch (e) {
+        console.error('Erro ao tocar som:', e);
+      }
+    };
 
     return () => {
       supabase.removeChannel(channel);
@@ -438,11 +463,11 @@ const AppContent: React.FC = () => {
 
             // Play notification sound
             try {
-              const audio = new Audio('https://jreklrhamersmamdmjna.supabase.co/storage/v1/object/public/audio/Editor%20Clideo.mp3');
+              const audio = new Audio('https://jreklrhamersmamdmjna.supabase.co/storage/v1/object/public/audio/Audio%20Clideo.mp3');
               audio.volume = 0.5;
-              audio.play();
+              audio.play().catch(e => console.warn('Browser blocked autoplay:', e));
             } catch (err) {
-              console.warn('Playback blocked or failed:', err);
+              console.warn('Playback failed:', err);
             }
           }
         }
@@ -576,6 +601,12 @@ const AppContent: React.FC = () => {
 
     return result;
   }, [columns, leads]);
+
+  // Alerta crítico se houver algum lead precisando de humano
+  const hasHumanNotification = useMemo(() =>
+    leads.some(l => l.notifica_humano === true),
+    [leads]
+  );
 
   if (loading) {
     return (
@@ -777,12 +808,13 @@ const AppContent: React.FC = () => {
                   setShowNotifications(!showNotifications);
                   if (!showNotifications) setUnreadCount(0);
                 }}
-                className={`p-2 hover:bg-zinc-800 rounded-lg relative transition-colors ${showNotifications ? 'text-indigo-400 bg-zinc-800' : 'text-zinc-400 hover:text-white'}`}
+                className={`p-2 hover:bg-zinc-800 rounded-lg relative transition-all duration-300 ${showNotifications ? 'text-indigo-400 bg-zinc-800' : 'text-zinc-400 hover:text-white'}
+                  ${hasHumanNotification ? 'text-rose-500 bg-rose-500/10 ring-2 ring-rose-500/20' : ''}`}
               >
-                <Bell size={18} />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 flex items-center justify-center min-w-4 h-4 px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full animate-pulse ring-2 ring-[#0c0c0e]">
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                <Bell size={18} className={hasHumanNotification ? 'animate-bounce' : ''} />
+                {(unreadCount > 0 || hasHumanNotification) && (
+                  <span className={`absolute top-1 right-1 flex items-center justify-center min-w-4 h-4 px-1 text-white text-[9px] font-bold rounded-full animate-pulse ring-2 ring-[#0c0c0e] ${hasHumanNotification ? 'bg-rose-600' : 'bg-rose-500'}`}>
+                    {hasHumanNotification ? '!' : (unreadCount > 9 ? '9+' : unreadCount)}
                   </span>
                 )}
               </button>

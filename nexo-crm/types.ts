@@ -28,6 +28,8 @@ export interface Lead {
   ai_paused?: boolean | null;
   assigned_to?: string | null;
   tags?: string[] | null;
+  notifica_humano?: boolean | null;
+  resumo_ia?: string | null;
   // UI-only fields (not in database)
   lastMessage?: string;
   lastActive?: string;
