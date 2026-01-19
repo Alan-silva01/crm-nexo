@@ -730,23 +730,41 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   };
 
   const handleResolveHumanNotification = async () => {
-    if (!selectedChat?.id) return;
+    if (!selectedChat?.id) {
+      console.warn('⚠️ No selected chat ID');
+      return;
+    }
+
+    console.log('🎯 Resolving human notification for lead:', selectedChat.id, selectedChat.name);
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('leads')
-        .update({ notifica_humano: false })
-        .eq('id', selectedChat.id);
+        .update({
+          notifica_humano: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedChat.id)
+        .select();
 
-      if (error) throw error;
+      console.log('📝 Update result:', { data, error });
+
+      if (error) {
+        console.error('❌ Error resolving human notification:', error);
+        throw error;
+      }
+
+      console.log('✅✅✅ Notification resolved successfully! Updated data:', data);
 
       // Update local state
       const updatedLeads = leads.map(l =>
         l.id === selectedChat.id ? { ...l, notifica_humano: false } : l
       );
       onLeadsUpdate(updatedLeads);
+
+      console.log('🔄 Local state updated');
     } catch (err) {
-      console.error('Error resolving human notification:', err);
+      console.error('💥 Error resolving human notification:', err);
     }
   };
 
