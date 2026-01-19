@@ -314,6 +314,14 @@ export const chatsSdrService = {
             // Primeiro buscar o ID do lead pelo phone
             console.log(`🔍 Searching for lead with phone: ${phone} or cleanPhone: ${cleanPhone}`);
 
+            // Debug: buscar TODOS os leads com esse telefone para ver se há duplicados
+            const { data: allMatches } = await supabase
+                .from('leads')
+                .select('id, name, phone, ai_paused')
+                .or(`phone.eq.${phone},phone.ilike.%${cleanPhone}%`);
+
+            console.log(`🔎 Found ${allMatches?.length || 0} lead(s) matching this phone:`, allMatches);
+
             const { data: leadData, error: findError } = await supabase
                 .from('leads')
                 .select('id, name, ai_paused')
