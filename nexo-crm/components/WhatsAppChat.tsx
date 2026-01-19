@@ -863,9 +863,9 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
             return name.includes(search) || (searchClean && phone.includes(searchClean));
           }).sort((a, b) => {
-            const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
-            const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
-            return timeB - timeA;
+            const timeA = new Date(a.created_at || 0).getTime();
+            const timeB = new Date(b.created_at || 0).getTime();
+            return timeB - timeA; // Mais recente primeiro
           }).map(chat => (
             <button
               key={chat.id}
@@ -895,8 +895,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                     )}
                   </div>
                   <span className="text-[10px] text-zinc-500 shrink-0">
-                    {chat.updated_at || chat.created_at
-                      ? new Date(chat.updated_at || chat.created_at!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                    {chat.created_at
+                      ? new Date(chat.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
                       : 'Agora'}
                   </span>
                 </div>
