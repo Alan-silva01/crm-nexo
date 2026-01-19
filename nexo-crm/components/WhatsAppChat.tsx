@@ -958,7 +958,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                   </button>
 
                   {showAssignDropdown && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-[#1e2a30] border border-zinc-700/50 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-[#0d1419] border border-zinc-700/50 rounded-xl shadow-xl z-50 overflow-hidden">
                       <div className="p-2 border-b border-zinc-700/30">
                         <span className="text-[10px] text-zinc-500 uppercase font-bold">Atribuir a</span>
                       </div>
@@ -1073,7 +1073,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                         <React.Fragment key={msg.id}>
                           {showDateSeparator && (
                             <div className="flex items-center justify-center my-4">
-                              <div className="bg-[#1e2a30] px-4 py-1.5 rounded-lg shadow-sm">
+                              <div className="bg-[#182229] px-4 py-1.5 rounded-lg shadow-sm">
                                 <span className="text-[11px] text-zinc-400 font-medium">
                                   {formatMessageDate(msg.created_at!)}
                                 </span>
