@@ -773,11 +773,12 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     const isRight = isFromAI || isFromAgent;
 
     // Colors
-    let bgColor = 'bg-[#1e2a30]'; // client - left
-    let textColor = 'text-zinc-100';
+    let bgColor = 'bg-white dark:bg-[#1e2a30]'; // client - left
+    let textColor = 'text-zinc-800 dark:text-zinc-100';
 
     if (isFromAI || isFromAgent) {
       bgColor = 'bg-[#056162]';
+      textColor = 'text-white';
     }
 
     return (
@@ -801,7 +802,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
           )}
 
           {isFromClient && (
-            <div className="px-3 py-1.5 text-[10px] font-medium flex items-center gap-1.5 border-b bg-[#1a242a] border-[#151d22] text-zinc-400">
+            <div className="px-3 py-1.5 text-[10px] font-medium flex items-center gap-1.5 border-b bg-zinc-50 dark:bg-[#1a242a] border-zinc-100 dark:border-[#151d22] text-zinc-400">
               <User size={12} />
               <span>Cliente</span>
             </div>
@@ -840,7 +841,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   // Loading while auth not ready - DEVE vir ANTES do empty state para evitar flash
   if (!effectiveUserId) {
     return (
-      <div className="h-full flex items-center justify-center bg-[#0b141a]">
+      <div className="h-full flex items-center justify-center bg-transparent">
         <div className="text-center p-8">
           <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-zinc-400 text-sm">Carregando sessão...</p>
@@ -864,13 +865,13 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   // Empty state - só mostra após confirmar que leads realmente vieram vazios (não está no loading inicial)
   if (initialLeadsLoaded && leads.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center bg-[#0b141a]">
+      <div className="h-full flex items-center justify-center bg-transparent">
         <div className="text-center p-8">
-          <div className="w-20 h-20 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <MessageSquare size={32} className="text-zinc-600" />
+          <div className="w-20 h-20 bg-zinc-800/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <MessageSquare size={32} className="text-zinc-400" />
           </div>
-          <h2 className="text-xl font-semibold text-zinc-300 mb-2">Nenhuma conversa</h2>
-          <p className="text-zinc-500 text-sm max-w-sm">
+          <h2 className="text-xl font-semibold text-zinc-500 mb-2">Nenhuma conversa</h2>
+          <p className="text-zinc-400 text-sm max-w-sm">
             Crie leads primeiro para começar a conversar. Vá para o Kanban e clique em "Novo Lead".
           </p>
         </div>
@@ -1123,8 +1124,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                         <React.Fragment key={msg.id}>
                           {showDateSeparator && (
                             <div className="flex items-center justify-center my-4">
-                              <div className="bg-[#182229] px-4 py-1.5 rounded-lg shadow-sm">
-                                <span className="text-[11px] text-zinc-400 font-medium">
+                              <div className="bg-zinc-100 dark:bg-[#182229] px-4 py-1.5 rounded-lg shadow-sm border border-zinc-200/50 dark:border-transparent">
+                                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium uppercase tracking-wider">
                                   {formatMessageDate(msg.created_at!)}
                                 </span>
                               </div>
