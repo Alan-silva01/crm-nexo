@@ -831,7 +831,39 @@ const AppContent: React.FC = () => {
                       <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20 font-bold">Recent</span>
                     </div>
                     <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
-                      {notifications.length > 0 ? (
+                      {/* NOVAS: Notificações de Intervenção Humana */}
+                      {leads.filter(l => l.notifica_humano).map(lead => (
+                        <div
+                          key={`alert-${lead.id}`}
+                          onClick={() => {
+                            setSelectedChatId(lead.id);
+                            setActiveTab('chats');
+                            setShowNotifications(false);
+                          }}
+                          className="p-4 border-b border-rose-500/10 bg-rose-500/5 hover:bg-rose-500/10 transition-colors cursor-pointer group"
+                        >
+                          <div className="flex gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30 group-hover:scale-110 transition-transform">
+                              <Bot size={18} className="text-rose-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[12px] text-zinc-100 font-bold leading-tight mb-1">
+                                {getLeadDisplayName(lead)}
+                              </p>
+                              <p className="text-[11px] text-rose-400 font-medium leading-tight">
+                                Precisa de ajuda humana agora! 🚨
+                              </p>
+                              {lead.resumo_ia && (
+                                <p className="text-[10px] text-zinc-500 mt-2 italic line-clamp-2 bg-black/20 p-1.5 rounded-lg border border-white/5">
+                                  "{lead.resumo_ia}"
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {notifications.length > 0 || leads.some(l => l.notifica_humano) ? (
                         notifications.map((notif, idx) => (
                           <div key={notif.id} className={`p-3 border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors ${idx === 0 && unreadCount > 0 ? 'bg-indigo-500/5' : ''}`}>
                             <div className="flex gap-3">
