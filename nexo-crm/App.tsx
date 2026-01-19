@@ -361,47 +361,57 @@ const AppContent: React.FC = () => {
         },
         (payload) => {
           const now = Date.now();
-          console.log('Realtime update:', payload);
+          console.log('📡 REALTIME EVENT:', payload.eventType, 'for lead:', payload.new?.id || payload.old?.id);
 
           if (payload.eventType === 'INSERT') {
             const newLead = payload.new as Lead;
+            console.log('➕ INSERT:', newLead.name, 'notifica_humano:', newLead.notifica_humano);
+
             setLeads(prev => {
               const exists = prev.some(lead => lead.id === newLead.id);
               if (exists) return prev;
 
               if (newLead.notifica_humano) {
+                console.log('🔊 Playing sound for INSERT with notifica_humano=true');
                 playNotificationSound(newLead.id);
               }
               return [newLead, ...prev];
             });
           } else if (payload.eventType === 'UPDATE') {
-            const currentLeads = leadsRef.current;
-            const oldLead = currentLeads.find(l => l.id === payload.new.id);
             const newLead = payload.new as Lead;
 
-            // Debug detalhado para notifica_humano
-            if (newLead.notifica_humano !== undefined) {
-              console.log('🔔 Notifica Humano Update Detected:', {
-                leadId: newLead.id,
-                leadName: newLead.name,
-                leadPhone: newLead.phone,
-                oldNotificaHumano: oldLead?.notifica_humano,
-                newNotificaHumano: newLead.notifica_humano,
-                willPlaySound: newLead.notifica_humano && (!oldLead || !oldLead.notifica_humano)
-              });
-            }
+            console.log('🔄 UPDATE Event Received:', {
+              leadId: newLead.id,
+              leadName: newLead.name,
+              payloadKeys: Object.keys(payload.new),
+              notifica_humano: newLead.notifica_humano,
+              resumo_ia: newLead.resumo_ia
+            });
 
-            // Só toca som se: 
-            // 1. O novo estado for notifica_humano=true
-            // 2. O estado anterior for notifica_humano=false (ou não existir no cache local)
-            // 3. Não tiver notificado este mesmo lead nos últimos 5 segundos
-            if (newLead.notifica_humano && (!oldLead || !oldLead.notifica_humano)) {
-              console.log('🚨 Intervenção humana solicitada!');
+            // Buscar o lead atual da lista
+            const currentLeads = leadsRef.current;
+            const oldLead = currentLeads.find(l => l.id === newLead.id);
+
+            console.log('🔍 Old Lead State:', {
+              found: !!oldLead,
+              oldNotificaHumano: oldLead?.notifica_humano,
+              newNotificaHumano: newLead.notifica_humano
+            });
+
+            // LÓGICA SIMPLIFICADA: se notifica_humano é true E era false (ou não existia), notificar
+            const shouldNotify = newLead.notifica_humano === true &&
+              (!oldLead || oldLead.notifica_humano !== true);
+
+            console.log('🎯 Should Notify?', shouldNotify);
+
+            if (shouldNotify) {
+              console.log('🚨🚨🚨 NOTIFICAÇÃO ATIVADA! Lead:', newLead.name);
               playNotificationSound(newLead.id);
             }
 
+            // Atualizar o lead na lista
             setLeads(prev => prev.map(lead =>
-              lead.id === payload.new.id ? { ...lead, ...newLead } : lead
+              lead.id === newLead.id ? { ...lead, ...newLead } : lead
             ));
           } else if (payload.eventType === 'DELETE') {
             setLeads(prev => prev.filter(lead => lead.id !== payload.old.id));
