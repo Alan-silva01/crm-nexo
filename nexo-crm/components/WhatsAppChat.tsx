@@ -163,14 +163,24 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     }
   }, [leads, tenantMembers]);
 
-  // Carregar atribuição atual do lead selecionado
+  // Carregar atribuição atual do lead selecionado - usar cache primeiro para evitar flash
   useEffect(() => {
     if (selectedChat?.id) {
-      tenantService.getLeadAssignment(selectedChat.id).then(setCurrentAssignment);
+      // Usar assignmentsMap primeiro (instantâneo)
+      if (assignmentsMap[selectedChat.id] !== undefined) {
+        setCurrentAssignment(assignmentsMap[selectedChat.id]);
+      } else if (selectedChat.assigned_to && tenantMembers.length > 0) {
+        // Fallback: buscar do tenantMembers se lead tem assigned_to
+        const member = tenantMembers.find(m => m.id === selectedChat.assigned_to) || null;
+        setCurrentAssignment(member);
+      } else {
+        // Último fallback: buscar do banco
+        tenantService.getLeadAssignment(selectedChat.id).then(setCurrentAssignment);
+      }
     } else {
       setCurrentAssignment(null);
     }
-  }, [selectedChat?.id]);
+  }, [selectedChat?.id, selectedChat?.assigned_to, assignmentsMap, tenantMembers]);
 
   // Get current user name
   useEffect(() => {
