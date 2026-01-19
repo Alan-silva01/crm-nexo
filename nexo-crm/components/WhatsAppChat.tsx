@@ -98,7 +98,14 @@ function formatMessageDate(dateStr: string): string {
 
 // Retorna a chave de data para agrupar mensagens (YYYY-MM-DD)
 function getDateKey(dateStr: string): string {
-  return new Date(dateStr).toISOString().split('T')[0];
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  } catch {
+    return '';
+  }
 }
 
 const capitalize = (str: string | undefined | null) => {
@@ -923,11 +930,11 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
       {/* Active Chat */}
       {selectedChat ? (
         <div className="flex-1 flex flex-col bg-[#0b141a]">
-          <header className="h-[64px] px-4 border-b border-zinc-800/50 flex items-center justify-between bg-[#1e2a30] z-10 shadow-sm">
+          <header className="h-[64px] px-4 border-b border-zinc-800/30 flex items-center justify-between bg-[#0b141a] z-10">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <LetterAvatar name={getLeadDisplayName(selectedChat)} size="md" />
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#1e2a30]"></span>
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#0b141a]"></span>
               </div>
               <div>
                 <h4 className="text-sm font-semibold text-zinc-100">{getLeadDisplayName(selectedChat)}</h4>
