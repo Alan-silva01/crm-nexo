@@ -306,34 +306,50 @@ export const chatsSdrService = {
         const isPaused = action === 'pausar';
         const evento = action === 'pausar' ? 'pausar_ia' : 'ativar_ia';
 
+        console.log(`🔄 toggleAI called: action=${action}, phone=${phone}, isPaused=${isPaused}`);
+
         // Atualizar no banco de dados (tabela leads) para persistência real
         // Usar phone normalizado para buscar o lead e atualizar
         try {
             // Primeiro buscar o ID do lead pelo phone
+            console.log(`🔍 Searching for lead with phone: ${phone} or cleanPhone: ${cleanPhone}`);
+
             const { data: leadData, error: findError } = await supabase
                 .from('leads')
-                .select('id')
+                .select('id, name, ai_paused')
                 .or(`phone.eq.${phone},phone.ilike.%${cleanPhone}%`)
                 .limit(1)
                 .single();
 
-            if (findError || !leadData) {
-                console.error('Could not find lead to update AI status:', findError);
-            } else {
-                // Agora atualizar pelo ID específico (o RLS permite pelo user_id implícito)
-                const { error: updateError } = await supabase
-                    .from('leads')
-                    .update({ ai_paused: isPaused, updated_at: new Date().toISOString() })
-                    .eq('id', leadData.id);
+            console.log('📊 Lead search result:', { leadData, findError });
 
-                if (updateError) {
-                    console.error('Error updating AI status in leads table:', updateError);
-                } else {
-                    console.log(`AI status persisted as ${action} for lead ${cleanPhone} (id: ${leadData.id})`);
-                }
+            if (findError || !leadData) {
+                console.error('❌ Could not find lead to update AI status:', findError);
+                throw new Error(`Lead not found for phone ${phone}`);
+            }
+
+            console.log(`✅ Found lead: ${leadData.name} (ID: ${leadData.id}), current ai_paused: ${leadData.ai_paused}`);
+
+            // Agora atualizar pelo ID específico (o RLS permite pelo user_id implícito)
+            console.log(`💾 Updating lead ${leadData.id} with ai_paused=${isPaused}`);
+
+            const { data: updateData, error: updateError } = await supabase
+                .from('leads')
+                .update({ ai_paused: isPaused, updated_at: new Date().toISOString() })
+                .eq('id', leadData.id)
+                .select();
+
+            console.log('📝 Update result:', { updateData, updateError });
+
+            if (updateError) {
+                console.error('❌ Error updating AI status in leads table:', updateError);
+                throw updateError;
+            } else {
+                console.log(`✅✅✅ AI status successfully persisted as ${action} for lead ${leadData.name} (id: ${leadData.id})`);
             }
         } catch (e) {
-            console.error('Failed to update leads table:', e);
+            console.error('💥 Failed to update leads table:', e);
+            throw e; // Re-throw para não continuar silenciosamente
         }
 
         // Enviar para o Webhook do usuário (se configurado)
