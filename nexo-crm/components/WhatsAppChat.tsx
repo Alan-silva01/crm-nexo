@@ -1140,22 +1140,22 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                   {/* Modal de Intervenção Humana (Resumo da IA) */}
                   {selectedChat?.notifica_humano && (
                     <div className="sticky bottom-4 left-0 right-0 z-50 px-4 pb-4 flex justify-center animate-in slide-in-from-bottom-4 duration-500">
-                      <div className="bg-[#2a3942] border border-rose-500/30 rounded-2xl shadow-2xl p-5 max-w-lg w-full flex flex-col gap-4 ring-1 ring-rose-500/20 backdrop-blur-md bg-opacity-95">
+                      <div className="bg-white dark:bg-[#2a3942] border border-zinc-200 dark:border-rose-500/30 rounded-2xl shadow-2xl p-5 max-w-lg w-full flex flex-col gap-4 ring-1 ring-zinc-200 dark:ring-rose-500/20 backdrop-blur-md bg-opacity-95 dark:bg-opacity-95">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div className="p-2 bg-rose-500/20 rounded-lg">
-                              <Bot size={18} className="text-rose-400" />
+                            <div className="p-2 bg-rose-500/10 dark:bg-rose-500/20 rounded-lg">
+                              <Bot size={18} className="text-rose-500 dark:text-rose-400" />
                             </div>
                             <div>
-                              <h5 className="text-[13px] font-bold text-zinc-100">Intervenção Humana Solicitada</h5>
+                              <h5 className="text-[13px] font-bold text-zinc-800 dark:text-zinc-100">Intervenção Humana Solicitada</h5>
                               <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest leading-none mt-0.5">IA Resumiu este contato</p>
                             </div>
                           </div>
                           <div className="w-2 h-2 shrink-0 bg-rose-500 rounded-full animate-ping"></div>
                         </div>
 
-                        <div className="bg-[#0b141a]/50 p-3 rounded-xl border border-zinc-700/30">
-                          <p className="text-[13px] text-zinc-300 leading-relaxed italic">
+                        <div className="bg-zinc-50 dark:bg-[#0b141a]/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/30">
+                          <p className="text-[13px] text-zinc-600 dark:text-zinc-300 leading-relaxed italic">
                             "{selectedChat.resumo_ia || 'IA detectou que o cliente precisa de atendimento direto.'}"
                           </p>
                         </div>
@@ -1163,14 +1163,14 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                         <div className="flex items-center gap-3 mt-1">
                           <button
                             onClick={handleToggleAI}
-                            className="flex-1 py-2.5 px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                            className="flex-1 py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-zinc-200 dark:border-transparent"
                           >
                             {selectedChat.ai_paused ? <Play size={14} /> : <Pause size={14} />}
                             <span>{selectedChat.ai_paused ? 'Ativar IA' : 'Pausar IA'}</span>
                           </button>
                           <button
                             onClick={handleResolveHumanNotification}
-                            className="flex-[2] py-2.5 px-4 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-rose-900/20 flex items-center justify-center gap-2"
+                            className="flex-[2] py-2.5 px-4 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-rose-900/10 dark:shadow-rose-900/20 flex items-center justify-center gap-2"
                           >
                             <CheckCheck size={16} />
                             <span>Entendido, eu assumo!</span>
