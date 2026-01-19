@@ -68,6 +68,39 @@ function shouldHideMessage(content: string): boolean {
   return !cleaned || /^[\.\s]*$/.test(cleaned);
 }
 
+// Formata data para separador estilo WhatsApp
+function formatMessageDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const isToday = date.toDateString() === today.toDateString();
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  if (isToday) return 'Hoje';
+  if (isYesterday) return 'Ontem';
+
+  // Para datas dentro da última semana, mostrar dia da semana
+  const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays < 7) {
+    return date.toLocaleDateString('pt-BR', { weekday: 'long' })
+      .replace(/^\w/, c => c.toUpperCase()); // Capitalizar primeira letra
+  }
+
+  // Para datas mais antigas, mostrar data completa
+  return date.toLocaleDateString('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+  });
+}
+
+// Retorna a chave de data para agrupar mensagens (YYYY-MM-DD)
+function getDateKey(dateStr: string): string {
+  return new Date(dateStr).toISOString().split('T')[0];
+}
+
 const capitalize = (str: string | undefined | null) => {
   if (!str) return '';
   return str.trim().split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
@@ -1020,14 +1053,38 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                       </button>
                     </div>
                   )}
-                  {sdrMessages.filter(msg => !shouldHideMessage(msg.message.content || '')).map(renderMessage)}
+                  {(() => {
+                    const filteredMessages = sdrMessages.filter(msg => !shouldHideMessage(msg.message.content || ''));
+                    let lastDateKey = '';
+
+                    return filteredMessages.map((msg, index) => {
+                      const currentDateKey = msg.created_at ? getDateKey(msg.created_at) : '';
+                      const showDateSeparator = currentDateKey && currentDateKey !== lastDateKey;
+                      lastDateKey = currentDateKey;
+
+                      return (
+                        <React.Fragment key={msg.id}>
+                          {showDateSeparator && (
+                            <div className="flex items-center justify-center my-4">
+                              <div className="bg-[#1e2a30] px-4 py-1.5 rounded-lg shadow-sm">
+                                <span className="text-[11px] text-zinc-400 font-medium">
+                                  {formatMessageDate(msg.created_at!)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          {renderMessage(msg)}
+                        </React.Fragment>
+                      );
+                    });
+                  })()}
                   <div ref={messagesEndRef} />
                 </>
               )}
             </div>
           </div>
 
-          <footer className="p-3 bg-[#1e2a30] border-t border-zinc-800/10 z-10">
+          <footer className="p-3 bg-[#0b141a] border-t border-zinc-800/30 z-10">
             {!canSendMessage ? (
               <div className="max-w-4xl mx-auto text-center py-2">
                 <p className="text-amber-500/70 text-sm">
