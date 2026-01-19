@@ -101,8 +101,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
   const noInterestNames = new Set(noInterestCols.map(c => c.name.trim().toUpperCase()));
 
   const leadsWithAppointment = leads.filter(l => {
-    // Only count leads that are CURRENTLY in an appointment status column
-    return l.status && agendamentoNames.has(l.status.trim().toUpperCase());
+    // Stat is scheduled if current status name contains "AGENDAD"
+    return l.status && l.status.toLowerCase().includes('agendad');
   }).length;
 
   const conversionRate = totalLeads > 0 ? ((leadsWithAppointment / totalLeads) * 100).toFixed(1) : '0';
@@ -161,7 +161,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
       const dayLeadsCount = leads.filter(l => getIsoDate(l.created_at) === dateStr).length;
 
       const dayAppointmentsCount = leads.filter(l => {
-        const isAgendadoStatus = l.status && agendamentoNames.has(l.status.trim().toUpperCase());
+        const isAgendadoStatus = l.status && l.status.toLowerCase().includes('agendad');
         if (!isAgendadoStatus) return false;
 
         // If it has a date, use the date to position in the chart
