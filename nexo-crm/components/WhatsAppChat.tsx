@@ -479,6 +479,16 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     };
   }, [selectedChat?.phone, effectiveUserId, propChatTableName, session?.access_token, leads.length]);
 
+  // Sincronizar aiPaused com a prop leads caso mude via Realtime no App.tsx
+  useEffect(() => {
+    if (selectedChat) {
+      const currentLead = leads.find(l => l.id === selectedChat.id);
+      if (currentLead && currentLead.ai_paused !== undefined) {
+        setAiPaused(currentLead.ai_paused);
+      }
+    }
+  }, [leads, selectedChat?.id]);
+
   // Auto-scroll to bottom when messages load
   useEffect(() => {
     if (sdrMessages.length > 0 && chatContainerRef.current) {
@@ -688,7 +698,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const handleToggleAI = async () => {
     if (!selectedChat?.phone) return;
 
-    const newStatus = !aiPaused;
+    const currentStatus = selectedChat.ai_paused || false;
+    const newStatus = !currentStatus;
     setAiPaused(newStatus);
 
     // Atualização otimista - instantânea na UI
@@ -1007,13 +1018,13 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
               <button
                 onClick={handleToggleAI}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${aiPaused
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${selectedChat?.ai_paused
                   ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20'
                   : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20'
                   }`}
-                title={aiPaused ? "Clique para ativar a IA" : "Clique para pausar a IA"}
+                title={selectedChat?.ai_paused ? "Clique para ativar a IA" : "Clique para pausar a IA"}
               >
-                {aiPaused ? (
+                {selectedChat?.ai_paused ? (
                   <>
                     <Pause size={12} className="fill-current" />
                     <span>IA Pausada</span>

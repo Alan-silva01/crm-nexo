@@ -39,11 +39,12 @@ export function formatPhoneNumber(phone: string | null | undefined): string {
     }
 
     // Se tiver 10 dígitos (sem o 9): DDD (2) + número (8)
+    // ADICIONAR 9 SEMPRE (como solicitado)
     if (cleaned.length === 10) {
         const ddd = cleaned.substring(0, 2);
         const firstPart = cleaned.substring(2, 6);  // 4 dígitos
         const secondPart = cleaned.substring(6, 10); // 4 dígitos
-        return `(${ddd}) ${firstPart}-${secondPart}`;
+        return `(${ddd}) 9${firstPart}-${secondPart}`;
     }
 
     // Se tiver 9 dígitos (só o número com 9)
