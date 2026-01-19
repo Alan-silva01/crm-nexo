@@ -323,7 +323,7 @@ const AppContent: React.FC = () => {
   }, [effectiveUserId]); // Simplificado: depende apenas de effectiveUserId
 
   // Função centralizada para tocar som com debounce
-  const playNotificationSound = useCallback((leadId?: string) => {
+  const playNotificationSound = useCallback((leadId?: string, isKanban: boolean = false) => {
     const now = Date.now();
     if (leadId) {
       const lastTime = lastNotificationTimeRef.current[leadId] || 0;
@@ -332,7 +332,12 @@ const AppContent: React.FC = () => {
     }
 
     try {
-      const audio = new Audio('https://jreklrhamersmamdmjna.supabase.co/storage/v1/object/public/audio/Audio%20Clideo.mp3');
+      // Som do Kanban (antigo) vs Som de Intervenção (novo)
+      const url = isKanban
+        ? 'https://jreklrhamersmamdmjna.supabase.co/storage/v1/object/public/audio/Editor%20Clideo.mp3'
+        : 'https://jreklrhamersmamdmjna.supabase.co/storage/v1/object/public/audio/Audio%20Clideo.mp3';
+
+      const audio = new Audio(url);
       audio.volume = 0.5;
       audio.play().catch(e => console.warn('Browser bloqueou o autoplay:', e));
     } catch (e) {
@@ -479,8 +484,8 @@ const AppContent: React.FC = () => {
             setNotifications(prev => [data as LeadColumnHistory, ...prev].slice(0, 5));
             setUnreadCount(prev => prev + 1);
 
-            // Play notification sound with debounce
-            playNotificationSound(data.lead_id);
+            // Play notification sound with debounce (using kanban sound)
+            playNotificationSound(data.lead_id, true);
           }
         }
       )
