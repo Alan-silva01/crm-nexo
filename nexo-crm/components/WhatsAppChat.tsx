@@ -696,11 +696,13 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   };
 
   const handleToggleAI = async () => {
-    if (!selectedChat?.phone) return;
+    if (!selectedChat?.phone || !selectedChat?.id) return;
 
     const currentStatus = selectedChat.ai_paused || false;
     const newStatus = !currentStatus;
     setAiPaused(newStatus);
+
+    console.log('🎯 toggleAI clicked:', { leadId: selectedChat.id, leadName: selectedChat.name, newStatus });
 
     // Atualização otimista - instantânea na UI
     const updatedLeads = leads.map(lead =>
@@ -708,10 +710,35 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     );
     onLeadsUpdate(updatedLeads);
 
-    // Enviar para o servidor (em background)
-    chatsSdrService.toggleAI(selectedChat.phone, newStatus ? 'pausar' : 'ativar').catch(err => {
-      console.error('Error toggling AI:', err);
-    });
+    try {
+      // PRIMEIRO: Atualizar diretamente no banco pelo ID (garantido)
+      console.log('💾 Updating database directly with leadId:', selectedChat.id);
+
+      const { data, error } = await supabase
+        .from('leads')
+        .update({
+          ai_paused: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedChat.id)
+        .select();
+
+      console.log('📝 Direct update result:', { data, error });
+
+      if (error) {
+        console.error('❌ Direct update failed:', error);
+        throw error;
+      }
+
+      console.log('✅✅✅ Database updated successfully!');
+
+      // SEGUNDO: Enviar para o webhook (em background)
+      await chatsSdrService.toggleAI(selectedChat.phone, newStatus ? 'pausar' : 'ativar');
+      console.log('📡 Webhook called successfully');
+
+    } catch (err) {
+      console.error('💥 Error in toggleAI:', err);
+    }
   };
 
   const handleAssignLead = async (memberId: string | null) => {
