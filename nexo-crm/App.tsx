@@ -1,5 +1,5 @@
 // Redeploy Trigger: Stable State f4a106a
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Kanban from './components/Kanban';
@@ -60,6 +60,13 @@ const AppContent: React.FC = () => {
     }
     return [];
   });
+
+  const leadsRef = useRef<Lead[]>(leads);
+  const lastNotificationTimeRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    leadsRef.current = leads;
+  }, [leads]);
 
   const [leadsHistory, setLeadsHistory] = useState<Record<string, LeadColumnHistory[]>>({});
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -315,6 +322,24 @@ const AppContent: React.FC = () => {
     }
   }, [effectiveUserId]); // Simplificado: depende apenas de effectiveUserId
 
+  // Função centralizada para tocar som com debounce
+  const playNotificationSound = useCallback((leadId?: string) => {
+    const now = Date.now();
+    if (leadId) {
+      const lastTime = lastNotificationTimeRef.current[leadId] || 0;
+      if (now - lastTime < 3000) return; // Debounce de 3s por lead
+      lastNotificationTimeRef.current[leadId] = now;
+    }
+
+    try {
+      const audio = new Audio('https://jreklrhamersmamdmjna.supabase.co/storage/v1/object/public/audio/Audio%20Clideo.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(e => console.warn('Browser bloqueou o autoplay:', e));
+    } catch (e) {
+      console.error('Erro ao tocar som:', e);
+    }
+  }, []);
+
   // Realtime subscription for leads
   useEffect(() => {
     if (!effectiveUserId) return;
@@ -330,29 +355,32 @@ const AppContent: React.FC = () => {
           filter: `user_id=eq.${effectiveUserId}`
         },
         (payload) => {
+          const now = Date.now();
           console.log('Realtime update:', payload);
 
           if (payload.eventType === 'INSERT') {
-            // Evitar duplicação: só adicionar se o lead ainda não existir na lista
+            const newLead = payload.new as Lead;
             setLeads(prev => {
-              const exists = prev.some(lead => lead.id === (payload.new as Lead).id);
+              const exists = prev.some(lead => lead.id === newLead.id);
               if (exists) return prev;
 
-              // Se for um novo lead e já vier com notifica_humano, tocar som
-              if ((payload.new as Lead).notifica_humano) {
-                playNotificationSound();
+              if (newLead.notifica_humano) {
+                playNotificationSound(newLead.id);
               }
-
-              return [payload.new as Lead, ...prev];
+              return [newLead, ...prev];
             });
           } else if (payload.eventType === 'UPDATE') {
-            const oldLead = leads.find(l => l.id === payload.new.id);
+            const currentLeads = leadsRef.current;
+            const oldLead = currentLeads.find(l => l.id === payload.new.id);
             const newLead = payload.new as Lead;
 
-            // Se mudou de false para true, tocar som
+            // Só toca som se: 
+            // 1. O novo estado for notifica_humano=true
+            // 2. O estado anterior for notifica_humano=false (ou não existir no cache local)
+            // 3. Não tiver notificado este mesmo lead nos últimos 5 segundos
             if (newLead.notifica_humano && (!oldLead || !oldLead.notifica_humano)) {
               console.log('🚨 Intervenção humana solicitada!');
-              playNotificationSound();
+              playNotificationSound(newLead.id);
             }
 
             setLeads(prev => prev.map(lead =>
@@ -364,16 +392,6 @@ const AppContent: React.FC = () => {
         }
       )
       .subscribe();
-
-    // Função para tocar o som de notificação
-    const playNotificationSound = () => {
-      try {
-        const audio = new Audio('https://jreklrhamersmamdmjna.supabase.co/storage/v1/object/public/audio/Audio%20Clideo.mp3');
-        audio.play().catch(e => console.warn('Browser bloqueou o autoplay do som:', e));
-      } catch (e) {
-        console.error('Erro ao tocar som:', e);
-      }
-    };
 
     return () => {
       supabase.removeChannel(channel);
@@ -461,14 +479,8 @@ const AppContent: React.FC = () => {
             setNotifications(prev => [data as LeadColumnHistory, ...prev].slice(0, 5));
             setUnreadCount(prev => prev + 1);
 
-            // Play notification sound
-            try {
-              const audio = new Audio('https://jreklrhamersmamdmjna.supabase.co/storage/v1/object/public/audio/Audio%20Clideo.mp3');
-              audio.volume = 0.5;
-              audio.play().catch(e => console.warn('Browser blocked autoplay:', e));
-            } catch (err) {
-              console.warn('Playback failed:', err);
-            }
+            // Play notification sound with debounce
+            playNotificationSound(data.lead_id);
           }
         }
       )
