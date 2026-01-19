@@ -443,6 +443,15 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                 });
                 return updated;
               });
+
+              // Atualizar last_message_at para mover conversa para o topo
+              const now = newMsg.created_at || new Date().toISOString();
+              const updatedLeads = leads.map(lead =>
+                lead.phone === newMsg.session_id
+                  ? { ...lead, last_message_at: now, last_message: newMsg.message.content?.slice(0, 100) }
+                  : lead
+              );
+              onLeadsUpdate(updatedLeads);
             }
           })
           .subscribe((status) => {
