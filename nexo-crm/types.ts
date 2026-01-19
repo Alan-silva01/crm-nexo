@@ -19,6 +19,7 @@ export interface Lead {
   last_message?: string | null;
   created_at?: string;
   updated_at?: string;
+  last_message_at?: string;
   company_name?: string | null;
   monthly_revenue?: number | null;
   dataHora_Agendamento?: string | null;
