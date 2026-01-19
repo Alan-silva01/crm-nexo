@@ -101,9 +101,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
   const noInterestNames = new Set(noInterestCols.map(c => c.name.trim().toUpperCase()));
 
   const leadsWithAppointment = leads.filter(l => {
-    const hasDate = !!l.dataHora_Agendamento;
-    const isAgendadoStatus = l.status && agendamentoNames.has(l.status.trim().toUpperCase());
-    return hasDate || isAgendadoStatus;
+    // Only count leads that are CURRENTLY in an appointment status column
+    return l.status && agendamentoNames.has(l.status.trim().toUpperCase());
   }).length;
 
   const conversionRate = totalLeads > 0 ? ((leadsWithAppointment / totalLeads) * 100).toFixed(1) : '0';
@@ -162,11 +161,15 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
       const dayLeadsCount = leads.filter(l => getIsoDate(l.created_at) === dateStr).length;
 
       const dayAppointmentsCount = leads.filter(l => {
+        const isAgendadoStatus = l.status && agendamentoNames.has(l.status.trim().toUpperCase());
+        if (!isAgendadoStatus) return false;
+
+        // If it has a date, use the date to position in the chart
         if (l.dataHora_Agendamento) {
           return getIsoDate(l.dataHora_Agendamento) === dateStr;
         }
-        const isAgendadoStatus = l.status && agendamentoNames.has(l.status.trim().toUpperCase());
-        return isAgendadoStatus && getIsoDate(l.created_at) === dateStr;
+        // Fallback to creation date if it's in the status but has no date
+        return getIsoDate(l.created_at) === dateStr;
       }).length;
 
       const dateObj = new Date(dateStr + 'T12:00:00');
@@ -182,9 +185,21 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
 
   // Auto-scroll to the end of the chart (latest data)
   React.useEffect(() => {
-    if (chartScrollRef.current) {
-      chartScrollRef.current.scrollLeft = chartScrollRef.current.scrollWidth;
-    }
+    const scrollToLatest = () => {
+      if (chartScrollRef.current) {
+        chartScrollRef.current.scrollLeft = chartScrollRef.current.scrollWidth;
+      }
+    };
+
+    // Use multiple triggers to ensure scroll happens after layout
+    scrollToLatest();
+    const timer = setTimeout(scrollToLatest, 100);
+    const animationFrame = requestAnimationFrame(scrollToLatest);
+
+    return () => {
+      clearTimeout(timer);
+      cancelAnimationFrame(animationFrame);
+    };
   }, [areaChartData]);
 
   // Distribution by status for Pie Chart
