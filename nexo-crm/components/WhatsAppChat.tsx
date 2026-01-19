@@ -776,10 +776,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     let bgColor = 'bg-[#1e2a30]'; // client - left
     let textColor = 'text-zinc-100';
 
-    if (isFromAI) {
+    if (isFromAI || isFromAgent) {
       bgColor = 'bg-[#056162]';
-    } else if (isFromAgent) {
-      bgColor = 'bg-[#005c4b]';
     }
 
     return (
@@ -787,7 +785,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         <div className={`max-w-[80%] md:max-w-[70%] rounded-2xl text-[13px] shadow-sm relative overflow-hidden ${bgColor} ${textColor} ${isRight ? 'rounded-tr-none' : 'rounded-tl-none'}`}>
           {/* Sender badge */}
           {(isFromAI || isFromAgent) && (
-            <div className={`px-3 py-1.5 text-[10px] font-medium flex items-center gap-1.5 border-b ${isFromAI ? 'bg-[#04514f] border-[#03403e] text-emerald-200' : 'bg-[#004d40] border-[#003d33] text-teal-200'}`}>
+            <div className="px-3 py-1.5 text-[10px] font-medium flex items-center gap-1.5 border-b bg-[#04514f] border-[#03403e] text-emerald-200">
               {isFromAI ? (
                 <>
                   <Bot size={12} />
@@ -883,7 +881,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   return (
     <div className="h-full flex overflow-hidden">
       {/* Chat List */}
-      <div className="w-80 border-r border-zinc-800/50 flex flex-col bg-[#09090b]">
+      <div className="w-80 border-r border-zinc-800/50 flex flex-col bg-[#0b141a]">
         <div className="p-4 border-b border-zinc-800/50">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
@@ -892,7 +890,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               placeholder="Buscar ou começar nova conversa"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-[#1e1e1e] border-none rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+              className="w-full pl-9 pr-4 py-2 bg-[#182229] border-none rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
             />
           </div>
         </div>
@@ -913,8 +911,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
             <button
               key={chat.id}
               onClick={() => setSelectedChatId(chat.id)}
-              className={`w-full p-4 flex gap-3 items-center hover:bg-[#18181b] transition-all border-b border-zinc-800/10 text-left relative overflow-hidden
-                  ${selectedChatId === chat.id ? 'bg-[#18181b] border-l-4 border-l-indigo-500 shadow-inner' : ''}
+              className={`w-full p-4 flex gap-3 items-center hover:bg-white/5 transition-all border-b border-zinc-800/10 text-left relative overflow-hidden
+                  ${selectedChatId === chat.id ? 'bg-white/5 border-l-4 border-l-indigo-500 shadow-inner' : ''}
                   ${chat.notifica_humano ? 'animate-pulse bg-rose-500/10' : ''}`}
             >
               {chat.notifica_humano && (
