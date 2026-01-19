@@ -379,6 +379,18 @@ const AppContent: React.FC = () => {
             const oldLead = currentLeads.find(l => l.id === payload.new.id);
             const newLead = payload.new as Lead;
 
+            // Debug detalhado para notifica_humano
+            if (newLead.notifica_humano !== undefined) {
+              console.log('🔔 Notifica Humano Update Detected:', {
+                leadId: newLead.id,
+                leadName: newLead.name,
+                leadPhone: newLead.phone,
+                oldNotificaHumano: oldLead?.notifica_humano,
+                newNotificaHumano: newLead.notifica_humano,
+                willPlaySound: newLead.notifica_humano && (!oldLead || !oldLead.notifica_humano)
+              });
+            }
+
             // Só toca som se: 
             // 1. O novo estado for notifica_humano=true
             // 2. O estado anterior for notifica_humano=false (ou não existir no cache local)
