@@ -105,7 +105,15 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isFirstLoad = useRef(true);
+  const [initialLeadsLoaded, setInitialLeadsLoaded] = useState(false);
   const MESSAGE_PAGE_SIZE = 50;
+
+  // Marca quando os leads são carregados pela primeira vez
+  useEffect(() => {
+    if (leads.length > 0 && !initialLeadsLoaded) {
+      setInitialLeadsLoaded(true);
+    }
+  }, [leads.length, initialLeadsLoaded]);
 
   // Tenant Users (atendentes)
   const { userType, atendenteInfo, effectiveUserId, tenantId, userInfo, signOut, session } = useAuth();
@@ -751,8 +759,20 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     );
   }
 
-  // Empty state - só mostra após confirmar que auth está pronta E leads realmente vieram vazios
-  if (leads.length === 0) {
+  // Loading enquanto leads ainda não foram carregados - evita flash de "Nenhuma conversa"
+  if (!initialLeadsLoaded && leads.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center bg-[#0b141a]">
+        <div className="text-center p-8">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-zinc-400 text-sm">Carregando conversas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state - só mostra após confirmar que leads realmente vieram vazios (não está no loading inicial)
+  if (initialLeadsLoaded && leads.length === 0) {
     return (
       <div className="h-full flex items-center justify-center bg-[#0b141a]">
         <div className="text-center p-8">
