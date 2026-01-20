@@ -76,6 +76,7 @@ interface KanbanProps {
   onColumnsUpdate: (columns: KanbanColumn[]) => void;
   externalSelectedLead?: Lead | null;
   onClearExternalLead?: () => void;
+  effectiveUserId: string;
 }
 
 const Kanban: React.FC<KanbanProps> = ({
@@ -88,7 +89,8 @@ const Kanban: React.FC<KanbanProps> = ({
   columns,
   onColumnsUpdate,
   externalSelectedLead,
-  onClearExternalLead
+  onClearExternalLead,
+  effectiveUserId
 }) => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draggingColumnId, setDraggingColumnId] = useState<string | null>(null);
@@ -238,8 +240,7 @@ const Kanban: React.FC<KanbanProps> = ({
     setDraggingColumnId(null);
 
     // Persist to Supabase using individual UPDATE calls
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!effectiveUserId) return;
 
     console.log('Saving column positions:', updatedColumns.map(c => ({ id: c.id, name: c.name, position: c.position })));
 
@@ -249,7 +250,7 @@ const Kanban: React.FC<KanbanProps> = ({
         .from('kanban_columns')
         .update({ position: col.position })
         .eq('id', col.id)
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
     );
 
     const results = await Promise.all(updatePromises);
@@ -265,13 +266,10 @@ const Kanban: React.FC<KanbanProps> = ({
   const addColumn = async () => {
     if (!newColumnName.trim()) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     const newPosition = columns.length;
     const { data, error } = await supabase
       .from('kanban_columns')
-      .insert([{ user_id: user.id, name: newColumnName, position: newPosition }])
+      .insert([{ user_id: effectiveUserId, name: newColumnName, position: newPosition }])
       .select()
       .single();
 

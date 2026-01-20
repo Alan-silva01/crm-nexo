@@ -728,6 +728,7 @@ const AppContent: React.FC = () => {
             }}
             externalSelectedLead={externalSelectedLead}
             onClearExternalLead={() => setExternalSelectedLead(null)}
+            effectiveUserId={effectiveUserId || ''}
           />
         );
       case 'leads':

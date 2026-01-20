@@ -189,13 +189,16 @@ export const leadsService = {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
 
+        const userInfo = await tenantService.getCurrentUserInfo(session.user.id);
+        if (!userInfo) return;
+
         const { error } = await supabase
             .from('lead_column_history')
             .insert([{
                 lead_id: leadId,
                 from_column_id: fromColumnId,
                 to_column_id: toColumnId,
-                user_id: session.user.id
+                user_id: userInfo.tenantId
             }]);
 
         if (error) {
