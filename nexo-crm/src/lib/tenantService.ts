@@ -184,7 +184,7 @@ export const tenantService = {
     },
 
     /**
-     * Obtém o limite de usuários do tenant
+     * Obtém o limite de atendentes do tenant
      */
     async getMaxUsers(): Promise<number> {
         try {
@@ -197,10 +197,10 @@ export const tenantService = {
                 .eq('id', userInfo.tenantId)
                 .single();
 
-            return tenant?.max_users || 5;
+            return tenant?.max_users || 0;
         } catch (e) {
             console.error('Error getting max users:', e);
-            return 5;
+            return 0;
         }
     },
 

@@ -55,6 +55,13 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
         variant: 'danger' | 'warning';
     }>({ show: false, title: '', message: '', onConfirm: () => { }, variant: 'danger' });
 
+    // Carregar maxMembers na inicialização para determinar se mostra aba Equipe
+    useEffect(() => {
+        if (userInfo?.isOwnerOrAdmin) {
+            tenantService.getMaxUsers().then(max => setMaxMembers(max));
+        }
+    }, [userInfo]);
+
     useEffect(() => {
         if (activeTab === 'equipe' && userInfo?.isOwnerOrAdmin) {
             loadEquipe();
@@ -161,25 +168,14 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
 
     const isAdmin = userInfo?.isOwnerOrAdmin || userType === 'admin';
 
+    // Só mostra aba Equipe se for admin E tiver slots de atendentes disponíveis
+    const showEquipeTab = isAdmin && maxMembers > 0;
+
     const tabs = [
         { id: 'perfil' as const, label: 'Perfil', icon: UserIcon },
         { id: 'seguranca' as const, label: 'Segurança', icon: Lock },
-        ...(isAdmin ? [{ id: 'equipe' as const, label: 'Equipe', icon: Users }] : [])
+        ...(showEquipeTab ? [{ id: 'equipe' as const, label: 'Equipe', icon: Users }] : [])
     ];
-
-    const handleClearCache = () => {
-        setConfirmModal({
-            show: true,
-            title: 'Limpar Cache',
-            message: 'Isso vai limpar todo o cache do app e recarregar a página. Deseja continuar?',
-            variant: 'warning',
-            onConfirm: () => {
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.reload();
-            }
-        });
-    };
 
     return (
         <>
@@ -230,17 +226,9 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
             )}
 
             <div className="p-8 h-full overflow-y-auto space-y-8 custom-scrollbar">
-                <header className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-semibold tracking-tight">Ajustes</h1>
-                        <p className="text-zinc-500 text-sm">Gerencie seu perfil e segurança da conta.</p>
-                    </div>
-                    <button
-                        onClick={handleClearCache}
-                        className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-sm font-medium transition-all"
-                    >
-                        Limpar Cache
-                    </button>
+                <header>
+                    <h1 className="text-2xl font-semibold tracking-tight">Ajustes</h1>
+                    <p className="text-zinc-500 text-sm">Gerencie seu perfil e segurança da conta.</p>
                 </header>
 
                 {/* Tabs */}
@@ -315,7 +303,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
                 )}
 
                 {/* Equipe Tab */}
-                {activeTab === 'equipe' && isAdmin && (
+                {activeTab === 'equipe' && showEquipeTab && (
                     <div className="space-y-6">
                         {/* Header com contador */}
                         <div className="flex items-center justify-between">
