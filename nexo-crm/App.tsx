@@ -357,7 +357,7 @@ const AppContent: React.FC = () => {
           event: '*',
           schema: 'public',
           table: 'leads',
-          filter: `user_id=eq.${effectiveUserId}`
+          filter: `tenant_id=eq.${effectiveUserId}`
         },
         (payload) => {
           const now = Date.now();
