@@ -297,7 +297,7 @@ const AppContent: React.FC = () => {
               ...profileData,
               logged_user_name: loggedName
             });
-            console.log(`[${rid}] App: Profile loaded: ${profileData.company_name}`);
+            console.log(`[${rid}] App: Profile loaded: ${profileData.company_name}, disparos: ${profileData.disparos} (type: ${typeof profileData.disparos})`);
           } else if (profileError) {
             console.error(`[${rid}] App: Error fetching profile:`, profileError);
           }
