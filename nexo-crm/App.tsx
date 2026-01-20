@@ -45,21 +45,8 @@ const AppContent: React.FC = () => {
   const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
 
 
-  // Leads são carregados do cache primeiro para carregamento instantâneo, depois atualizados do banco
-  const [leads, setLeads] = useState<Lead[]>(() => {
-    // Restaurar do cache para carregamento instantâneo
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('nero_leads_cache');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          console.log('App: Restored', parsed.length, 'leads from cache');
-          return parsed;
-        }
-      } catch (e) { }
-    }
-    return [];
-  });
+  // Leads são carregados do banco - começar vazio para evitar flash de dados desatualizados
+  const [leads, setLeads] = useState<Lead[]>([]);
 
   const leadsRef = useRef<Lead[]>(leads);
   const lastNotificationTimeRef = useRef<Record<string, number>>({});
