@@ -477,7 +477,7 @@ const Kanban: React.FC<KanbanProps> = ({
                             ></div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-none">{getLeadDisplayName(lead)}</h4>
+                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase line-clamp-2 leading-tight">{getLeadDisplayName(lead)}</h4>
                             {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1">{lead.company_name}</p>}
                             <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
                           </div>
