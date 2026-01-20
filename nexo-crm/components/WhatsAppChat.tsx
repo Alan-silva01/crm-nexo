@@ -910,7 +910,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   // Loading enquanto leads ainda não foram carregados - evita flash de "Nenhuma conversa"
   if (!initialLeadsLoaded && leads.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center bg-[#0b141a]">
+      <div className="h-full flex items-center justify-center bg-white dark:bg-[#0b141a]">
         <div className="text-center p-8">
           <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-zinc-400 text-sm">Carregando conversas...</p>
@@ -939,7 +939,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   return (
     <div className="h-full flex overflow-hidden">
       {/* Chat List */}
-      <div className="w-80 border-r border-zinc-800/50 flex flex-col bg-[#0b141a]">
+      <div className="w-80 border-r border-zinc-800/50 flex flex-col bg-white dark:bg-[#0b141a]">
         <div className="p-4 border-b border-zinc-800/50">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
@@ -948,7 +948,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               placeholder="Buscar ou começar nova conversa"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-[#182229] border-none rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+              className="w-full pl-9 pr-4 py-2 bg-zinc-100 dark:bg-[#182229] border-none rounded-xl text-xs text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
             />
           </div>
         </div>
@@ -969,8 +969,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
             <button
               key={chat.id}
               onClick={() => setSelectedChatId(chat.id)}
-              className={`w-full p-4 flex gap-3 items-center hover:bg-white/5 transition-all border-b border-zinc-800/10 text-left relative overflow-hidden
-                  ${selectedChatId === chat.id ? 'bg-white/5 border-l-4 border-l-indigo-500 shadow-inner' : ''}
+              className={`w-full p-4 flex gap-3 items-center hover:bg-zinc-50 dark:hover:bg-white/5 transition-all border-b border-zinc-800/10 text-left relative overflow-hidden
+                  ${selectedChatId === chat.id ? 'bg-indigo-50 dark:bg-white/10 border-l-4 border-l-indigo-500 shadow-inner' : ''}
                   ${chat.notifica_humano ? 'animate-pulse bg-rose-500/10' : ''}`}
             >
               {chat.notifica_humano && (
@@ -988,7 +988,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-baseline mb-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <h4 className="text-[13px] font-semibold truncate text-zinc-200">{getLeadDisplayName(chat)}</h4>
+                    <h4 className="text-[13px] font-semibold truncate text-zinc-900 dark:text-zinc-200">{getLeadDisplayName(chat)}</h4>
                     {chat.ai_paused === false && (
                       <div className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md shrink-0 ring-1 ring-emerald-500/20">
                         <Bot size={10} className="text-emerald-500" />
@@ -1037,15 +1037,15 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
       {/* Active Chat */}
       {selectedChat ? (
-        <div className="flex-1 flex flex-col bg-[#0b141a]">
-          <header className="h-[64px] px-4 border-b border-zinc-800/30 flex items-center justify-between bg-[#0b141a] z-10">
+        <div className="flex-1 flex flex-col bg-white dark:bg-[#0b141a]">
+          <header className="h-[64px] px-4 border-b border-zinc-800/30 flex items-center justify-between bg-white dark:bg-[#0b141a] z-10">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <LetterAvatar name={getLeadDisplayName(selectedChat)} size="md" />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#0b141a]"></span>
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-zinc-100">{getLeadDisplayName(selectedChat)}</h4>
+                <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{getLeadDisplayName(selectedChat)}</h4>
                 <p className="text-[11px] text-zinc-400">{formatPhoneNumber(selectedChat.phone) || 'online'}</p>
               </div>
             </div>
@@ -1127,7 +1127,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
           <div
             ref={chatContainerRef}
-            className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 relative bg-[#0b141a]"
+            className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 relative bg-white dark:bg-[#0b141a]"
           >
             <div className="relative flex flex-col space-y-4 max-w-4xl mx-auto">
               {loadingMessages ? (
@@ -1234,7 +1234,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
             </div>
           </div>
 
-          <footer className="p-3 bg-[#0b141a] border-t border-zinc-800/30 z-10">
+          <footer className="p-3 bg-white dark:bg-[#0b141a] border-t border-zinc-800/30 z-10">
             {!canSendMessage ? (
               <div className="max-w-4xl mx-auto text-center py-2">
                 <p className="text-amber-500/70 text-sm">
@@ -1253,7 +1253,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder={`Mensagem como ${currentUserName}`}
-                    className="w-full py-2 px-4 bg-[#2a3942] border-none rounded-xl text-sm text-zinc-100 focus:outline-none focus:ring-0"
+                    className="w-full py-2 px-4 bg-zinc-100 dark:bg-[#2a3942] border-none rounded-xl text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-0"
                   />
                 </div>
                 <button
@@ -1267,7 +1267,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
           </footer>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center bg-[#0b141a]">
+        <div className="flex-1 flex items-center justify-center bg-white dark:bg-[#0b141a]">
           <p className="text-zinc-600">Selecione uma conversa</p>
         </div>
       )}
