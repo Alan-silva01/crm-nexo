@@ -148,13 +148,6 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   const [initialLeadsLoaded, setInitialLeadsLoaded] = useState(false);
   const MESSAGE_PAGE_SIZE = 50;
 
-  // Marca quando os leads são carregados pela primeira vez
-  useEffect(() => {
-    if (leads.length > 0 && !initialLeadsLoaded) {
-      setInitialLeadsLoaded(true);
-    }
-  }, [leads.length, initialLeadsLoaded]);
-
   // Tenant Users (atendentes)
   const { userType, atendenteInfo, effectiveUserId, tenantId, userInfo, signOut, session } = useAuth();
   const [tenantMembers, setTenantMembers] = useState<TenantUser[]>([]);
@@ -164,6 +157,25 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
   const setSelectedChatId = onSelectChat;
   const selectedChat = leads.find(l => l.id === selectedChatId) || leads[0];
+
+  // Marca quando os leads são carregados pela primeira vez
+  useEffect(() => {
+    if (leads.length > 0 && !initialLeadsLoaded) {
+      setInitialLeadsLoaded(true);
+    }
+  }, [leads.length, initialLeadsLoaded]);
+
+  // Timeout de segurança: se após 3s não tiver leads mas tiver user, assume lista vazia para sair do loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!initialLeadsLoaded && leads.length === 0 && effectiveUserId) {
+        console.log('[WhatsAppChat] Timeout waiting for leads (3s), assuming empty list');
+        setInitialLeadsLoaded(true);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [initialLeadsLoaded, leads.length, effectiveUserId]);
+
 
   // Carregar lista de membros do tenant (com cache para evitar delay)
   useEffect(() => {
