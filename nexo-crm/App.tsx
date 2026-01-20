@@ -405,7 +405,9 @@ const AppContent: React.FC = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔌 REALTIME SUBSCRIPTION STATUS:', status, 'for tenant_id:', effectiveUserId);
+      });
 
     return () => {
       supabase.removeChannel(channel);
