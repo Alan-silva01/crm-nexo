@@ -97,7 +97,7 @@ const Kanban: React.FC<KanbanProps> = ({
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
   const [isAddingLead, setIsAddingLead] = useState(false);
-  const [newLead, setNewLead] = useState({ name: '', phone: '', email: '', status: '', company_name: '', monthly_revenue: '' });
+  const [newLead, setNewLead] = useState({ name: '', phone: '', email: '', status: '', description: '' });
   const [isCreating, setIsCreating] = useState(false);
   const [creationSuccess, setCreationSuccess] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState(false);
@@ -335,16 +335,24 @@ const Kanban: React.FC<KanbanProps> = ({
       return;
     }
 
+    if (!newLead.phone.trim()) {
+      setAlertModal({
+        isOpen: true,
+        title: 'Telefone Obrigatório',
+        message: 'Por favor, informe o telefone do lead para continuar com o cadastro.'
+      });
+      return;
+    }
+
     setIsCreating(true);
     try {
       const created = await leadsService.createLead({
         name: newLead.name,
-        phone: newLead.phone || null,
+        phone: newLead.phone,
         email: newLead.email || null,
         status: newLead.status || columns[0]?.name || 'NOVO LEAD',
         avatar: `https://picsum.photos/seed/${newLead.name}/200`,
-        company_name: newLead.company_name || null,
-        monthly_revenue: newLead.monthly_revenue ? parseFloat(newLead.monthly_revenue) : null,
+        last_message: newLead.description || null,
       });
 
       if (created) {
@@ -353,7 +361,7 @@ const Kanban: React.FC<KanbanProps> = ({
         onLeadsUpdate(updatedLeads);
 
         // Limpar dados IMEDIATAMENTE
-        setNewLead({ name: '', phone: '', email: '', status: columns[0]?.name || '', company_name: '', monthly_revenue: '' });
+        setNewLead({ name: '', phone: '', email: '', status: columns[0]?.name || '', description: '' });
 
         setTimeout(() => {
           setIsAddingLead(false);
@@ -817,7 +825,7 @@ const Kanban: React.FC<KanbanProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Telefone / WhatsApp</label>
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Telefone / WhatsApp *</label>
                 <input
                   type="tel"
                   value={newLead.phone}
@@ -825,6 +833,19 @@ const Kanban: React.FC<KanbanProps> = ({
                   placeholder="+55 11 99999-9999"
                   className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Coluna Inicial *</label>
+                <select
+                  value={newLead.status}
+                  onChange={(e) => setNewLead({ ...newLead, status: e.target.value })}
+                  className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium appearance-none"
+                >
+                  {columns.map(col => (
+                    <option key={col.id} value={col.name} className="bg-[#0c0c0e]">{col.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2">
@@ -839,38 +860,14 @@ const Kanban: React.FC<KanbanProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Nome da Empresa</label>
-                <input
-                  type="text"
-                  value={newLead.company_name}
-                  onChange={(e) => setNewLead({ ...newLead, company_name: e.target.value })}
-                  placeholder="Ex: Tech Solutions Ltda"
-                  className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium"
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Descrição</label>
+                <textarea
+                  value={newLead.description}
+                  onChange={(e) => setNewLead({ ...newLead, description: e.target.value })}
+                  placeholder="Observações sobre o lead..."
+                  rows={3}
+                  className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium resize-none"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Faturamento Mensal (R$)</label>
-                <input
-                  type="number"
-                  value={newLead.monthly_revenue}
-                  onChange={(e) => setNewLead({ ...newLead, monthly_revenue: e.target.value })}
-                  placeholder="Ex: 50000"
-                  className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-4">Coluna Inicial</label>
-                <select
-                  value={newLead.status}
-                  onChange={(e) => setNewLead({ ...newLead, status: e.target.value })}
-                  className="w-full bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border-none rounded-2xl px-6 py-4 text-sm focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium appearance-none"
-                >
-                  {columns.map(col => (
-                    <option key={col.id} value={col.name} className="bg-[#0c0c0e]">{col.name}</option>
-                  ))}
-                </select>
               </div>
             </div>
 
