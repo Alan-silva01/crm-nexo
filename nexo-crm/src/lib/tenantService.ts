@@ -9,7 +9,6 @@ export type UserRole = 'owner' | 'admin' | 'atendente' | 'viewer';
 export interface Tenant {
     id: string;
     name: string;
-    slug: string | null;
     settings: Record<string, unknown>;
     max_users: number;
     created_at: string;
