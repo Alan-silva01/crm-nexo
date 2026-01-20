@@ -250,7 +250,7 @@ const Kanban: React.FC<KanbanProps> = ({
         .from('kanban_columns')
         .update({ position: col.position })
         .eq('id', col.id)
-        .eq('user_id', effectiveUserId)
+        .eq('tenant_id', effectiveUserId)
     );
 
     const results = await Promise.all(updatePromises);
@@ -269,7 +269,7 @@ const Kanban: React.FC<KanbanProps> = ({
     const newPosition = columns.length;
     const { data, error } = await supabase
       .from('kanban_columns')
-      .insert([{ user_id: effectiveUserId, name: newColumnName, position: newPosition }])
+      .insert([{ user_id: effectiveUserId, tenant_id: effectiveUserId, name: newColumnName, position: newPosition }])
       .select()
       .single();
 

@@ -101,7 +101,7 @@ export const leadsService = {
         const { data: fallbackData, error: fallbackError } = await supabase
             .from('leads')
             .select('*')
-            .eq('user_id', targetTenantId)
+            .eq('tenant_id', targetTenantId)
             .order('updated_at', { ascending: false });
 
         if (!fallbackError && fallbackData) {
@@ -247,7 +247,7 @@ export const leadsService = {
                 from_column:kanban_columns!from_column_id(name),
                 to_column:kanban_columns!to_column_id(name)
             `)
-            .eq('user_id', targetId)
+            .eq('tenant_id', targetId)
             .order('moved_at', { ascending: false });
 
         if (error) {

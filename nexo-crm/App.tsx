@@ -189,7 +189,7 @@ const AppContent: React.FC = () => {
           const columnsPromise = supabase
             .from('kanban_columns')
             .select('*')
-            .eq('user_id', effectiveUserId)
+            .eq('tenant_id', effectiveUserId)
             .order('position');
 
           const timeoutPromise = new Promise((_, reject) =>
@@ -426,7 +426,7 @@ const AppContent: React.FC = () => {
           event: '*',
           schema: 'public',
           table: 'kanban_columns',
-          filter: `user_id=eq.${effectiveUserId}`
+          filter: `tenant_id=eq.${effectiveUserId}`
         },
         (payload) => {
           console.log('Columns realtime update:', payload);
@@ -461,7 +461,7 @@ const AppContent: React.FC = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'lead_column_history',
-          filter: `user_id=eq.${effectiveUserId}`
+          filter: `tenant_id=eq.${effectiveUserId}`
         },
         async (payload) => {
           console.log('History realtime update:', payload);
