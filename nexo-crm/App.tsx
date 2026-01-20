@@ -849,7 +849,7 @@ const AppContent: React.FC = () => {
               {showNotifications && (
                 <>
                   <div
-                    className="fixed inset-0 z-40 bg-black/5"
+                    className="fixed inset-0 z-40"
                     onClick={() => setShowNotifications(false)}
                   ></div>
                   <div className="absolute right-0 top-full mt-3 w-80 bg-[#0c0c0e] border border-zinc-800/80 rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.8)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-white/10">
