@@ -859,7 +859,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
           )}
 
           {isFromClient && (
-            <div className="px-3 py-1.5 text-[10px] font-medium flex items-center gap-1.5 border-b bg-zinc-50 dark:bg-[#1a242a] border-zinc-100 dark:border-[#151d22] text-zinc-400">
+            <div className="px-3 py-1.5 text-[10px] font-medium flex items-center gap-1.5 border-b bg-[#04514f] border-[#03403e] text-emerald-200">
               <User size={12} />
               <span>Cliente</span>
             </div>
