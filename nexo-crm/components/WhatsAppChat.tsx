@@ -1129,16 +1129,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
             ref={chatContainerRef}
             className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 relative bg-[#0c0c0e]"
           >
-            <div
-              className="absolute inset-0 opacity-[0.05] pointer-events-none"
-              style={{
-                backgroundImage: `url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')`,
-                backgroundRepeat: 'repeat',
-                backgroundSize: '400px'
-              }}
-            ></div>
-
-            <div className="relative flex flex-col space-y-4 max-w-4xl mx-auto z-0">
+            <div className="relative flex flex-col space-y-4 max-w-4xl mx-auto">
               {loadingMessages ? (
                 <div className="text-center py-12">
                   <div className="w-8 h-8 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto"></div>
