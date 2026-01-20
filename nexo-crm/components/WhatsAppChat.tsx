@@ -969,8 +969,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
             <button
               key={chat.id}
               onClick={() => setSelectedChatId(chat.id)}
-              className={`w-full p-4 flex gap-3 items-center hover:bg-white/5 transition-all border-b border-zinc-800/10 text-left relative overflow-hidden
-                  ${selectedChatId === chat.id ? 'bg-white/5 border-l-4 border-l-indigo-500 shadow-inner' : ''}
+              className={`w-full p-4 flex gap-3 items-center hover:bg-zinc-50 dark:hover:bg-white/5 transition-all border-b border-zinc-100 dark:border-zinc-800/10 text-left relative overflow-hidden
+                  ${selectedChatId === chat.id ? 'bg-zinc-100 dark:bg-white/10 border-l-4 border-l-indigo-500 shadow-inner' : ''}
                   ${chat.notifica_humano ? 'animate-pulse bg-rose-500/10' : ''}`}
             >
               {chat.notifica_humano && (
