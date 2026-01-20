@@ -341,7 +341,7 @@ const Kanban: React.FC<KanbanProps> = ({
         name: newLead.name,
         phone: newLead.phone || null,
         email: newLead.email || null,
-        status: newLead.status || columns[0]?.name || 'Novos Leads',
+        status: newLead.status || columns[0]?.name || 'NOVO LEAD',
         avatar: `https://picsum.photos/seed/${newLead.name}/200`,
         company_name: newLead.company_name || null,
         monthly_revenue: newLead.monthly_revenue ? parseFloat(newLead.monthly_revenue) : null,

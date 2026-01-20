@@ -77,7 +77,7 @@ const ImportContactsModal: React.FC<ImportContactsModalProps> = ({
             name: c.name,
             phone: c.phone,
             avatar: null,
-            status: 'Novos Leads',
+            status: 'NOVO LEAD',
             email: null,
             company_name: null,
             last_message: null,

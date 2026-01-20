@@ -210,20 +210,20 @@ const AppContent: React.FC = () => {
           } else {
             console.log(`[${rid}] No columns found, setting defaults.`);
             setColumns([
-              { id: '1', name: 'Novos Leads', position: 0 },
-              { id: '2', name: 'Em Atendimento', position: 1 },
-              { id: '3', name: 'Negociação', position: 2 },
-              { id: '4', name: 'Venda Concluída', position: 3 }
+              { id: '1', name: 'NOVO LEAD', position: 0 },
+              { id: '2', name: 'EM ATENDIMENTO', position: 1 },
+              { id: '3', name: 'QUALIFICADO', position: 2 },
+              { id: '4', name: 'CONCLUIDO', position: 3 }
             ]);
           }
         } catch (e) {
           console.error(`[${rid}] CRITICAL: Columns fetch crashed:`, e);
           // Set defaults even on error
           setColumns([
-            { id: '1', name: 'Novos Leads', position: 0 },
-            { id: '2', name: 'Em Atendimento', position: 1 },
-            { id: '3', name: 'Negociação', position: 2 },
-            { id: '4', name: 'Venda Concluída', position: 3 }
+            { id: '1', name: 'NOVO LEAD', position: 0 },
+            { id: '2', name: 'EM ATENDIMENTO', position: 1 },
+            { id: '3', name: 'QUALIFICADO', position: 2 },
+            { id: '4', name: 'CONCLUIDO', position: 3 }
           ]);
         }
 
