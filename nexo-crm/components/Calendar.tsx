@@ -106,7 +106,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                 }}
                 className="relative flex flex-col items-center justify-center group cursor-pointer"
             >
-                <div className={`h-12 w-12 [@media(max-height:850px)]:h-10 [@media(max-height:850px)]:w-10 [@media(max-height:768px)]:h-7 [@media(max-height:768px)]:w-7 flex flex-col items-center justify-center rounded-xl transition-all duration-300
+                <div className={`aspect-square w-full max-w-[64px] flex flex-col items-center justify-center rounded-xl transition-all duration-300
           ${isToday
                         ? 'bg-[#1a1a1c] shadow-[inset_4px_4px_8px_#0d0d0e,inset_-4px_-4px_8px_#27272a] text-indigo-400 font-bold border border-indigo-500/20'
                         : 'text-zinc-400 hover:text-white hover:bg-zinc-800/10'}`}>
@@ -218,7 +218,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
         .slice(0, 15);
 
     return (
-        <div className="h-full bg-[#0c0c0e] p-8 [@media(max-height:850px)]:p-5 [@media(max-height:768px)]:p-3 overflow-y-auto custom-scrollbar flex flex-col gap-8 [@media(max-height:850px)]:gap-4 [@media(max-height:768px)]:gap-2 text-zinc-300 select-none">
+        <div className="h-full bg-[#0c0c0e] p-8 [@media(max-height:850px)]:p-5 [@media(max-height:768px)]:p-3 overflow-hidden flex flex-col gap-8 [@media(max-height:850px)]:gap-4 [@media(max-height:768px)]:gap-2 text-zinc-300 select-none">
 
             {/* Top Header Section */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 [@media(max-height:850px)]:gap-2">
@@ -270,7 +270,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 [@media(max-height:850px)]:gap-4 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 [@media(max-height:850px)]:gap-4 items-stretch flex-1 min-h-0">
                 {/* Left Column: Upcoming Events */}
                 <div className="lg:col-span-4 flex flex-col">
                     <div className="p-8 [@media(max-height:850px)]:p-4 rounded-[3rem] [@media(max-height:850px)]:rounded-[2rem] bg-[#0c0c0e] shadow-[12px_12px_24px_#050506,-12px_-12px_24px_#131316] flex flex-col h-full border border-zinc-800/20">
@@ -282,7 +282,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                             <div className="text-[9px] [@media(max-height:850px)]:text-[7px] bg-indigo-500/10 px-3 py-1.5 [@media(max-height:850px)]:px-1.5 [@media(max-height:850px)]:py-1 rounded-full text-indigo-400 font-bold uppercase tracking-wider border border-indigo-500/10">Hoje</div>
                         </div>
 
-                        <div className="flex-1 space-y-4 [@media(max-height:850px)]:space-y-2 overflow-y-auto custom-scrollbar pr-2 min-h-[400px] [@media(max-height:850px)]:min-h-[200px] [@media(max-height:768px)]:min-h-[140px] max-h-[600px]">
+                        <div className="flex-1 space-y-4 [@media(max-height:850px)]:space-y-2 overflow-y-auto custom-scrollbar pr-2">
                             {upcomingEvents.length > 0 ? upcomingEvents.map((event, i) => (
                                 <div
                                     key={event.id}
@@ -361,7 +361,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                             ))}
                         </div>
 
-                        <div className="grid grid-cols-7 gap-y-6 [@media(max-height:850px)]:gap-y-3 gap-x-4 [@media(max-height:850px)]:gap-x-2 [@media(max-height:768px)]:gap-x-1">
+                        <div className="grid grid-cols-7 grid-rows-[repeat(6,1fr)] gap-y-2 [@media(max-height:850px)]:gap-y-1 gap-x-4 [@media(max-height:850px)]:gap-x-2 [@media(max-height:768px)]:gap-x-1 flex-1">
                             {days}
                         </div>
                     </div>
