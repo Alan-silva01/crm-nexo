@@ -28,6 +28,28 @@ import { useTheme } from '../src/lib/ThemeContext';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e', '#0ea5e9', '#f97316', '#22c55e', '#d946ef'];
 
+// Custom Tooltip component using Tailwind classes for reliable theme switching
+const CustomChartTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) return null;
+
+  return (
+    <div className="bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 shadow-lg dark:shadow-none">
+      <p className="text-zinc-900 dark:text-white font-bold text-xs mb-2">{label}</p>
+      {payload.map((entry: any, index: number) => (
+        <div key={index} className="flex items-center gap-2 text-[11px]">
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: entry.color }}
+          />
+          <span className="text-zinc-700 dark:text-zinc-300">
+            {entry.name}: <span className="font-semibold text-zinc-900 dark:text-white">{entry.value}</span>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const DashboardClock = () => {
   const [time, setTime] = React.useState(new Date());
 
@@ -378,18 +400,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
                     axisLine={false}
                     tick={{ fill: isDark ? "#52525b" : "#71717a" }}
                   />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: isDark ? '#0c0c0e' : '#ffffff',
-                      border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
-                      borderRadius: '12px',
-                      padding: '12px',
-                      boxShadow: isDark ? 'none' : '0 10px 15px -3px rgba(0,0,0,0.1)'
-                    }}
-                    itemStyle={{ color: isDark ? '#f8fafc' : '#1e293b', fontSize: '11px', fontWeight: '500' }}
-                    labelStyle={{ color: isDark ? '#f8fafc' : '#1e293b', fontWeight: 'bold', marginBottom: '8px', fontSize: '12px' }}
-                    cursor={{ stroke: isDark ? '#334155' : '#cbd5e1', strokeWidth: 2 }}
-                  />
+                  <Tooltip content={<CustomChartTooltip />} />
                   <Area type="monotone" dataKey="leads" name="Leads" stroke="#6366f1" fillOpacity={1} fill="url(#colorLeads)" strokeWidth={2} />
                   <Area type="monotone" dataKey="appointments" name={agendamentoLabel} stroke="#10b981" fillOpacity={1} fill="url(#colorAppointments)" strokeWidth={2} />
                   <Area type="monotone" dataKey="noInterest" name="Sem Interesse" stroke="#f43f5e" fillOpacity={1} fill="url(#colorNoInterest)" strokeWidth={2} />
