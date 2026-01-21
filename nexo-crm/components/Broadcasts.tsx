@@ -69,7 +69,11 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
 
     const handleSaveDraft = () => {
         if (drafts.length >= 2) {
-            alert('Você já tem 2 rascunhos salvos. Exclua um para salvar outro.');
+            setValidationMessage({
+                title: 'Limite de Rascunhos',
+                message: 'Você já tem 2 rascunhos salvos. Exclua um para salvar outro.'
+            });
+            setShowTagValidationModal(true);
             return;
         }
         setShowDraftModal(true);
@@ -77,7 +81,11 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
 
     const confirmSaveDraft = () => {
         if (!draftName.trim()) {
-            alert('Digite um nome para o rascunho.');
+            setValidationMessage({
+                title: 'Nome Obrigatório',
+                message: 'Digite um nome para identificar o rascunho.'
+            });
+            setShowTagValidationModal(true);
             return;
         }
         const newDraft: Draft = {
@@ -128,7 +136,11 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
 
     const handleStartBroadcast = async () => {
         if (!message.trim() && !selectedImage && !selectedAudio) {
-            alert('Por favor, adicione uma mensagem ou mídia para disparar.');
+            setValidationMessage({
+                title: 'Conteúdo Vazio',
+                message: 'Por favor, adicione uma mensagem ou mídia para disparar.'
+            });
+            setShowTagValidationModal(true);
             return;
         }
 
@@ -165,7 +177,11 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
             );
 
             if (filteredLeads.length === 0) {
-                alert('Nenhum contato encontrado com as etiquetas selecionadas.');
+                setValidationMessage({
+                    title: 'Nenhum Contato',
+                    message: 'Nenhum contato encontrado com as etiquetas selecionadas.'
+                });
+                setShowTagValidationModal(true);
                 setIsSending(false);
                 return;
             }
