@@ -222,6 +222,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
 
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
 
+  // IMPORTANT: useTheme must be declared BEFORE renderActiveShape to ensure isDark is in scope
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const onPieEnter = (_: any, index: number) => {
     setActiveIndex(index);
   };
@@ -277,10 +281,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
     );
   };
 
-  const { theme } = useTheme();
   const [responseTime] = React.useState(() => (Math.random() * (90 - 40) + 40).toFixed(0));
-
-  const isDark = theme === 'dark';
 
   const handleExportCSV = () => {
     if (leads.length === 0) return;
