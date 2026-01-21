@@ -361,19 +361,33 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
                       <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" opacity={0.3} />
-                  <XAxis dataKey="name" stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} interval={0} tick={{ dy: 10 }} />
-                  <YAxis stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "#27272a" : "#e4e4e7"} opacity={0.6} />
+                  <XAxis
+                    dataKey="name"
+                    stroke={isDark ? "#52525b" : "#71717a"}
+                    fontSize={9}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: isDark ? "#52525b" : "#71717a" }}
+                  />
+                  <YAxis
+                    stroke={isDark ? "#52525b" : "#71717a"}
+                    fontSize={9}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: isDark ? "#52525b" : "#71717a" }}
+                  />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: isDark ? '#0c0c0e' : '#fff',
+                      backgroundColor: isDark ? '#0c0c0e' : '#ffffff',
                       border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
-                      borderRadius: '15px',
-                      padding: '10px',
-                      zIndex: 100,
-                      boxShadow: isDark ? 'none' : '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                      borderRadius: '12px',
+                      padding: '12px',
+                      boxShadow: isDark ? 'none' : '0 10px 15px -3px rgba(0,0,0,0.1)'
                     }}
-                    itemStyle={{ color: isDark ? '#fff' : '#18181b', fontSize: '10px' }}
+                    itemStyle={{ color: isDark ? '#f8fafc' : '#1e293b', fontSize: '11px', fontWeight: '500' }}
+                    labelStyle={{ color: isDark ? '#f8fafc' : '#1e293b', fontWeight: 'bold', marginBottom: '8px', fontSize: '12px' }}
+                    cursor={{ stroke: isDark ? '#334155' : '#cbd5e1', strokeWidth: 2 }}
                   />
                   <Area type="monotone" dataKey="leads" name="Leads" stroke="#6366f1" fillOpacity={1} fill="url(#colorLeads)" strokeWidth={2} />
                   <Area type="monotone" dataKey="appointments" name={agendamentoLabel} stroke="#10b981" fillOpacity={1} fill="url(#colorAppointments)" strokeWidth={2} />
@@ -462,7 +476,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
                           className="w-2 h-2 rounded-full shrink-0"
                           style={{ backgroundColor: COLORS[realIndex % COLORS.length] }}
                         />
-                        <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight truncate flex-1" title={entry.name}>
+                        <span className={`text-[9px] font-bold uppercase tracking-tight truncate flex-1 ${isDark ? 'text-zinc-500' : 'text-zinc-700'}`} title={entry.name}>
                           {entry.name}
                         </span>
                       </div>
