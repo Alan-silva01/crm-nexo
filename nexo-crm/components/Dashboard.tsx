@@ -41,7 +41,7 @@ const CustomChartTooltip = ({ active, payload, label }: any) => {
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: entry.color }}
           />
-          <span className="text-zinc-700 dark:text-zinc-300">
+          <span className="text-zinc-700 dark:text-zinc-300 uppercase">
             {entry.name}: <span className="font-semibold text-zinc-900 dark:text-white">{entry.value}</span>
           </span>
         </div>
