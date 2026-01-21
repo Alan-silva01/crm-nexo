@@ -24,6 +24,7 @@ import {
   ArrowDownRight
 } from 'lucide-react';
 import { Lead, LeadColumnHistory } from '../types';
+import { useTheme } from '../src/lib/ThemeContext';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e', '#0ea5e9', '#f97316', '#22c55e', '#d946ef'];
 
@@ -36,7 +37,7 @@ const DashboardClock = () => {
   }, []);
 
   return (
-    <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-[#0c0c0e] shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-zinc-800/10">
+    <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white dark:bg-[#0c0c0e] shadow-xl dark:shadow-[inset_4px_4px_8px_#060607,inset_-4px_-4px_8px_#121215] border border-zinc-200 dark:border-zinc-800/10">
       <div className="flex items-center gap-2 text-indigo-400">
         <Clock size={14} />
         <span className="text-xs font-bold tracking-tight">{time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
@@ -51,7 +52,7 @@ const DashboardClock = () => {
 };
 
 const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) => (
-  <div className="bg-[#0c0c0e] border border-zinc-800/50 p-4 [@media(max-height:800px)]:p-2.5 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316] hover:border-zinc-700/50 transition-all group">
+  <div className="bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/50 p-4 [@media(max-height:800px)]:p-2.5 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-xl dark:shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316] hover:border-indigo-500/30 dark:hover:border-zinc-700/50 transition-all group">
     <div className="flex justify-between items-start mb-3 [@media(max-height:800px)]:mb-2">
       <div className={`p-2 [@media(max-height:800px)]:p-1.5 rounded-xl [@media(max-height:800px)]:rounded-lg ${color} bg-opacity-10 text-${color.split('-')[1]}-400 shadow-inner`}>
         <Icon size={16} className="[@media(max-height:800px)]:w-3.5 [@media(max-height:800px)]:h-3.5" />
@@ -246,7 +247,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
         <text x="50%" y="45%" dy={-35} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest">
           {payload.name.length > 15 ? `${payload.name.substring(0, 12)}...` : payload.name}
         </text>
-        <text x="50%" y="45%" dy={10} textAnchor="middle" fill="#fff" fontSize={24} fontWeight="bold">
+        <text x="50%" y="45%" dy={10} textAnchor="middle" fill={isDark ? "#fff" : "#18181b"} fontSize={24} fontWeight="bold">
           {value}
         </text>
         <text x="50%" y="45%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold">
@@ -276,7 +277,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
     );
   };
 
+  const { theme } = useTheme();
   const [responseTime] = React.useState(() => (Math.random() * (90 - 40) + 40).toFixed(0));
+
+  const isDark = theme === 'dark';
 
   const handleExportCSV = () => {
     if (leads.length === 0) return;
@@ -319,7 +323,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 [@media(max-height:800px)]:gap-3 flex-1 min-h-0">
-        <div className="col-span-2 bg-[#0c0c0e] border border-zinc-800/50 p-4 [@media(max-height:800px)]:p-3 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
+        <div className="col-span-2 bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/50 p-4 [@media(max-height:800px)]:p-3 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-xl dark:shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
           <div className="flex justify-between items-center mb-4 [@media(max-height:800px)]:mb-2 shrink-0">
             <h3 className="text-[10px] [@media(max-height:800px)]:text-[9px] font-bold text-zinc-400 uppercase tracking-widest pl-2 border-l-4 border-indigo-500">
               Fluxo Estratégico
@@ -361,8 +365,15 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
                   <XAxis dataKey="name" stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} interval={0} tick={{ dy: 10 }} />
                   <YAxis stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#0c0c0e', border: '1px solid #27272a', borderRadius: '15px', padding: '10px', zIndex: 100 }}
-                    itemStyle={{ color: '#fff', fontSize: '10px' }}
+                    contentStyle={{
+                      backgroundColor: isDark ? '#0c0c0e' : '#fff',
+                      border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
+                      borderRadius: '15px',
+                      padding: '10px',
+                      zIndex: 100,
+                      boxShadow: isDark ? 'none' : '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                    }}
+                    itemStyle={{ color: isDark ? '#fff' : '#18181b', fontSize: '10px' }}
                   />
                   <Area type="monotone" dataKey="leads" name="Leads" stroke="#6366f1" fillOpacity={1} fill="url(#colorLeads)" strokeWidth={2} />
                   <Area type="monotone" dataKey="appointments" name={agendamentoLabel} stroke="#10b981" fillOpacity={1} fill="url(#colorAppointments)" strokeWidth={2} />
@@ -373,7 +384,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
           </div>
         </div>
 
-        <div className="bg-[#0c0c0e] border border-zinc-800/50 p-4 [@media(max-height:800px)]:p-3 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
+        <div className="bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/50 p-4 [@media(max-height:800px)]:p-3 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-xl dark:shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
           <h3 className="text-[10px] [@media(max-height:800px)]:text-[9px] font-bold text-zinc-400 mb-2 uppercase tracking-widest pl-2 border-l-4 border-indigo-500 shrink-0">
             Distribuição por Status
           </h3>
@@ -409,7 +420,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
                     <text x="50%" y="50%" dy={-35} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest">
                       Colunas do Kanban
                     </text>
-                    <text x="50%" y="50%" dy={10} textAnchor="middle" fill="#fff" fontSize={24} fontWeight="bold">
+                    <text x="50%" y="50%" dy={10} textAnchor="middle" fill={isDark ? "#fff" : "#18181b"} fontSize={24} fontWeight="bold">
                       100%
                     </text>
                     <text x="50%" y="50%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold">
