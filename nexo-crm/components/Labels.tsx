@@ -31,6 +31,12 @@ const Labels: React.FC<LabelsProps> = ({ tags, onTagsUpdate }) => {
     const [editName, setEditName] = useState('');
     const [editColor, setEditColor] = useState('');
 
+    // Estado para modal de exclusão
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; tag: Tag | null }>({
+        isOpen: false,
+        tag: null
+    });
+
     // Reload tags when auth is ready (if not already loaded from parent)
     useEffect(() => {
         if (!authLoading && effectiveUserId && tags.length === 0) {
@@ -68,13 +74,22 @@ const Labels: React.FC<LabelsProps> = ({ tags, onTagsUpdate }) => {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm('Tem certeza que deseja excluir esta etiqueta? Ela será removida de todos os contatos.')) {
-            const success = await tagsService.deleteTag(id);
-            if (success) {
-                onTagsUpdate(tags.filter(t => t.id !== id));
-            }
+    const openDeleteModal = (tag: Tag) => {
+        setDeleteModal({ isOpen: true, tag });
+    };
+
+    const closeDeleteModal = () => {
+        setDeleteModal({ isOpen: false, tag: null });
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteModal.tag) return;
+
+        const success = await tagsService.deleteTag(deleteModal.tag.id);
+        if (success) {
+            onTagsUpdate(tags.filter(t => t.id !== deleteModal.tag!.id));
         }
+        closeDeleteModal();
     };
 
     return (
@@ -234,7 +249,7 @@ const Labels: React.FC<LabelsProps> = ({ tags, onTagsUpdate }) => {
                                                         <Edit2 size={14} />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDelete(tag.id)}
+                                                        onClick={() => openDeleteModal(tag)}
                                                         className="p-2 text-zinc-500 hover:text-rose-400 transition-colors"
                                                     >
                                                         <Trash2 size={14} />
@@ -249,6 +264,57 @@ const Labels: React.FC<LabelsProps> = ({ tags, onTagsUpdate }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal de Confirmação de Exclusão */}
+            {deleteModal.isOpen && deleteModal.tag && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm transition-all animate-in fade-in duration-200">
+                    <div className="w-full max-w-md bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 rounded-[2rem] p-8 shadow-[0_0_50px_rgba(0,0,0,0.2)] dark:shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-200">
+                        {/* Ícone */}
+                        <div className="mx-auto w-16 h-16 rounded-2xl mb-6 flex items-center justify-center bg-rose-500/10 shadow-[0_0_20px_rgba(244,63,94,0.1)]">
+                            <Trash2 size={28} className="text-rose-500" />
+                        </div>
+
+                        {/* Conteúdo */}
+                        <div className="text-center mb-8">
+                            <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-3">
+                                Excluir Etiqueta
+                            </h3>
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                                Tem certeza que deseja excluir a etiqueta{' '}
+                                <span
+                                    className="font-bold px-2 py-0.5 rounded-lg"
+                                    style={{
+                                        backgroundColor: deleteModal.tag.color + '20',
+                                        color: deleteModal.tag.color
+                                    }}
+                                >
+                                    {deleteModal.tag.name}
+                                </span>
+                                ?
+                            </p>
+                            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-3">
+                                Ela será removida de todos os contatos.
+                            </p>
+                        </div>
+
+                        {/* Botões */}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={closeDeleteModal}
+                                className="flex-1 py-3.5 px-6 bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold uppercase tracking-widest transition-all active:scale-95"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="flex-1 py-3.5 px-6 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-all shadow-lg shadow-rose-500/20 active:scale-95"
+                            >
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
