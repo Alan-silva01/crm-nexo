@@ -277,36 +277,74 @@ export const tenantService = {
      */
     async deleteMember(tenantUserId: string): Promise<boolean> {
         try {
+            console.log('[deleteMember] Starting deletion for:', tenantUserId);
+
             // Primeiro buscar o user_id para poder deletar do Auth
-            const { data: member } = await supabase
+            const { data: member, error: fetchError } = await supabase
                 .from('tenant_users')
-                .select('user_id, role')
+                .select('user_id, role, tenant_id')
                 .eq('id', tenantUserId)
                 .single();
 
-            if (!member) return false;
+            if (fetchError) {
+                console.error('[deleteMember] Error fetching member:', fetchError);
+                return false;
+            }
+
+            if (!member) {
+                console.error('[deleteMember] Member not found:', tenantUserId);
+                return false;
+            }
+
+            console.log('[deleteMember] Found member:', member);
 
             // Não permitir deletar o owner
             if (member.role === 'owner') {
-                console.error('Cannot delete tenant owner');
+                console.error('[deleteMember] Cannot delete tenant owner');
                 return false;
             }
 
-            // Deletar do Auth (via Edge Function ou admin API)
-            // Por enquanto, apenas desativar
-            const { error } = await supabase
+            // Verificar se o usuário atual tem permissão
+            const userInfo = await this.getCurrentUserInfo();
+            if (!userInfo || !userInfo.isOwnerOrAdmin) {
+                console.error('[deleteMember] User does not have permission to delete');
+                return false;
+            }
+
+            // Verificar se pertence ao mesmo tenant
+            if (member.tenant_id !== userInfo.tenantId) {
+                console.error('[deleteMember] Member belongs to different tenant');
+                return false;
+            }
+
+            // Tentar deletar
+            const { error: deleteError, count } = await supabase
                 .from('tenant_users')
                 .delete()
-                .eq('id', tenantUserId);
+                .eq('id', tenantUserId)
+                .select();
 
-            if (error) {
-                console.error('Error deleting member:', error);
+            if (deleteError) {
+                console.error('[deleteMember] Error deleting member:', deleteError);
                 return false;
             }
 
+            // Verificar se realmente deletou
+            const { data: checkMember } = await supabase
+                .from('tenant_users')
+                .select('id')
+                .eq('id', tenantUserId)
+                .maybeSingle();
+
+            if (checkMember) {
+                console.error('[deleteMember] Member still exists after delete! RLS might be blocking.');
+                return false;
+            }
+
+            console.log('[deleteMember] Successfully deleted member:', tenantUserId);
             return true;
         } catch (e) {
-            console.error('Error in deleteMember:', e);
+            console.error('[deleteMember] Error:', e);
             return false;
         }
     },
