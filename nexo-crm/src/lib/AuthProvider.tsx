@@ -233,7 +233,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signOut = async () => {
         console.log('AuthProvider: signOut initiated');
         try {
-            localStorage.clear();
+            // Preservar preferência de tema
+            const savedTheme = localStorage.getItem('nero-theme');
+
+            // Limpar todos os caches de autenticação
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('auth_tenant_user_') ||
+                    key.startsWith('auth_user_type_') ||
+                    key.startsWith('nero_leads_cache') ||
+                    key.startsWith('sb-')) {
+                    localStorage.removeItem(key);
+                }
+            });
+
+            // Restaurar preferência de tema
+            if (savedTheme) {
+                localStorage.setItem('nero-theme', savedTheme);
+            }
+
             updateUserState(null);
             await supabase.auth.signOut();
         } catch (e) {
