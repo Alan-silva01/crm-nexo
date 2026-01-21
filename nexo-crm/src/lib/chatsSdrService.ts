@@ -73,14 +73,16 @@ async function getEffectiveProfileData(): Promise<{ chat_table_name: string | nu
     console.warn('[getEffectiveProfileData] All RPC retries failed, trying direct query...');
 
     try {
-        const { data: atendente } = await supabase
-            .from('atendentes')
-            .select('admin_id')
+        // Buscar tenant_id do tenant_users (substituiu tabela atendentes)
+        const { data: tenantUser } = await supabase
+            .from('tenant_users')
+            .select('tenant_id')
             .eq('user_id', user.id)
             .eq('ativo', true)
             .maybeSingle();
 
-        const profileUserId = atendente?.admin_id || user.id;
+        // Se for atendente, buscar o profile do owner do tenant
+        const profileUserId = tenantUser?.tenant_id || user.id;
 
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
