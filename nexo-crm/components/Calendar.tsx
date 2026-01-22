@@ -6,6 +6,7 @@ import { Lead, LeadColumnHistory, getLeadDisplayName } from '../types';
 import LetterAvatar from './LetterAvatar';
 import LeadDetailsModal from './LeadDetailsModal';
 import ConfirmModal from './ConfirmModal';
+import { formatPhoneNumber } from '../src/lib/formatPhone';
 
 interface CalendarProps {
     leads: Lead[];
@@ -420,7 +421,7 @@ const CalendarPage: React.FC<CalendarProps> = ({ leads, onUpdateLead, leadsHisto
                                         >
                                             <div className="text-left">
                                                 <p className={`text-xs font-bold ${selectedLeadId === lead.id ? 'text-indigo-400' : 'text-zinc-400 group-hover:text-zinc-200'}`}>{getLeadDisplayName(lead)}</p>
-                                                <p className="text-[10px] text-zinc-600">{lead.phone}</p>
+                                                <p className="text-[10px] text-zinc-600">{formatPhoneNumber(lead.phone)}</p>
                                             </div>
                                             {selectedLeadId === lead.id && <Check size={14} className="text-indigo-500" />}
                                         </button>
