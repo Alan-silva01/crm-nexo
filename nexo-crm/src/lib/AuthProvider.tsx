@@ -211,7 +211,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signIn = async (email: string, password: string) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (!error && data.session) {
-            await fetchUserInfo(data.session.user.id);
+            const info = await fetchUserInfo(data.session.user.id);
+
+            // Verificar se o usuário é um atendente inativo
+            if (info && info.isAtendente) {
+                // Buscar status ativo do tenant_users
+                const { data: tenantUser } = await supabase
+                    .from('tenant_users')
+                    .select('ativo')
+                    .eq('user_id', data.session.user.id)
+                    .single();
+
+                if (tenantUser && tenantUser.ativo === false) {
+                    // Atendente inativo - fazer logout e retornar erro
+                    await supabase.auth.signOut();
+                    updateUserState(null);
+                    return {
+                        data: null,
+                        error: { message: 'Sua conta foi desativada. Entre em contato com o administrador.' }
+                    };
+                }
+            }
         }
         return { data, error };
     };
