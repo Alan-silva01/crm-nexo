@@ -61,7 +61,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
         if (error) {
           console.error('Login error:', error);
-          setErrorMessage('E-mail ou senha incorretos. Verifique suas credenciais.');
+          // Usar mensagem do erro se disponível (ex: conta desativada)
+          setErrorMessage(error.message || 'E-mail ou senha incorretos. Verifique suas credenciais.');
           setIsLoading(false);
           return;
         }

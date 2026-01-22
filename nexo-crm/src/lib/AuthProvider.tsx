@@ -137,6 +137,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }, 20000);
 
                 if (currSession?.user) {
+                    // PRIMEIRO: Verificar se é atendente inativo ANTES de qualquer coisa
+                    const { data: tenantUser } = await supabase
+                        .from('tenant_users')
+                        .select('ativo, role')
+                        .eq('user_id', currSession.user.id)
+                        .single();
+
+                    // Se é atendente inativo, fazer logout imediato
+                    if (tenantUser && tenantUser.role === 'atendente' && tenantUser.ativo === false) {
+                        console.log('AuthProvider: ❌ Atendente inativo detectado, fazendo logout...');
+                        localStorage.removeItem(`auth_tenant_user_${currSession.user.id}`);
+                        await supabase.auth.signOut();
+                        setSession(null);
+                        setUser(null);
+                        updateUserState(null);
+                        clearTimeout(timer);
+                        if (isMounted) setLoading(false);
+                        return; // Interrompe aqui, não prossegue com login
+                    }
+
                     setSession(currSession);
                     setUser(currSession.user);
 
