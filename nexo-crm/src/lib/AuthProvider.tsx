@@ -211,27 +211,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signIn = async (email: string, password: string) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (!error && data.session) {
-            const info = await fetchUserInfo(data.session.user.id);
+            // PRIMEIRO: Verificar status ativo ANTES de carregar cache
+            // Isso garante que atendentes inativos sejam bloqueados imediatamente
+            const { data: tenantUser } = await supabase
+                .from('tenant_users')
+                .select('ativo, role')
+                .eq('user_id', data.session.user.id)
+                .single();
 
-            // Verificar se o usuário é um atendente inativo
-            if (info && info.isAtendente) {
-                // Buscar status ativo do tenant_users
-                const { data: tenantUser } = await supabase
-                    .from('tenant_users')
-                    .select('ativo')
-                    .eq('user_id', data.session.user.id)
-                    .single();
-
-                if (tenantUser && tenantUser.ativo === false) {
-                    // Atendente inativo - fazer logout e retornar erro
-                    await supabase.auth.signOut();
-                    updateUserState(null);
-                    return {
-                        data: null,
-                        error: { message: 'Sua conta foi desativada. Entre em contato com o administrador.' }
-                    };
-                }
+            // Se encontrou registro e é atendente inativo, bloquear login
+            if (tenantUser && tenantUser.role === 'atendente' && tenantUser.ativo === false) {
+                // Limpar cache para evitar login com dados antigos
+                localStorage.removeItem(`auth_tenant_user_${data.session.user.id}`);
+                await supabase.auth.signOut();
+                updateUserState(null);
+                return {
+                    data: null,
+                    error: { message: 'Sua conta foi desativada. Entre em contato com o administrador.' }
+                };
             }
+
+            // Só buscar info completa se passou na verificação
+            await fetchUserInfo(data.session.user.id);
         }
         return { data, error };
     };
