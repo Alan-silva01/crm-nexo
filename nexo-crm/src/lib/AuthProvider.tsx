@@ -209,23 +209,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const signIn = async (email: string, password: string) => {
-        // PRIMEIRO: Verificar se é atendente inativo ANTES de fazer login
-        // Isso evita disparar o evento SIGNED_IN para contas desativadas
-        const { data: tenantUser } = await supabase
-            .from('tenant_users')
-            .select('ativo, role')
-            .eq('email', email.toLowerCase().trim())
-            .single();
-
-        // Se encontrou registro e é atendente inativo, bloquear antes do login
-        if (tenantUser && tenantUser.role === 'atendente' && tenantUser.ativo === false) {
-            return {
-                data: null,
-                error: { message: 'Sua conta foi desativada. Entre em contato com o administrador.' }
-            };
-        }
-
-        // Só faz login se passou na verificação
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (!error && data.session) {
             await fetchUserInfo(data.session.user.id);
