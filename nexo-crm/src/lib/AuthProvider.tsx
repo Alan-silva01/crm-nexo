@@ -229,29 +229,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const signIn = async (email: string, password: string) => {
+        // PRIMEIRO: Verificar se é atendente inativo ANTES de fazer login
+        // Isso evita disparar o evento SIGNED_IN para contas desativadas
+        const { data: tenantUser } = await supabase
+            .from('tenant_users')
+            .select('ativo, role')
+            .eq('email', email.toLowerCase().trim())
+            .single();
+
+        // Se encontrou registro e é atendente inativo, bloquear antes do login
+        if (tenantUser && tenantUser.role === 'atendente' && tenantUser.ativo === false) {
+            return {
+                data: null,
+                error: { message: 'Sua conta foi desativada. Entre em contato com o administrador.' }
+            };
+        }
+
+        // Só faz login se passou na verificação
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (!error && data.session) {
-            // PRIMEIRO: Verificar status ativo ANTES de carregar cache
-            // Isso garante que atendentes inativos sejam bloqueados imediatamente
-            const { data: tenantUser } = await supabase
-                .from('tenant_users')
-                .select('ativo, role')
-                .eq('user_id', data.session.user.id)
-                .single();
-
-            // Se encontrou registro e é atendente inativo, bloquear login
-            if (tenantUser && tenantUser.role === 'atendente' && tenantUser.ativo === false) {
-                // Limpar cache para evitar login com dados antigos
-                localStorage.removeItem(`auth_tenant_user_${data.session.user.id}`);
-                await supabase.auth.signOut();
-                updateUserState(null);
-                return {
-                    data: null,
-                    error: { message: 'Sua conta foi desativada. Entre em contato com o administrador.' }
-                };
-            }
-
-            // Só buscar info completa se passou na verificação
             await fetchUserInfo(data.session.user.id);
         }
         return { data, error };
