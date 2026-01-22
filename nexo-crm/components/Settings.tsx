@@ -70,11 +70,13 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
 
     const loadEquipe = async () => {
         setLoadingEquipe(true);
-        const [list, max] = await Promise.all([
-            tenantService.listAtendentes(),
+        const [allMembers, max] = await Promise.all([
+            tenantService.listTenantMembers(),
             tenantService.getMaxUsers()
         ]);
-        setTenantMembers(list);
+        // Filtrar apenas atendentes (ativos e inativos) para gerenciamento
+        const atendentes = allMembers.filter(m => m.role === 'atendente');
+        setTenantMembers(atendentes);
         setMaxMembers(max);
         setLoadingEquipe(false);
     };
