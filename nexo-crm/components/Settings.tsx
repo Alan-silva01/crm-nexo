@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, User as UserIcon, Save, CheckCircle, AlertCircle, Users, Plus, Trash2, ToggleLeft, ToggleRight, Mail, Eye, EyeOff, X, AlertTriangle } from 'lucide-react';
+import { User, Lock, User as UserIcon, Save, CheckCircle, AlertCircle, Users, Plus, Trash2, Mail, Eye, EyeOff, X, AlertTriangle } from 'lucide-react';
 import { supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/lib/AuthProvider';
 import { tenantService, TenantUser } from '../src/lib/tenantService';
@@ -70,13 +70,11 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
 
     const loadEquipe = async () => {
         setLoadingEquipe(true);
-        const [allMembers, max] = await Promise.all([
-            tenantService.listTenantMembers(),
+        const [list, max] = await Promise.all([
+            tenantService.listAtendentes(),
             tenantService.getMaxUsers()
         ]);
-        // Filtrar apenas atendentes (ativos e inativos) para gerenciamento
-        const atendentes = allMembers.filter(m => m.role === 'atendente');
-        setTenantMembers(atendentes);
+        setTenantMembers(list);
         setMaxMembers(max);
         setLoadingEquipe(false);
     };
@@ -142,10 +140,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
         setLoading(false);
     };
 
-    const handleToggleMember = async (id: string, ativo: boolean) => {
-        await tenantService.toggleMemberStatus(id, !ativo);
-        loadEquipe();
-    };
+
 
     const handleDeleteMember = (id: string) => {
         setConfirmModal({
@@ -416,8 +411,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
                                 {tenantMembers.map(member => (
                                     <div
                                         key={member.id}
-                                        className={`flex items-center justify-between p-4 bg-[#0c0c0e] border rounded-2xl transition-all
-                                        ${member.ativo ? 'border-zinc-800/50' : 'border-zinc-800/30 opacity-60'}`}
+                                        className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-zinc-800/50 rounded-2xl transition-all"
                                     >
                                         <div className="flex items-center gap-4">
                                             <UserAvatar name={member.nome} size="md" className="border-2 border-zinc-800" />
@@ -427,20 +421,8 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
                                                     <Mail size={10} /> {member.email}
                                                 </p>
                                             </div>
-                                            {!member.ativo && (
-                                                <span className="text-[10px] px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded-full font-bold">
-                                                    INATIVO
-                                                </span>
-                                            )}
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => handleToggleMember(member.id, member.ativo)}
-                                                className={`p-2 rounded-lg transition-all ${member.ativo ? 'text-emerald-500 hover:bg-emerald-500/10' : 'text-zinc-500 hover:bg-zinc-800'}`}
-                                                title={member.ativo ? 'Desativar' : 'Ativar'}
-                                            >
-                                                {member.ativo ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
-                                            </button>
                                             <button
                                                 onClick={() => handleDeleteMember(member.id)}
                                                 className="p-2 text-zinc-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
