@@ -840,7 +840,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
     return (
       <div key={msg.id} className={`flex ${isRight ? 'justify-end' : 'justify-start'}`}>
-        <div className={`max-w-[80%] md:max-w-[70%] rounded-2xl text-[13px] shadow-sm relative overflow-hidden ${bgColor} ${textColor} ${isRight ? 'rounded-tr-none' : 'rounded-tl-none'}`}>
+        <div className={`max-w-[80%] md:max-w-[70%] rounded-2xl text-[13px] shadow-sm relative overflow-hidden ${bgColor} ${textColor}`}>
           {/* Sender badge */}
           {(isFromAI || isFromAgent) && (
             <div className="px-3 py-1.5 text-[10px] font-medium flex items-center gap-1.5 border-b bg-[#04514f] border-[#03403e] text-emerald-200">
@@ -884,12 +884,6 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
               {isRight && <CheckCheck size={12} className="text-[#34b7f1]" />}
             </div>
           </div>
-
-          {/* Tail */}
-          <div
-            className={`absolute top-0 ${isRight ? '-right-1.5' : '-left-1.5'} w-4 h-4 rounded-full ${bgColor}`}
-            style={{ clipPath: isRight ? 'polygon(0 0, 100% 0, 0 100%)' : 'polygon(100% 0, 0 0, 100% 100%)' }}
-          ></div>
         </div>
       </div>
     );
