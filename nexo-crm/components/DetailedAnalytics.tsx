@@ -279,16 +279,17 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
 
           <div className="space-y-4">
             <p className="text-zinc-400 leading-relaxed text-[15px] font-medium">
-              Identificamos <span className="text-zinc-100 font-bold underline decoration-indigo-500/40 underline-offset-4">{waitingDecisionLeads} {waitingDecisionLeads === 1 ? 'cliente' : 'clientes'}</span> estagnados na etapa de decisão.
+              Identificamos <span className="text-zinc-100 font-bold underline decoration-indigo-500/40 underline-offset-4">{waitingDecisionLeads} {waitingDecisionLeads === 1 ? 'cliente' : 'clientes'}</span> {waitingDecisionLeads === 1 ? 'estagnado' : 'estagnados'} na etapa de decisão.
             </p>
 
             {waitingDecisionLeads > 0 ? (
               <p className="text-zinc-500 leading-loose text-sm">
-                Com base na sua taxa histórica, a conversão de apenas {projectedExtraLeads} deles injetaria
+                Com base na sua taxa histórica, a conversão {projectedExtraLeads === 1 ? 'desse cliente' : `de apenas ${projectedExtraLeads} deles`} injetaria
                 <span className="text-emerald-400 font-bold mx-1.5">R$ {projectedExtraRevenue.toLocaleString('pt-BR')}</span>
                 imediatamente em seu caixa. Em valor de vida útil (LTV), o impacto estratégico é de
                 <span className="text-indigo-400 font-bold ml-1.5">R$ {projectedExtraLTV.toLocaleString('pt-BR')}</span>.
               </p>
+
             ) : (
               <p className="text-zinc-500 text-sm italic">
                 Sua fila de decisão está vazia. Mova leads qualificados para esta etapa para gerar novas projeções de faturamento.
