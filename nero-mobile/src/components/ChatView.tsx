@@ -2,37 +2,93 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase, getLeadDisplayName } from '../lib/supabase';
 import type { Lead, Message, KanbanColumn } from '../lib/supabase';
 import { useAuth } from '../lib/AuthProvider';
-import { ChevronLeft, Send, CheckCircle2, X } from 'lucide-react';
+import { ChevronLeft, Send, CheckCircle2, X, Bot, User, UserPlus, Pause, Play, MoreVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { formatPhoneNumber } from '../lib/formatPhone';
 
+interface TenantMember {
+    id: string;
+    user_id: string;
+    nome: string;
+    email: string;
+    role: string;
+}
+
 interface ChatViewProps {
     lead: Lead;
     onBack: () => void;
+    onLeadUpdate?: (updatedLead: Lead) => void;
 }
 
-export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
-    const { effectiveUserId } = useAuth();
+// Clean content from wrapper
+function cleanContent(content: string): string {
+    let cleaned = content;
+    const jsonWrapperMatch = cleaned.match(/\{["\\s]*o cliente falou:\\s*([^}]+)\}/i);
+    if (jsonWrapperMatch) cleaned = jsonWrapperMatch[1];
+    cleaned = cleaned.replace(/^["\\s]*o cliente falou:\\s*/i, '');
+    cleaned = cleaned.replace(/^["'\\s]+|["'\\s]+$/g, '');
+    cleaned = cleaned.replace(/^\{+|\}+$/g, '');
+    cleaned = cleaned.replace(/\\n\\n/g, '\n\n').replace(/\\n/g, '\n');
+    if (/^[\\.\\s]+$/.test(cleaned)) return '';
+    return cleaned.trim();
+}
+
+// Format message date
+function formatMessageDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return 'Hoje';
+    if (date.toDateString() === yesterday.toDateString()) return 'Ontem';
+
+    const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays < 7) {
+        return date.toLocaleDateString('pt-BR', { weekday: 'long' }).replace(/^\w/, c => c.toUpperCase());
+    }
+    return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
+}
+
+function getDateKey(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toISOString().split('T')[0];
+}
+
+export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack, onLeadUpdate }) => {
+    const { effectiveUserId, userType, userInfo } = useAuth();
+    const [currentLead, setCurrentLead] = useState<Lead>(lead);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [columns, setColumns] = useState<KanbanColumn[]>([]);
     const [showStatusModal, setShowStatusModal] = useState(false);
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [tenantMembers, setTenantMembers] = useState<TenantMember[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [chatTableName, setChatTableName] = useState<string | null>(null);
+
+    // Sync lead prop changes
+    useEffect(() => {
+        setCurrentLead(lead);
+    }, [lead]);
 
     useEffect(() => {
         fetchChatTableName();
         fetchColumns();
-    }, [effectiveUserId]);
+        if (userInfo?.isOwnerOrAdmin) {
+            fetchTenantMembers();
+        }
+    }, [effectiveUserId, userInfo]);
 
     useEffect(() => {
         if (chatTableName) {
             fetchMessages();
-            subscribeToMessages();
+            const unsubscribe = subscribeToMessages();
+            return unsubscribe;
         }
-    }, [chatTableName, lead.id]);
+    }, [chatTableName, currentLead.id]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -53,26 +109,43 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
         if (data) setColumns(data);
     };
 
+    const fetchTenantMembers = async () => {
+        if (!effectiveUserId) return;
+        const { data } = await supabase
+            .from('tenant_users')
+            .select('id, user_id, nome, email, role')
+            .eq('tenant_id', effectiveUserId)
+            .eq('ativo', true)
+            .order('nome');
+        if (data) setTenantMembers(data);
+    };
+
     const fetchMessages = async () => {
-        if (!chatTableName || !lead.phone) return;
-        const customerId = (lead as any).customer_id || lead.phone;
+        if (!chatTableName || !currentLead.phone) return;
+        const customerId = (currentLead as any).customer_id || currentLead.phone;
         const { data } = await supabase.from(chatTableName).select('*').eq('customer_id', customerId).order('created_at', { ascending: true });
         if (data) {
             setMessages(data.map((msg: any) => ({
                 id: msg.id,
-                content: msg.content,
+                content: cleanContent(msg.content),
                 sender: msg.sender as 'user' | 'client',
                 timestamp: msg.created_at,
-            })));
+            })).filter(m => m.content));
         }
     };
 
     const subscribeToMessages = () => {
-        if (!chatTableName) return;
-        const channel = supabase.channel(`chat-${lead.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: chatTableName }, (payload) => {
-            const msg = payload.new as any;
-            setMessages(prev => [...prev, { id: msg.id, content: msg.content, sender: msg.sender, timestamp: msg.created_at }]);
-        }).subscribe();
+        if (!chatTableName) return () => { };
+        const channel = supabase.channel(`chat-mobile-${currentLead.id}`).on('postgres_changes',
+            { event: 'INSERT', schema: 'public', table: chatTableName },
+            (payload) => {
+                const msg = payload.new as any;
+                const cleaned = cleanContent(msg.content);
+                if (cleaned) {
+                    setMessages(prev => [...prev, { id: msg.id, content: cleaned, sender: msg.sender, timestamp: msg.created_at }]);
+                }
+            }
+        ).subscribe();
         return () => { supabase.removeChannel(channel); };
     };
 
@@ -80,32 +153,32 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
         if (!newMessage.trim() || sending) return;
         setSending(true);
 
-        // Auto-pausar IA ao enviar mensagem
-        if (!lead.ai_paused) {
-            await supabase.from('leads').update({ ai_paused: true }).eq('id', lead.id);
+        // Auto-pause AI when sending message
+        if (!currentLead.ai_paused) {
+            await supabase.from('leads').update({ ai_paused: true }).eq('id', currentLead.id);
+            setCurrentLead(prev => ({ ...prev, ai_paused: true }));
         }
 
         const { data: profile } = await supabase.from('profiles').select('webhook_url').eq('id', effectiveUserId).single();
         if (profile?.webhook_url) {
             try {
-                // Enviar notificação de pausa da IA junto com a mensagem
-                if (!lead.ai_paused) {
+                if (!currentLead.ai_paused) {
                     await fetch(profile.webhook_url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ evento: 'pausar_ia', phone: lead.phone, action: 'Pausar IA' }),
+                        body: JSON.stringify({ evento: 'pausar_ia', phone: currentLead.phone, action: 'Pausar IA' }),
                     });
                 }
-                // Enviar a mensagem
                 await fetch(profile.webhook_url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: lead.phone, message: newMessage, lead_id: lead.id, sender: 'user' }),
+                    body: JSON.stringify({ phone: currentLead.phone, message: newMessage, lead_id: currentLead.id, sender: 'user' }),
                 });
             } catch (error) { console.error('Error sending message:', error); }
         }
+
         if (chatTableName) {
-            const customerId = (lead as any).customer_id || lead.phone;
+            const customerId = (currentLead as any).customer_id || currentLead.phone;
             await supabase.from(chatTableName).insert({ customer_id: customerId, content: newMessage, sender: 'user' });
         }
         setNewMessage('');
@@ -113,133 +186,177 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
     };
 
     const changeStatus = async (newStatus: string) => {
-        await supabase.from('leads').update({ status: newStatus }).eq('id', lead.id);
-        lead.status = newStatus;
+        await supabase.from('leads').update({ status: newStatus }).eq('id', currentLead.id);
+        setCurrentLead(prev => ({ ...prev, status: newStatus }));
         setShowStatusModal(false);
     };
 
     const toggleAI = async () => {
-        const newStatus = !lead.ai_paused;
-        const { error } = await supabase.from('leads').update({ ai_paused: newStatus }).eq('id', lead.id);
+        const newStatus = !currentLead.ai_paused;
+        const { error } = await supabase.from('leads').update({ ai_paused: newStatus }).eq('id', currentLead.id);
         if (!error) {
-            lead.ai_paused = newStatus;
-            setMessages(prev => [...prev]); // Force re-render if needed
-            // Opcional: Atualizar lista de leads global se houver um prop pra isso
+            setCurrentLead(prev => ({ ...prev, ai_paused: newStatus }));
+
+            // Send webhook notification
+            const { data: profile } = await supabase.from('profiles').select('webhook_url').eq('id', effectiveUserId).single();
+            if (profile?.webhook_url) {
+                await fetch(profile.webhook_url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        evento: newStatus ? 'pausar_ia' : 'ativar_ia',
+                        phone: currentLead.phone,
+                        action: newStatus ? 'Pausar IA' : 'Ativar IA'
+                    }),
+                }).catch(console.error);
+            }
         }
     };
 
-    return (
-        <div className="flex flex-col h-screen bg-[var(--bg-main)]">
-            {/* Header */}
-            <header className="px-6 py-4 flex items-center justify-between border-b border-[var(--border-base)] bg-[var(--bg-sidebar)]/80 backdrop-blur-xl sticky top-0 z-30">
-                <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-2xl bg-[var(--border-base)] text-zinc-400 hover:text-[var(--text-main)] transition-all active:scale-90">
-                        <ChevronLeft size={24} />
-                    </button>
+    const assignToMember = async (memberId: string | null) => {
+        const { error } = await supabase.from('leads').update({ assigned_to: memberId }).eq('id', currentLead.id);
+        if (!error) {
+            setCurrentLead(prev => ({ ...prev, assigned_to: memberId }));
+            setShowAssignModal(false);
+        }
+    };
 
-                    <div className="flex items-center gap-3">
-                        <div className="w-16 h-16 rounded-full p-1 border-2 border-indigo-500/30 bg-[var(--bg-card)] flex-shrink-0">
-                            <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg">
-                                {!lead.avatar || lead.avatar.trim() === "" || lead.avatar.includes('picsum.photos') ? (
-                                    <div className="text-white font-black text-xl uppercase">
-                                        {getLeadDisplayName(lead).charAt(0).toUpperCase()}
-                                    </div>
-                                ) : (
-                                    <img
-                                        src={lead.avatar}
-                                        className="w-full h-full object-cover"
-                                        alt=""
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).onerror = null;
-                                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(getLeadDisplayName(lead))}&background=6366f1&color=fff`;
-                                        }}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                        <div className="min-w-0">
-                            <h4 className="font-black text-[var(--text-main)] truncate text-base leading-tight tracking-tight">{getLeadDisplayName(lead)}</h4>
-                            <p className="text-[10px] text-zinc-500 font-medium tracking-tight mb-0.5">
-                                {formatPhoneNumber(lead.phone)}
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">
-                                    {lead.assigned_to ? 'Atribuído' : 'Sem Atendente'}
-                                </span>
-                                <div className="flex items-center gap-1 opacity-60">
-                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Online</span>
-                                </div>
-                            </div>
-                        </div>
+    // Group messages by date
+    const groupedMessages: { date: string; label: string; messages: Message[] }[] = [];
+    let currentDateKey = '';
+    messages.forEach(msg => {
+        const dateKey = getDateKey(msg.timestamp);
+        if (dateKey !== currentDateKey) {
+            currentDateKey = dateKey;
+            groupedMessages.push({ date: dateKey, label: formatMessageDate(msg.timestamp), messages: [msg] });
+        } else {
+            groupedMessages[groupedMessages.length - 1].messages.push(msg);
+        }
+    });
+
+    const assignedMember = tenantMembers.find(m => m.id === currentLead.assigned_to);
+
+    return (
+        <div className="flex flex-col h-full bg-[var(--bg-main)]">
+            {/* Header */}
+            <header className="px-4 py-3 flex items-center gap-3 border-b border-[var(--border-base)] bg-[var(--bg-sidebar)] safe-area-top">
+                <button
+                    onClick={onBack}
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--bg-card)] border border-[var(--border-base)] text-[var(--text-secondary)] active:scale-95 transition-transform"
+                >
+                    <ChevronLeft size={22} />
+                </button>
+
+                <div className="flex-1 flex items-center gap-3 min-w-0">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg flex-shrink-0">
+                        <span className="text-white font-black text-lg">
+                            {getLeadDisplayName(currentLead).charAt(0).toUpperCase()}
+                        </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-[var(--text-main)] truncate text-sm">{getLeadDisplayName(currentLead)}</h4>
+                        <p className="text-[11px] text-[var(--text-muted)] truncate">{formatPhoneNumber(currentLead.phone)}</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={toggleAI}
-                        className={cn(
-                            "px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
-                            lead.ai_paused
-                                ? "bg-red-500/10 border-red-500/20 text-red-500"
-                                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
-                        )}
-                    >
-                        {lead.ai_paused ? 'IA OFF' : 'IA ON'}
-                    </button>
-                    <button
-                        onClick={() => setShowStatusModal(true)}
-                        className="px-3 py-1.5 rounded-xl bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
-                    >
-                        {lead.status}
-                    </button>
-                </div>
+                {/* AI Toggle */}
+                <button
+                    onClick={toggleAI}
+                    className={cn(
+                        "px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide flex items-center gap-1.5 active:scale-95 transition-all",
+                        currentLead.ai_paused
+                            ? "bg-red-500/10 text-red-500 border border-red-500/20"
+                            : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                    )}
+                >
+                    {currentLead.ai_paused ? <Pause size={12} /> : <Play size={12} />}
+                    {currentLead.ai_paused ? 'OFF' : 'ON'}
+                </button>
             </header>
 
+            {/* Action Bar */}
+            <div className="px-4 py-2 flex items-center gap-2 border-b border-[var(--border-base)] bg-[var(--bg-card)]">
+                <button
+                    onClick={() => setShowStatusModal(true)}
+                    className="flex-1 px-3 py-2 rounded-xl bg-[var(--bg-main)] border border-[var(--border-base)] text-[11px] font-bold text-[var(--text-main)] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                >
+                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                    {currentLead.status || 'Novo Lead'}
+                </button>
+
+                {userInfo?.isOwnerOrAdmin && (
+                    <button
+                        onClick={() => setShowAssignModal(true)}
+                        className="flex-1 px-3 py-2 rounded-xl bg-[var(--bg-main)] border border-[var(--border-base)] text-[11px] font-bold text-[var(--text-main)] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    >
+                        <UserPlus size={14} className="text-[var(--text-muted)]" />
+                        {assignedMember ? assignedMember.nome.split(' ')[0] : 'Atribuir'}
+                    </button>
+                )}
+            </div>
+
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
-                {messages.map((msg, idx) => {
-                    const isUser = msg.sender === 'user';
-                    return (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            transition={{ type: 'spring', damping: 25 }}
-                            key={msg.id || idx}
-                            className={cn("flex flex-col max-w-[80%]", isUser ? "self-end items-end" : "self-start items-start")}
-                        >
-                            <div className={cn(
-                                "px-5 py-3.5 text-[14px] leading-relaxed shadow-xl transition-all",
-                                isUser
-                                    ? "bg-indigo-600 text-white rounded-[24px] rounded-tr-none shadow-indigo-600/20"
-                                    : "bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-base)] rounded-[24px] rounded-tl-none shadow-sm"
-                            )}>
-                                {msg.content}
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+                {groupedMessages.map((group, groupIdx) => (
+                    <div key={group.date}>
+                        {/* Date separator */}
+                        <div className="flex items-center justify-center my-4">
+                            <div className="px-4 py-1.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-base)] text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider shadow-sm">
+                                {group.label}
                             </div>
-                            <div className="flex items-center gap-2 mt-2 px-1">
-                                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                                    {new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                                {isUser && <CheckCircle2 size={12} className="text-indigo-500" />}
-                            </div>
-                        </motion.div>
-                    );
-                })}
+                        </div>
+
+                        {/* Messages */}
+                        {group.messages.map((msg, idx) => {
+                            const isUser = msg.sender === 'user';
+                            return (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{ type: 'spring', damping: 25, delay: idx * 0.02 }}
+                                    key={msg.id || `${group.date}-${idx}`}
+                                    className={cn("flex mb-3", isUser ? "justify-end" : "justify-start")}
+                                >
+                                    <div className={cn(
+                                        "max-w-[80%] px-4 py-3 text-[14px] leading-relaxed",
+                                        isUser
+                                            ? "bg-[var(--bubble-sent)] text-[var(--bubble-sent-text)] rounded-[20px] rounded-br-md shadow-lg shadow-indigo-500/10"
+                                            : "bg-[var(--bubble-received)] text-[var(--bubble-received-text)] border border-[var(--bubble-received-border)] rounded-[20px] rounded-bl-md"
+                                    )}>
+                                        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                                        <div className={cn(
+                                            "flex items-center gap-1.5 mt-1.5",
+                                            isUser ? "justify-end" : "justify-start"
+                                        )}>
+                                            <span className={cn(
+                                                "text-[10px] font-medium",
+                                                isUser ? "text-white/60" : "text-[var(--text-muted)]"
+                                            )}>
+                                                {new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                            {isUser && <CheckCircle2 size={12} className="text-white/60" />}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                ))}
                 <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}
-            <footer className="p-6 bg-transparent sticky bottom-0 z-30">
-                <div className="max-w-xl mx-auto flex items-end gap-3 bg-[var(--bg-card)]/90 backdrop-blur-2xl border border-[var(--border-base)] rounded-[32px] p-2 pr-3 group focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all shadow-2xl">
+            <footer className="p-4 bg-[var(--bg-sidebar)] border-t border-[var(--border-base)] safe-area-bottom">
+                <div className="flex items-end gap-3 bg-[var(--bg-card)] border border-[var(--border-base)] rounded-[24px] p-2 pr-3 shadow-lg">
                     <textarea
-                        className="flex-1 bg-transparent border-none focus:ring-0 text-[14px] text-[var(--text-main)] placeholder:text-zinc-600 py-3.5 px-4 max-h-32 min-h-[40px] resize-none overflow-hidden"
+                        className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-[14px] text-[var(--text-main)] placeholder:text-[var(--text-muted)] py-2.5 px-3 max-h-28 min-h-[36px] resize-none"
                         value={newMessage}
                         onChange={(e) => {
                             setNewMessage(e.target.value);
                             e.target.style.height = 'auto';
-                            e.target.style.height = e.target.scrollHeight + 'px';
+                            e.target.style.height = Math.min(e.target.scrollHeight, 112) + 'px';
                         }}
-                        placeholder="Escreva sua mensagem..."
+                        placeholder="Digite sua mensagem..."
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
@@ -250,14 +367,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
                     <button
                         onClick={sendMessage}
                         disabled={!newMessage.trim() || sending}
-                        className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-600/30 disabled:opacity-50 disabled:grayscale transition-all active:scale-90 hover:scale-105 mb-0.5"
+                        className="w-11 h-11 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 disabled:opacity-40 disabled:shadow-none transition-all active:scale-90"
                     >
-                        {sending ? <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div> : <Send size={22} />}
+                        {sending ? (
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                            <Send size={18} />
+                        )}
                     </button>
                 </div>
             </footer>
 
-            {/* Status Transition Modal */}
+            {/* Status Modal */}
             <AnimatePresence>
                 {showStatusModal && (
                     <div className="fixed inset-0 z-[100] flex items-end justify-center">
@@ -266,37 +387,105 @@ export const ChatView: React.FC<ChatViewProps> = ({ lead, onBack }) => {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setShowStatusModal(false)}
-                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
                         />
                         <motion.div
-                            initial={{ y: '100%', opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: '100%', opacity: 0 }}
+                            initial={{ y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={{ y: '100%' }}
                             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                            className="relative w-full max-w-md bg-[var(--bg-sidebar)]/95 backdrop-blur-2xl border-t border-[var(--border-base)] rounded-t-[48px] px-8 pt-10 pb-12 shadow-2xl z-[101]"
+                            className="relative w-full max-w-lg bg-[var(--bg-sidebar)] border-t border-[var(--border-base)] rounded-t-[32px] px-6 pt-6 pb-10 shadow-2xl z-[101] safe-area-bottom"
                         >
-                            <div className="w-16 h-1.5 bg-[var(--border-base)] rounded-full mx-auto mb-10 shadow-inner" />
-                            <div className="flex items-center justify-between mb-8">
-                                <div>
-                                    <h3 className="text-2xl font-black text-[var(--text-main)] tracking-tight">Alterar Status</h3>
-                                    <p className="text-xs font-black text-indigo-500 uppercase tracking-widest leading-none mt-1">Mover lead no funil</p>
-                                </div>
-                                <button onClick={() => setShowStatusModal(false)} className="w-12 h-12 flex items-center justify-center bg-[var(--border-base)] rounded-full text-zinc-400 hover:text-[var(--text-main)] active:scale-90 transition-all"><X size={24} /></button>
+                            <div className="w-12 h-1 bg-[var(--border-strong)] rounded-full mx-auto mb-6" />
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-lg font-bold text-[var(--text-main)]">Alterar Status</h3>
+                                <button onClick={() => setShowStatusModal(false)} className="w-10 h-10 flex items-center justify-center bg-[var(--bg-card)] border border-[var(--border-base)] rounded-full text-[var(--text-muted)] active:scale-90 transition-all">
+                                    <X size={20} />
+                                </button>
                             </div>
-                            <div className="grid grid-cols-1 gap-4 max-h-[50vh] overflow-y-auto no-scrollbar pr-1">
+                            <div className="grid grid-cols-1 gap-3 max-h-[50vh] overflow-y-auto no-scrollbar">
                                 {columns.map((col) => (
                                     <button
                                         key={col.id}
                                         onClick={() => changeStatus(col.name)}
                                         className={cn(
-                                            "flex items-center justify-between p-6 rounded-[32px] border transition-all active:scale-[0.98] animate-slide-up",
-                                            lead.status === col.name
-                                                ? "bg-indigo-600 border-indigo-500 shadow-xl shadow-indigo-600/20 text-white"
-                                                : "bg-[var(--bg-card)] border-[var(--border-base)] text-zinc-500 hover:text-[var(--text-main)] hover:bg-[var(--border-base)]"
+                                            "flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.98]",
+                                            currentLead.status === col.name
+                                                ? "bg-indigo-600 border-indigo-500 text-white shadow-lg"
+                                                : "bg-[var(--bg-card)] border-[var(--border-base)] text-[var(--text-main)]"
                                         )}
                                     >
-                                        <span className="text-sm font-black uppercase tracking-widest">{col.name}</span>
-                                        {lead.status === col.name && <CheckCircle2 size={22} />}
+                                        <span className="text-sm font-bold">{col.name}</span>
+                                        {currentLead.status === col.name && <CheckCircle2 size={18} />}
+                                    </button>
+                                ))}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Assign Modal */}
+            <AnimatePresence>
+                {showAssignModal && (
+                    <div className="fixed inset-0 z-[100] flex items-end justify-center">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowAssignModal(false)}
+                            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={{ y: '100%' }}
+                            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                            className="relative w-full max-w-lg bg-[var(--bg-sidebar)] border-t border-[var(--border-base)] rounded-t-[32px] px-6 pt-6 pb-10 shadow-2xl z-[101] safe-area-bottom"
+                        >
+                            <div className="w-12 h-1 bg-[var(--border-strong)] rounded-full mx-auto mb-6" />
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-lg font-bold text-[var(--text-main)]">Atribuir Atendimento</h3>
+                                <button onClick={() => setShowAssignModal(false)} className="w-10 h-10 flex items-center justify-center bg-[var(--bg-card)] border border-[var(--border-base)] rounded-full text-[var(--text-muted)] active:scale-90 transition-all">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-1 gap-3 max-h-[50vh] overflow-y-auto no-scrollbar">
+                                {/* Remove assignment option */}
+                                <button
+                                    onClick={() => assignToMember(null)}
+                                    className={cn(
+                                        "flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.98]",
+                                        !currentLead.assigned_to
+                                            ? "bg-amber-500/10 border-amber-500/20 text-amber-500"
+                                            : "bg-[var(--bg-card)] border-[var(--border-base)] text-[var(--text-muted)]"
+                                    )}
+                                >
+                                    <span className="text-sm font-bold">Sem atribuição</span>
+                                    {!currentLead.assigned_to && <CheckCircle2 size={18} />}
+                                </button>
+
+                                {tenantMembers.map((member) => (
+                                    <button
+                                        key={member.id}
+                                        onClick={() => assignToMember(member.id)}
+                                        className={cn(
+                                            "flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.98]",
+                                            currentLead.assigned_to === member.id
+                                                ? "bg-indigo-600 border-indigo-500 text-white shadow-lg"
+                                                : "bg-[var(--bg-card)] border-[var(--border-base)] text-[var(--text-main)]"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center">
+                                                <span className="text-white font-bold text-sm">{member.nome.charAt(0).toUpperCase()}</span>
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="text-sm font-bold">{member.nome}</p>
+                                                <p className={cn("text-[11px]", currentLead.assigned_to === member.id ? "text-white/60" : "text-[var(--text-muted)]")}>{member.role}</p>
+                                            </div>
+                                        </div>
+                                        {currentLead.assigned_to === member.id && <CheckCircle2 size={18} />}
                                     </button>
                                 ))}
                             </div>

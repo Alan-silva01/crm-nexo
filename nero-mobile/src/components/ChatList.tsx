@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase, getLeadDisplayName } from '../lib/supabase';
 import type { Lead } from '../lib/supabase';
 import { useAuth } from '../lib/AuthProvider';
-import { Search, RefreshCw, MessageSquare } from 'lucide-react';
+import { Search, RefreshCw, MessageSquare, Bot, Pause } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { formatPhoneNumber } from '../lib/formatPhone';
@@ -16,10 +16,12 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectLead, selectedLeadId
     const { effectiveUserId, atendenteId, userType } = useAuth();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const fetchLeads = async () => {
+    const fetchLeads = async (isRefresh = false) => {
         if (!effectiveUserId) return;
+        if (isRefresh) setRefreshing(true);
 
         let query = supabase
             .from('leads')
@@ -34,19 +36,20 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectLead, selectedLeadId
         const { data, error } = await query;
         if (!error && data) setLeads(data);
         setLoading(false);
+        setRefreshing(false);
     };
 
     useEffect(() => {
         fetchLeads();
         const channel = supabase
-            .channel('leads-mobile')
+            .channel('leads-mobile-realtime')
             .on('postgres_changes',
                 { event: '*', schema: 'public', table: 'leads', filter: `user_id=eq.${effectiveUserId}` },
                 () => fetchLeads()
             )
             .subscribe();
         return () => { supabase.removeChannel(channel); };
-    }, [effectiveUserId]);
+    }, [effectiveUserId, atendenteId]);
 
     const filteredLeads = leads.filter(lead => {
         const displayName = getLeadDisplayName(lead).toLowerCase();
@@ -55,173 +58,157 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectLead, selectedLeadId
         return displayName.includes(search) || phone.includes(search);
     });
 
+    // Format relative time
+    const formatRelativeTime = (dateStr: string) => {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'Agora';
+        if (diffMins < 60) return `${diffMins}m`;
+        if (diffHours < 24) return `${diffHours}h`;
+        if (diffDays < 7) return `${diffDays}d`;
+        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    };
+
     if (loading) {
         return (
             <div className="flex-1 flex items-center justify-center">
-                <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-10 h-10 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
 
     return (
         <div className="flex flex-col h-full bg-[var(--bg-main)]">
-            <div className="px-6 pt-8 pb-4 space-y-6">
+            <div className="px-5 pt-6 pb-4 space-y-5">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-3xl font-black tracking-tight text-[var(--text-main)]">Mensagens</h2>
+                    <h2 className="text-2xl font-black tracking-tight text-[var(--text-main)]">Conversas</h2>
                     <button
-                        onClick={() => { setLoading(true); fetchLeads(); }}
-                        className="w-10 h-10 flex items-center justify-center rounded-2xl bg-[var(--border-base)] text-zinc-400 hover:text-indigo-500 transition-all active:rotate-180"
+                        onClick={() => fetchLeads(true)}
+                        disabled={refreshing}
+                        className={cn(
+                            "w-10 h-10 flex items-center justify-center rounded-full bg-[var(--bg-card)] border border-[var(--border-base)] text-[var(--text-muted)] transition-all active:scale-90",
+                            refreshing && "animate-spin"
+                        )}
                     >
                         <RefreshCw size={18} />
                     </button>
                 </div>
 
                 {/* Search Bar */}
-                <div className="relative group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" size={20} />
+                <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={18} />
                     <input
                         type="text"
-                        placeholder="Pesquisar conversas..."
-                        className="w-full bg-[var(--bg-card)] border border-[var(--border-base)] rounded-2xl py-4 pl-12 pr-4 text-sm text-[var(--text-main)] placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 shadow-inner transition-all"
+                        placeholder="Buscar conversas..."
+                        className="w-full bg-[var(--bg-card)] border border-[var(--border-base)] rounded-2xl py-3.5 pl-11 pr-4 text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-
-                {/* Active Leads "Stories" */}
-                {leads.length > 0 && (
-                    <div className="space-y-3">
-                        <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest ml-1">Ativos agora</span>
-                        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
-                            <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                                <div className="w-16 h-16 rounded-full p-1 border-2 border-dashed border-indigo-500/30 flex items-center justify-center bg-[var(--bg-card)]">
-                                    <div className="w-full h-full rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400">
-                                        <span className="text-2xl">+</span>
-                                    </div>
-                                </div>
-                                <span className="text-[10px] font-bold text-zinc-500 uppercase">Novo</span>
-                            </div>
-                            {leads.slice(0, 5).map(lead => (
-                                <div key={`story-${lead.id}`} className="flex flex-col items-center gap-2 flex-shrink-0">
-                                    <div className="w-16 h-16 rounded-full p-1 border-2 border-indigo-500 flex items-center justify-center bg-[var(--bg-card)]">
-                                        <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-indigo-700">
-                                            {!lead.avatar || lead.avatar.trim() === "" || lead.avatar.includes('picsum.photos') ? (
-                                                <div className="w-full h-full flex items-center justify-center text-white font-black text-xl">
-                                                    {getLeadDisplayName(lead).charAt(0).toUpperCase()}
-                                                </div>
-                                            ) : (
-                                                <img
-                                                    src={lead.avatar}
-                                                    className="w-full h-full object-cover"
-                                                    alt=""
-                                                    onError={(e) => {
-                                                        (e.target as HTMLImageElement).onerror = null;
-                                                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name)}&background=6366f1&color=fff`;
-                                                    }}
-                                                />
-                                            )}
-                                        </div>
-                                    </div>
-                                    <span className="text-[10px] font-bold text-[var(--text-main)] uppercase truncate w-16 text-center">{getLeadDisplayName(lead).split(' ')[0]}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-10">
-                <div className="px-2 mb-4">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Conversas Recentes</span>
-                </div>
+            <div className="flex-1 overflow-y-auto px-4 pb-28">
                 {filteredLeads.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-center px-6 animate-scale-in">
-                        <div className="w-20 h-20 bg-[var(--bg-card)] rounded-3xl flex items-center justify-center mb-6 shadow-xl border border-[var(--border-base)]">
-                            <MessageSquare className="text-zinc-700" size={40} />
+                    <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                        <div className="w-16 h-16 bg-[var(--bg-card)] border border-[var(--border-base)] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+                            <MessageSquare className="text-[var(--text-muted)]" size={28} />
                         </div>
-                        <h3 className="text-xl font-black text-[var(--text-main)] mb-2">Nenhuma conversa</h3>
-                        <p className="text-zinc-500 text-sm max-w-[200px]">Comece uma nova conversa para gerenciar seus leads.</p>
+                        <h3 className="text-lg font-bold text-[var(--text-main)] mb-1">Nenhuma conversa</h3>
+                        <p className="text-[var(--text-muted)] text-sm">Suas conversas aparecerão aqui.</p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {filteredLeads.map((lead, idx) => (
                             <motion.div
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: idx * 0.05, type: 'spring', damping: 20 }}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.03, type: 'spring', damping: 25 }}
                                 key={lead.id}
                                 onClick={() => onSelectLead(lead)}
                                 className={cn(
-                                    "group flex items-center gap-4 p-4 rounded-[32px] cursor-pointer transition-all active:scale-[0.98] animate-scale-in",
+                                    "flex items-center gap-3 p-3.5 rounded-2xl cursor-pointer transition-all active:scale-[0.98]",
                                     selectedLeadId === lead.id
-                                        ? "bg-indigo-600 text-white shadow-2xl shadow-indigo-600/20"
-                                        : "bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border border-[var(--border-base)] shadow-sm"
+                                        ? "bg-indigo-600 shadow-lg shadow-indigo-600/20"
+                                        : "bg-[var(--bg-card)] border border-[var(--border-base)]"
                                 )}
                             >
-                                <div className="relative">
-                                    <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 border-[var(--border-base)] bg-[var(--bg-main)]">
-                                        {!lead.avatar || lead.avatar.trim() === "" || lead.avatar.includes('picsum.photos') ? (
-                                            <div className={cn(
-                                                "w-full h-full flex items-center justify-center text-xl font-black transition-colors",
-                                                selectedLeadId === lead.id ? "bg-white/10 text-white" : "bg-gradient-to-br from-indigo-500 to-indigo-700 text-white"
-                                            )}>
-                                                {getLeadDisplayName(lead).charAt(0).toUpperCase()}
-                                            </div>
-                                        ) : (
-                                            <img
-                                                src={lead.avatar}
-                                                className="w-full h-full object-cover"
-                                                alt=""
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).onerror = null;
-                                                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name)}&background=6366f1&color=fff`;
-                                                }}
-                                            />
-                                        )}
-                                    </div>
-                                    {/* Status Indicator */}
+                                {/* Avatar */}
+                                <div className="relative flex-shrink-0">
                                     <div className={cn(
-                                        "absolute bottom-0 right-0 w-5 h-5 border-4 rounded-full bg-emerald-500",
+                                        "w-14 h-14 rounded-full flex items-center justify-center text-lg font-black",
+                                        selectedLeadId === lead.id
+                                            ? "bg-white/20 text-white"
+                                            : "bg-gradient-to-br from-indigo-500 to-indigo-700 text-white"
+                                    )}>
+                                        {getLeadDisplayName(lead).charAt(0).toUpperCase()}
+                                    </div>
+                                    {/* Online indicator */}
+                                    <div className={cn(
+                                        "absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 bg-emerald-500",
                                         selectedLeadId === lead.id ? "border-indigo-600" : "border-[var(--bg-card)]"
                                     )}></div>
                                 </div>
 
+                                {/* Content */}
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <div className="flex flex-col">
-                                            <h4 className={cn(
-                                                "font-black text-base truncate tracking-tight transition-colors",
-                                                selectedLeadId === lead.id ? "text-white" : "text-[var(--text-main)]"
-                                            )}>{getLeadDisplayName(lead)}</h4>
-                                            <span className={cn(
-                                                "text-[9px] font-bold tracking-widest transition-colors",
-                                                selectedLeadId === lead.id ? "text-white/60" : "text-indigo-500"
-                                            )}>{formatPhoneNumber(lead.phone)}</span>
-                                        </div>
-                                        <span className={cn(
-                                            "text-[10px] font-black uppercase tracking-widest",
-                                            selectedLeadId === lead.id ? "text-white/60" : "text-zinc-500"
+                                    <div className="flex items-center justify-between mb-0.5">
+                                        <h4 className={cn(
+                                            "font-bold text-[15px] truncate",
+                                            selectedLeadId === lead.id ? "text-white" : "text-[var(--text-main)]"
                                         )}>
-                                            {new Date(lead.updated_at || lead.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                            {getLeadDisplayName(lead)}
+                                        </h4>
+                                        <span className={cn(
+                                            "text-[11px] font-semibold flex-shrink-0 ml-2",
+                                            selectedLeadId === lead.id ? "text-white/60" : "text-[var(--text-muted)]"
+                                        )}>
+                                            {formatRelativeTime(lead.updated_at || lead.created_at)}
                                         </span>
                                     </div>
+
                                     <p className={cn(
-                                        "text-xs truncate mb-2 transition-colors",
-                                        selectedLeadId === lead.id ? "text-white/80" : "text-zinc-500"
-                                    )}>{lead.last_message || 'Inicie uma conversa...'}</p>
-                                    <div className="flex items-center gap-2">
-                                        <div className={cn(
-                                            "px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-colors",
+                                        "text-[13px] truncate mb-2",
+                                        selectedLeadId === lead.id ? "text-white/70" : "text-[var(--text-secondary)]"
+                                    )}>
+                                        {lead.last_message || formatPhoneNumber(lead.phone)}
+                                    </p>
+
+                                    {/* Tags */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className={cn(
+                                            "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide",
                                             selectedLeadId === lead.id
-                                                ? "bg-white/10 border-white/20 text-white"
-                                                : "bg-[var(--bg-main)]/50 border-[var(--border-base)] text-zinc-400"
+                                                ? "bg-white/20 text-white"
+                                                : "bg-indigo-500/10 text-indigo-500 border border-indigo-500/20"
                                         )}>
-                                            {lead.status}
-                                        </div>
+                                            {lead.status || 'Novo'}
+                                        </span>
+
                                         {lead.ai_paused && (
-                                            <div className="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-red-500/10 border border-red-500/20 text-red-500 uppercase tracking-widest">
-                                                IA OFF
-                                            </div>
+                                            <span className={cn(
+                                                "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide flex items-center gap-1",
+                                                selectedLeadId === lead.id
+                                                    ? "bg-red-400/20 text-red-200"
+                                                    : "bg-red-500/10 text-red-500 border border-red-500/20"
+                                            )}>
+                                                <Pause size={10} /> IA
+                                            </span>
+                                        )}
+
+                                        {lead.assigned_to && (
+                                            <span className={cn(
+                                                "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide",
+                                                selectedLeadId === lead.id
+                                                    ? "bg-emerald-400/20 text-emerald-200"
+                                                    : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                                            )}>
+                                                Atribuído
+                                            </span>
                                         )}
                                     </div>
                                 </div>

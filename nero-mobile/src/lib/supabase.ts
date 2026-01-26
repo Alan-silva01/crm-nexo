@@ -24,7 +24,7 @@ export interface Lead {
     created_at: string;
     updated_at?: string;
     dados?: Record<string, any>;
-    assigned_to?: string;
+    assigned_to?: string | null;
     ai_paused?: boolean;
 }
 

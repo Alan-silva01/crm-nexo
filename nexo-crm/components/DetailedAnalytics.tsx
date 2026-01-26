@@ -123,7 +123,7 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
           <p className="text-zinc-500 text-sm">Visão financeira baseada em dados reais e Ticket Médio.</p>
         </div>
         <div className="flex gap-3">
-          <div className="flex items-center gap-4 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl">
+          <div className="flex items-center gap-4 px-5 py-3 bg-[#0c0c0e] border border-zinc-800/50 rounded-2xl shadow-xl dark:shadow-[5px_5px_10px_#050506,-5px_-5px_10px_#131316]">
             <div className="flex flex-col">
               <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter">Ticket Médio</span>
               <div className="flex items-center gap-1">
@@ -138,7 +138,7 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-4 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl">
+          <div className="flex items-center gap-4 px-5 py-3 bg-[#0c0c0e] border border-zinc-800/50 rounded-2xl shadow-xl dark:shadow-[5px_5px_10px_#050506,-5px_-5px_10px_#131316]">
             <div className="flex flex-col">
               <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter">LTV Estimado</span>
               <div className="flex items-center gap-1">

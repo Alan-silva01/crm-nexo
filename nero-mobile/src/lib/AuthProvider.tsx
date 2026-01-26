@@ -3,11 +3,17 @@ import type { ReactNode } from 'react';
 import { supabase } from './supabase';
 import type { Session, User } from '@supabase/supabase-js';
 
+interface UserInfo {
+    isOwnerOrAdmin: boolean;
+    role: string | null;
+}
+
 interface AuthContextProps {
     user: User | null;
     session: Session | null;
     loading: boolean;
     userType: 'admin' | 'atendente' | null;
+    userInfo: UserInfo | null;
     effectiveUserId: string | null;  // tenant_id para novo sistema
     atendenteId: string | null;  // tenant_users.id para novo sistema
     signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -21,6 +27,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [userType, setUserType] = useState<'admin' | 'atendente' | null>(null);
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const [effectiveUserId, setEffectiveUserId] = useState<string | null>(null);
     const [atendenteId, setAtendenteId] = useState<string | null>(null);
 
@@ -33,6 +40,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 await determineUserType(session.user);
             } else {
                 setUserType(null);
+                setUserInfo(null);
                 setEffectiveUserId(null);
                 setAtendenteId(null);
             }
@@ -82,6 +90,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (tenantUserData && tenantUserData.role === 'atendente') {
                 setUserType('atendente');
+                setUserInfo({ isOwnerOrAdmin: false, role: 'atendente' });
                 setEffectiveUserId(tenantUserData.tenant_id);
                 setAtendenteId(tenantUserData.id);
                 console.log('[AuthProvider] Set as atendente (tenant_users), tenantId:', tenantUserData.tenant_id);
@@ -98,6 +107,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (atendenteData) {
                 setUserType('atendente');
+                setUserInfo({ isOwnerOrAdmin: false, role: 'atendente' });
                 setEffectiveUserId(atendenteData.admin_id);
                 setAtendenteId(atendenteData.id);
                 console.log('[AuthProvider] Set as atendente (legacy), effectiveUserId:', atendenteData.admin_id);
@@ -116,6 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (tenantUserData) {
             const isAdmin = tenantUserData.role === 'owner' || tenantUserData.role === 'admin';
             setUserType(isAdmin ? 'admin' : 'atendente');
+            setUserInfo({ isOwnerOrAdmin: isAdmin, role: tenantUserData.role });
             setEffectiveUserId(tenantUserData.tenant_id);
             setAtendenteId(isAdmin ? null : tenantUserData.id);
             console.log('[AuthProvider] Set from tenant_users, role:', tenantUserData.role, 'tenantId:', tenantUserData.tenant_id);
@@ -132,6 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (atendenteData) {
             setUserType('atendente');
+            setUserInfo({ isOwnerOrAdmin: false, role: 'atendente' });
             setEffectiveUserId(atendenteData.admin_id);
             setAtendenteId(atendenteData.id);
             console.log('[AuthProvider] Set as atendente from DB, effectiveUserId:', atendenteData.admin_id);
@@ -147,6 +159,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (profileData) {
             setUserType('admin');
+            setUserInfo({ isOwnerOrAdmin: true, role: 'owner' });
             setEffectiveUserId(user.id);
             setAtendenteId(null);
             console.log('[AuthProvider] Set as admin, effectiveUserId:', user.id);
@@ -156,6 +169,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Fallback: treat as admin
         console.warn('[AuthProvider] No profile or atendente found, defaulting to admin');
         setUserType('admin');
+        setUserInfo({ isOwnerOrAdmin: true, role: 'owner' });
         setEffectiveUserId(user.id);
         setAtendenteId(null);
     };
@@ -170,7 +184,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, userType, effectiveUserId, atendenteId, signIn, signOut }}>
+        <AuthContext.Provider value={{ user, session, loading, userType, userInfo, effectiveUserId, atendenteId, signIn, signOut }}>
             {children}
         </AuthContext.Provider>
     );
