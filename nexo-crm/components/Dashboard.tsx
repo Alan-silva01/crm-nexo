@@ -271,13 +271,13 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <text x="50%" y="50%" dy={-35} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest">
+        <text x="50%" y="50%" dy={-35} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest" style={{ transition: 'all 0.3s ease' }}>
           {payload.name.length > 15 ? `${payload.name.substring(0, 12)}...` : payload.name}
         </text>
-        <text x="50%" y="50%" dy={10} textAnchor="middle" fill={isDark ? "#fff" : "#18181b"} fontSize={24} fontWeight="bold">
+        <text x="50%" y="50%" dy={10} textAnchor="middle" fill={isDark ? "#fff" : "#18181b"} fontSize={24} fontWeight="bold" style={{ transition: 'all 0.3s ease' }}>
           {value}
         </text>
-        <text x="50%" y="50%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold">
+        <text x="50%" y="50%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold" style={{ transition: 'all 0.3s ease' }}>
           {`${(percent * 100).toFixed(1)}%`}
         </text>
         <Sector
@@ -433,6 +433,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
                     activeShape: renderActiveShape,
                     onMouseEnter: onPieEnter,
                     onMouseLeave: onPieLeave,
+                    animationDuration: 400,
+                    animationEasing: "ease-out"
                   } as any)}
                 >
                   {pieData.map((entry, index) => (
@@ -444,14 +446,14 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
                   ))}
                 </Pie>
                 {activeIndex === null && (
-                  <g>
-                    <text x="50%" y="50%" dy={-35} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest">
+                  <g style={{ transition: 'all 0.3s ease' }}>
+                    <text x="50%" y="50%" dy={-35} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest" style={{ transition: 'all 0.3s ease' }}>
                       Colunas do Kanban
                     </text>
-                    <text x="50%" y="50%" dy={10} textAnchor="middle" fill={isDark ? "#fff" : "#18181b"} fontSize={24} fontWeight="bold">
+                    <text x="50%" y="50%" dy={10} textAnchor="middle" fill={isDark ? "#fff" : "#18181b"} fontSize={24} fontWeight="bold" style={{ transition: 'all 0.3s ease' }}>
                       100%
                     </text>
-                    <text x="50%" y="50%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold">
+                    <text x="50%" y="50%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold" style={{ transition: 'all 0.3s ease' }}>
                       Visão Geral
                     </text>
                   </g>
