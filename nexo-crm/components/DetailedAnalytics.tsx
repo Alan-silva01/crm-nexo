@@ -4,11 +4,11 @@ import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell, LabelList
 } from 'recharts';
-import { Download, Calendar, ArrowUpRight, TrendingUp, Users, Target, DollarSign, Briefcase } from 'lucide-react';
+import { Download, Calendar, ArrowUpRight, TrendingUp, Users, Target, DollarSign, Briefcase, Tag, X, Sparkles, Send } from 'lucide-react';
 
 interface DetailedAnalyticsProps {
   leads: Lead[];
-  onAction?: (action: 'view-decision-kanban' | 'focus-decision') => void;
+  onAction?: (action: 'view-decision-kanban' | 'focus-decision-leads') => void;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -61,6 +61,8 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
   const [ltvRaw, setLtvRaw] = React.useState<string>(() => {
     return localStorage.getItem('crm_ltv') || '5000';
   });
+
+  const [showStrategyModal, setShowStrategyModal] = React.useState(false);
 
   const ticketMedio = parseFloat(ticketRaw) || 0;
   const ltv = parseFloat(ltvRaw) || 0;
@@ -296,20 +298,99 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
 
           <div className="mt-10 flex gap-4">
             <button
-              onClick={() => onAction?.('focus-decision')}
-              className="px-8 py-3 bg-zinc-100 text-zinc-950 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-white transition-all shadow-xl active:scale-95"
+              onClick={() => setShowStrategyModal(true)}
+              className="px-8 py-3 bg-zinc-100 dark:bg-zinc-100 text-zinc-950 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-white transition-all shadow-xl active:scale-95 flex items-center gap-2"
             >
+              <Sparkles size={14} />
               Focar em Decisão
             </button>
             <button
               onClick={() => onAction?.('view-decision-kanban')}
-              className="px-8 py-3 bg-zinc-900 text-zinc-400 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:text-white hover:bg-zinc-800 transition-all border border-zinc-800 active:scale-95"
+              className="px-8 py-3 bg-[#0c0c0e] dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all border border-zinc-200 dark:border-zinc-800 active:scale-95"
             >
-              Ver Leads
+              Ver no Kanban
             </button>
           </div>
         </div>
       </div>
+
+      {/* Strategy Modal */}
+      {showStrategyModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/50 rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
+                  <Sparkles size={20} className="text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Estratégia de Ativação</h3>
+              </div>
+              <button
+                onClick={() => setShowStrategyModal(false)}
+                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4 mb-8">
+              <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed">
+                Você tem <span className="font-bold text-zinc-900 dark:text-white">{waitingDecisionLeads} leads</span> aguardando decisão. Aqui estão algumas dicas para reativá-los:
+              </p>
+
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
+                  <div className="p-1.5 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg mt-0.5">
+                    <Tag size={14} className="text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">Organize com Etiquetas</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-500">Marque os leads mais importantes para priorizá-los no atendimento.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
+                  <div className="p-1.5 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg mt-0.5">
+                    <Send size={14} className="text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">Use os Disparos</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-500">Envie mensagens em massa para tentar reativar esses contatos parados.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
+                  <div className="p-1.5 bg-amber-100 dark:bg-amber-500/20 rounded-lg mt-0.5">
+                    <Target size={14} className="text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">Priorize os Antigos</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-500">Leads há mais tempo parados podem precisar de atenção imediata.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowStrategyModal(false)}
+                className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:text-zinc-900 dark:hover:text-white transition-all"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={() => {
+                  setShowStrategyModal(false);
+                  onAction?.('focus-decision-leads');
+                }}
+                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
+              >
+                Ver Contatos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

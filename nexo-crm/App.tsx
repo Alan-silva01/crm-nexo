@@ -688,12 +688,18 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const handleAnalysisAction = (action: 'view-decision-kanban' | 'focus-decision') => {
-    if (action === 'view-decision-kanban' || action === 'focus-decision') {
+  const handleAnalysisAction = (action: 'view-decision-kanban' | 'focus-decision-leads') => {
+    if (action === 'view-decision-kanban') {
+      // Set search query to filter by "Aguardando Decisão" status and go to Kanban
+      setSearchQuery('AGUARDANDO DECISAO');
       setActiveTab('kanban');
-      // In a more advanced version, we could set a filter state here
+    } else if (action === 'focus-decision-leads') {
+      // Set search query to filter by "Aguardando Decisão" status and go to Leads list
+      setSearchQuery('AGUARDANDO DECISAO');
+      setActiveTab('leads');
     }
   };
+
 
   const { theme, toggleTheme } = useTheme();
 
