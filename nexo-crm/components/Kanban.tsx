@@ -77,6 +77,8 @@ interface KanbanProps {
   externalSelectedLead?: Lead | null;
   onClearExternalLead?: () => void;
   effectiveUserId: string;
+  focusColumnName?: string | null;
+  onClearFocusColumn?: () => void;
 }
 
 const Kanban: React.FC<KanbanProps> = ({
@@ -90,7 +92,9 @@ const Kanban: React.FC<KanbanProps> = ({
   onColumnsUpdate,
   externalSelectedLead,
   onClearExternalLead,
-  effectiveUserId
+  effectiveUserId,
+  focusColumnName,
+  onClearFocusColumn
 }) => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draggingColumnId, setDraggingColumnId] = useState<string | null>(null);
@@ -127,6 +131,29 @@ const Kanban: React.FC<KanbanProps> = ({
       if (onClearExternalLead) onClearExternalLead();
     }
   }, [externalSelectedLead, onClearExternalLead]);
+
+  // Auto-scroll to focused column (from analytics navigation)
+  useEffect(() => {
+    if (focusColumnName && boardRef.current && columns.length > 0) {
+      const columnIndex = columns.findIndex(
+        c => c.name.trim().toUpperCase() === focusColumnName.trim().toUpperCase()
+      );
+      if (columnIndex !== -1) {
+        // Each column is roughly 384px wide (24rem) + gap
+        const columnWidth = 400; // approximate width including gap
+        const containerWidth = boardRef.current.clientWidth;
+        const scrollPosition = (columnIndex * columnWidth) - (containerWidth / 2) + (columnWidth / 2);
+
+        setTimeout(() => {
+          boardRef.current?.scrollTo({
+            left: Math.max(0, scrollPosition),
+            behavior: 'smooth'
+          });
+        }, 100);
+      }
+      if (onClearFocusColumn) onClearFocusColumn();
+    }
+  }, [focusColumnName, columns, onClearFocusColumn]);
 
 
 

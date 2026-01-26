@@ -125,6 +125,7 @@ const AppContent: React.FC = () => {
   // Profile é carregado do banco - sem cache
 
   const [externalSelectedLead, setExternalSelectedLead] = useState<Lead | null>(null);
+  const [focusColumnName, setFocusColumnName] = useState<string | null>(null);
 
   // RECOVERY: Se tem sessão mas não tem effectiveUserId, tentar buscar novamente
   // Isso cobre o cenário onde AuthProvider timeout acontece antes de fetchUserInfo completar
@@ -692,6 +693,7 @@ const AppContent: React.FC = () => {
     if (action === 'view-decision-kanban') {
       // Set search query to filter by "Aguardando Decisão" status and go to Kanban
       setSearchQuery('AGUARDANDO DECISAO');
+      setFocusColumnName('AGUARDANDO DECISAO');
       setActiveTab('kanban');
     } else if (action === 'focus-decision-leads') {
       // Set search query to filter by "Aguardando Decisão" status and go to Leads list
@@ -724,6 +726,8 @@ const AppContent: React.FC = () => {
             externalSelectedLead={externalSelectedLead}
             onClearExternalLead={() => setExternalSelectedLead(null)}
             effectiveUserId={effectiveUserId || ''}
+            focusColumnName={focusColumnName}
+            onClearFocusColumn={() => setFocusColumnName(null)}
           />
         );
       case 'leads':
