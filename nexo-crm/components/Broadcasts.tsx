@@ -530,7 +530,7 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
                 )}
 
                 {/* Aviso de Riscos */}
-                <div className="bg-amber-500/5 border border-amber-500/20 p-6 rounded-3xl flex gap-4 items-start">
+                <div className="bg-[#0c0c0e] border border-amber-500/30 p-6 rounded-3xl flex gap-4 items-start shadow-xl dark:shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316]">
                     <div className="p-2 bg-amber-500/10 rounded-xl">
                         <AlertCircle size={20} className="text-amber-400" />
                     </div>
@@ -595,7 +595,7 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
                             </div>
                         </div>
 
-                        <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-6 space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar no-scrollbar text-zinc-400">
+                        <div className="bg-[#0c0c0e] border border-zinc-800/50 rounded-2xl p-6 space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar no-scrollbar text-zinc-400 shadow-inner">
                             <div className="space-y-4 text-xs leading-relaxed italic border-l-2 border-amber-500/20 pl-4">
                                 <p>
                                     Ao utilizar a ferramenta de disparos em massa, você declara estar ciente de que o uso de APIs não oficiais para envio de mensagens automáticas via WhatsApp (Meta) infringe as diretrizes comerciais da plataforma.
@@ -612,7 +612,7 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4 p-4 bg-zinc-900/30 rounded-2xl border border-zinc-800/50 group cursor-pointer" onClick={() => setHasCheckedConsent(!hasCheckedConsent)}>
+                        <div className="flex items-center gap-4 p-4 bg-[#0c0c0e] rounded-2xl border border-zinc-800/50 shadow-sm group cursor-pointer" onClick={() => setHasCheckedConsent(!hasCheckedConsent)}>
                             <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${hasCheckedConsent ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-zinc-700 bg-zinc-800/50 group-hover:border-zinc-500'}`}>
                                 {hasCheckedConsent && <CheckCircle2 size={16} />}
                             </div>
@@ -622,7 +622,7 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
                         <div className="flex gap-4">
                             <button
                                 onClick={() => { setShowConsentModal(false); setHasCheckedConsent(false); }}
-                                className="flex-1 py-4 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all shadow-inner active:scale-95"
+                                className="flex-1 py-4 bg-[#0c0c0e] border border-zinc-800/50 text-zinc-400 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all shadow-inner active:scale-95"
                             >
                                 Cancelar
                             </button>
@@ -634,7 +634,7 @@ const Broadcasts: React.FC<BroadcastsProps> = ({ leads, profile, availableTags }
                                     }
                                 }}
                                 disabled={!hasCheckedConsent}
-                                className={`flex-1 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 ${hasCheckedConsent ? 'bg-indigo-600 text-white shadow-indigo-600/30 hover:bg-indigo-500' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'}`}
+                                className={`flex-1 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 ${hasCheckedConsent ? 'bg-indigo-600 text-white shadow-indigo-600/30 hover:bg-indigo-500' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-50'}`}
                             >
                                 <Send size={14} />
                                 Iniciar Agora
