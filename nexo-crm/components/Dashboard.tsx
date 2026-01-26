@@ -73,13 +73,13 @@ const DashboardClock = () => {
   );
 };
 
-const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) => (
+const StatCard = ({ title, value, change, isPositive, icon: Icon }: any) => (
   <div className="bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/50 p-4 [@media(max-height:800px)]:p-2.5 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-xl dark:shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316] hover:border-indigo-500/30 dark:hover:border-zinc-700/50 transition-all group">
     <div className="flex justify-between items-start mb-3 [@media(max-height:800px)]:mb-2">
-      <div className={`p-2 [@media(max-height:800px)]:p-1.5 rounded-xl [@media(max-height:800px)]:rounded-lg ${color} bg-opacity-10 text-${color.split('-')[1]}-400 shadow-inner`}>
-        <Icon size={16} className="[@media(max-height:800px)]:w-3.5 [@media(max-height:800px)]:h-3.5" />
+      <div className="p-2 [@media(max-height:800px)]:p-1.5 rounded-xl [@media(max-height:800px)]:rounded-lg bg-indigo-50 dark:bg-indigo-500/10 shadow-inner">
+        <Icon size={16} className="[@media(max-height:800px)]:w-3.5 [@media(max-height:800px)]:h-3.5 text-indigo-600 dark:text-indigo-400" />
       </div>
-      <button className="text-zinc-600 hover:text-zinc-400 p-1 hover:bg-zinc-800/50 rounded-lg transition-colors [@media(max-height:800px)]:hidden">
+      <button className="text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 rounded-lg transition-colors [@media(max-height:800px)]:hidden">
         <MoreHorizontal size={14} />
       </button>
     </div>
@@ -87,7 +87,7 @@ const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) 
       <p className="text-zinc-500 text-[9px] [@media(max-height:800px)]:text-[8px] uppercase font-bold tracking-widest mb-1">{title}</p>
       <div className="flex items-end gap-2">
         <h3 className="text-xl [@media(max-height:800px)]:text-lg font-bold tracking-tight">{value}</h3>
-        <span className={`flex items-center text-[10px] [@media(max-height:800px)]:text-[9px] mb-0.5 font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'} px-1.5 py-0.5 bg-zinc-900/50 rounded-full border border-zinc-800/50`}>
+        <span className={`flex items-center text-[10px] [@media(max-height:800px)]:text-[9px] mb-0.5 font-bold ${isPositive ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'} px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-900/50 rounded-full border border-zinc-200 dark:border-zinc-800/50`}>
           {isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
           {change}
         </span>
@@ -95,6 +95,7 @@ const StatCard = ({ title, value, change, isPositive, icon: Icon, color }: any) 
     </div>
   </div>
 );
+
 
 interface DashboardProps {
   leads: Lead[];
@@ -338,11 +339,12 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-3 2xl:gap-4 shrink-0 [@media(max-height:850px)]:gap-2">
-        <StatCard title="Total de Leads" value={totalLeads.toLocaleString()} change="+12.5%" isPositive={true} icon={Users} color="bg-blue-500" />
-        <StatCard title="Novos Leads (24h)" value={newLeads.toLocaleString()} icon={PhoneCall} color="bg-amber-500" change="+4.2%" isPositive={true} />
-        <StatCard title="Aguardando Decisão" value={leadsWaitingDecision.toLocaleString()} change="+5.4%" isPositive={true} icon={TrendingUp} color="bg-indigo-500" />
-        <StatCard title="Taxa de Agendamento" value={`${conversionRate}%`} change="-1.2%" isPositive={false} icon={Users} color="bg-emerald-500" />
+        <StatCard title="Total de Leads" value={totalLeads.toLocaleString()} change="+12.5%" isPositive={true} icon={Users} />
+        <StatCard title="Novos Leads (24h)" value={newLeads.toLocaleString()} icon={PhoneCall} change="+4.2%" isPositive={true} />
+        <StatCard title="Aguardando Decisão" value={leadsWaitingDecision.toLocaleString()} change="+5.4%" isPositive={true} icon={TrendingUp} />
+        <StatCard title="Taxa de Agendamento" value={`${conversionRate}%`} change="-1.2%" isPositive={false} icon={Users} />
       </div>
+
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 [@media(max-height:800px)]:gap-3 flex-1 min-h-0">

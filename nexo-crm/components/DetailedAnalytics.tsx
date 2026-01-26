@@ -160,8 +160,8 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-[#0c0c0e] border border-zinc-800/50 p-6 rounded-[2rem] shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316]">
           <div className="flex items-center gap-2 text-zinc-400 mb-4">
-            <div className="p-2 bg-indigo-500/10 rounded-lg">
-              <DollarSign size={16} className="text-indigo-400" />
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
+              <DollarSign size={16} className="text-indigo-600 dark:text-indigo-400" />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-widest">Faturamento Real</span>
           </div>
@@ -173,21 +173,21 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
 
         <div className="bg-[#0c0c0e] border border-zinc-800/50 p-6 rounded-[2rem] shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316]">
           <div className="flex items-center gap-2 text-zinc-400 mb-4">
-            <div className="p-2 bg-amber-500/10 rounded-lg">
-              <TrendingUp size={16} className="text-amber-400" />
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
+              <TrendingUp size={16} className="text-indigo-600 dark:text-indigo-400" />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-widest">Projeção (Aguardando)</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-amber-400/90">R$ {faturamentoPotencialDecisao.toLocaleString('pt-BR')}</span>
+            <span className="text-2xl font-bold">R$ {faturamentoPotencialDecisao.toLocaleString('pt-BR')}</span>
           </div>
           <p className="text-[10px] text-zinc-500 mt-2">{waitingDecisionLeads} leads em decisão</p>
         </div>
 
         <div className="bg-[#0c0c0e] border border-zinc-800/50 p-6 rounded-[2rem] shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316]">
           <div className="flex items-center gap-2 text-zinc-400 mb-4">
-            <div className="p-2 bg-emerald-500/10 rounded-lg">
-              <Target size={16} className="text-emerald-400" />
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
+              <Target size={16} className="text-indigo-600 dark:text-indigo-400" />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-widest">Taxa de Conversão</span>
           </div>
@@ -199,8 +199,8 @@ const DetailedAnalytics: React.FC<DetailedAnalyticsProps> = ({ leads, onAction }
 
         <div className="bg-[#0c0c0e] border border-zinc-800/50 p-6 rounded-[2rem] shadow-[10px_10px_20px_#050506,-10px_-10px_20px_#131316]">
           <div className="flex items-center gap-2 text-zinc-400 mb-4">
-            <div className="p-2 bg-rose-500/10 rounded-lg">
-              <Target size={16} className="text-rose-400" />
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
+              <Target size={16} className="text-indigo-600 dark:text-indigo-400" />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-widest">Agendamentos</span>
           </div>
