@@ -271,13 +271,13 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <text x="50%" y="45%" dy={-35} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest">
+        <text x="50%" y="50%" dy={-35} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest">
           {payload.name.length > 15 ? `${payload.name.substring(0, 12)}...` : payload.name}
         </text>
-        <text x="50%" y="45%" dy={10} textAnchor="middle" fill={isDark ? "#fff" : "#18181b"} fontSize={24} fontWeight="bold">
+        <text x="50%" y="50%" dy={10} textAnchor="middle" fill={isDark ? "#fff" : "#18181b"} fontSize={24} fontWeight="bold">
           {value}
         </text>
-        <text x="50%" y="45%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold">
+        <text x="50%" y="50%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold">
           {`${(percent * 100).toFixed(1)}%`}
         </text>
         <Sector
