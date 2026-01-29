@@ -570,21 +570,22 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] text-zinc-500 uppercase font-bold ml-1">Chave de API (Anon Key)</label>
+                                    <label className="text-[10px] text-zinc-500 uppercase font-bold ml-1">Chave de Serviço (Service Role Key)</label>
                                     <div className="flex gap-2">
                                         <code className="flex-1 px-5 py-3.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl text-xs font-mono text-zinc-300 overflow-x-auto whitespace-nowrap scrollbar-hide break-all">
-                                            {import.meta.env.VITE_SUPABASE_ANON_KEY}
+                                            {import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'Não configurada no .env'}
                                         </code>
                                         <button
-                                            onClick={() => copyToClipboard(import.meta.env.VITE_SUPABASE_ANON_KEY, 'key')}
-                                            className="p-3.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-2xl transition-all border border-zinc-700 hover:border-zinc-600"
+                                            onClick={() => copyToClipboard(import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || '', 'key')}
+                                            className="p-3.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-2xl transition-all border border-zinc-700 hover:border-zinc-600 disabled:opacity-50"
                                             title="Copiar"
+                                            disabled={!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}
                                         >
                                             {copiedField === 'key' ? <Check size={18} className="text-emerald-500" /> : <Copy size={18} />}
                                         </button>
                                     </div>
                                     <p className="text-[10px] text-zinc-500 px-1">
-                                        Esta chave é pública e segura para uso no frontend, mas necessária para conexões via n8n.
+                                        Esta chave tem permissões administrativas. Use APENAS no n8n. Nunca compartilhe.
                                     </p>
                                 </div>
 
