@@ -53,6 +53,21 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
     const [showApiKeys, setShowApiKeys] = useState(false);
     const [copiedField, setCopiedField] = useState<string | null>(null);
 
+    // Auto-lock timer
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (showApiKeys) {
+            timer = setTimeout(() => {
+                setShowApiKeys(false);
+                setApiPassword('');
+                setStatus({ type: 'success', message: 'Credenciais bloqueadas automaticamente por segurança.' });
+            }, 60000); // 60 segundos
+        }
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [showApiKeys]);
+
     // Modal de confirmação
     const [confirmModal, setConfirmModal] = useState<{
         show: boolean;
