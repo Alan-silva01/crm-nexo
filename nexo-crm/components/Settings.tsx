@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, User as UserIcon, Save, CheckCircle, AlertCircle, Users, Plus, Trash2, Mail, Eye, EyeOff, X, AlertTriangle } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+
+import { User, Lock, User as UserIcon, Save, CheckCircle, AlertCircle, Users, Plus, Trash2, Mail, Eye, EyeOff, X, AlertTriangle, Key, Copy, Check } from 'lucide-react';
 import { supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/lib/AuthProvider';
 import { tenantService, TenantUser } from '../src/lib/tenantService';
@@ -31,7 +33,7 @@ const translateError = (msg: string) => {
 
 const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
     const { userType, userInfo } = useAuth();
-    const [activeTab, setActiveTab] = useState<'perfil' | 'seguranca' | 'equipe'>('perfil');
+    const [activeTab, setActiveTab] = useState<'perfil' | 'seguranca' | 'equipe' | 'api'>('perfil');
     const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -45,6 +47,11 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [newMember, setNewMember] = useState({ nome: '', email: '', senha: '' });
     const [showPassword, setShowPassword] = useState(false);
+
+    // API Keys state
+    const [apiPassword, setApiPassword] = useState('');
+    const [showApiKeys, setShowApiKeys] = useState(false);
+    const [copiedField, setCopiedField] = useState<string | null>(null);
 
     // Modal de confirmação
     const [confirmModal, setConfirmModal] = useState<{
@@ -163,6 +170,48 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
         });
     };
 
+    const verifyApiPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setStatus(null);
+
+        try {
+            const tempClient = createClient(
+                import.meta.env.VITE_SUPABASE_URL,
+                import.meta.env.VITE_SUPABASE_ANON_KEY,
+                {
+                    auth: {
+                        persistSession: false,
+                        autoRefreshToken: false,
+                        detectSessionInUrl: false
+                    }
+                }
+            );
+
+            const { data, error } = await tempClient.auth.signInWithPassword({
+                email: user.email,
+                password: apiPassword
+            });
+
+            if (error || !data.user) {
+                setStatus({ type: 'error', message: 'Senha incorreta. Tente novamente.' });
+            } else {
+                setShowApiKeys(true);
+                setApiPassword('');
+                setStatus(null);
+            }
+        } catch (err) {
+            setStatus({ type: 'error', message: 'Ocorreu um erro ao verificar a senha.' });
+        }
+        setLoading(false);
+    };
+
+    const copyToClipboard = (text: string, fieldId: string) => {
+        navigator.clipboard.writeText(text);
+        setCopiedField(fieldId);
+        setTimeout(() => setCopiedField(null), 2000);
+    };
+
     const isAdmin = userInfo?.isOwnerOrAdmin || userType === 'admin';
 
     // Só mostra aba Equipe se for admin E tiver slots de atendentes disponíveis
@@ -171,7 +220,8 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
     const tabs = [
         { id: 'perfil' as const, label: 'Perfil', icon: UserIcon },
         { id: 'seguranca' as const, label: 'Segurança', icon: Lock },
-        ...(showEquipeTab ? [{ id: 'equipe' as const, label: 'Equipe', icon: Users }] : [])
+        ...(showEquipeTab ? [{ id: 'equipe' as const, label: 'Equipe', icon: Users }] : []),
+        ...(isAdmin ? [{ id: 'api' as const, label: 'API & Integrações', icon: Key }] : [])
     ];
 
     return (
@@ -437,6 +487,126 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
                         )}
                     </div>
                 )}
+
+                {/* API Tab */}
+                {activeTab === 'api' && isAdmin && (
+                    <section className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] max-w-2xl">
+                        <h2 className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest flex items-center gap-2">
+                            <Key size={16} /> Credenciais de API
+                        </h2>
+
+                        {!showApiKeys ? (
+                            <form onSubmit={verifyApiPassword} className="space-y-6">
+                                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl mb-6">
+                                    <h3 className="text-amber-500 font-semibold flex items-center gap-2 text-sm mb-1">
+                                        <Lock size={14} /> Área Segura
+                                    </h3>
+                                    <p className="text-xs text-amber-500/80">
+                                        Para visualizar suas chaves de API, por favor confirme sua senha.
+                                        Essas informações permitem acesso total à sua conta via API.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] text-zinc-500 uppercase font-bold ml-1">Sua Senha Atual</label>
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword ? 'text' : 'password'}
+                                            value={apiPassword}
+                                            onChange={(e) => setApiPassword(e.target.value)}
+                                            className="w-full px-5 py-3.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                            placeholder="Digite sua senha para desbloquear"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                                        >
+                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-sm font-bold transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    {loading ? 'Verificando...' : 'Desbloquear Credenciais'}
+                                </button>
+                            </form>
+                        ) : (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] text-zinc-500 uppercase font-bold ml-1">URL do Projeto (Supabase URL)</label>
+                                    <div className="flex gap-2">
+                                        <code className="flex-1 px-5 py-3.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl text-xs font-mono text-zinc-300 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                                            {import.meta.env.VITE_SUPABASE_URL}
+                                        </code>
+                                        <button
+                                            onClick={() => copyToClipboard(import.meta.env.VITE_SUPABASE_URL, 'url')}
+                                            className="p-3.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-2xl transition-all border border-zinc-700 hover:border-zinc-600"
+                                            title="Copiar"
+                                        >
+                                            {copiedField === 'url' ? <Check size={18} className="text-emerald-500" /> : <Copy size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] text-zinc-500 uppercase font-bold ml-1">Chave de API (Anon Key)</label>
+                                    <div className="flex gap-2">
+                                        <code className="flex-1 px-5 py-3.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl text-xs font-mono text-zinc-300 overflow-x-auto whitespace-nowrap scrollbar-hide break-all">
+                                            {import.meta.env.VITE_SUPABASE_ANON_KEY}
+                                        </code>
+                                        <button
+                                            onClick={() => copyToClipboard(import.meta.env.VITE_SUPABASE_ANON_KEY, 'key')}
+                                            className="p-3.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-2xl transition-all border border-zinc-700 hover:border-zinc-600"
+                                            title="Copiar"
+                                        >
+                                            {copiedField === 'key' ? <Check size={18} className="text-emerald-500" /> : <Copy size={18} />}
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-zinc-500 px-1">
+                                        Esta chave é pública e segura para uso no frontend, mas necessária para conexões via n8n.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] text-zinc-500 uppercase font-bold ml-1">Seu ID de Usuário (User ID)</label>
+                                    <div className="flex gap-2">
+                                        <code className="flex-1 px-5 py-3.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl text-xs font-mono text-zinc-300 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                                            {userInfo?.tenantId || user?.id}
+                                        </code>
+                                        <button
+                                            onClick={() => copyToClipboard(userInfo?.tenantId || user?.id, 'uid')}
+                                            className="p-3.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-2xl transition-all border border-zinc-700 hover:border-zinc-600"
+                                            title="Copiar"
+                                        >
+                                            {copiedField === 'uid' ? <Check size={18} className="text-emerald-500" /> : <Copy size={18} />}
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-zinc-500 px-1">
+                                        Este ID identifica sua conta. Use-o no campo 'User ID' nas configurações do n8n.
+                                    </p>
+                                </div>
+
+                                <div className="pt-4 border-t border-zinc-800/50">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setShowApiKeys(false); setApiPassword(''); }}
+                                        className="text-xs text-zinc-500 hover:text-zinc-300 transition-all flex items-center gap-1"
+                                    >
+                                        <Lock size={12} /> Bloquear novamente
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </section>
+                )}
+
+
             </div>
         </>
     );
