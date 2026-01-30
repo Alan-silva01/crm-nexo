@@ -5,48 +5,10 @@
   "description": "NERO CRM - Gerencie seus leads e conversas do WhatsApp",
   "author": "NERO",
   "type": "module",
-  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron:build": "vite build && electron-builder",
-    "electron:build:mac": "vite build && electron-builder --mac",
-    "electron:build:win": "vite build && electron-builder --win"
-  },
-  "build": {
-    "appId": "com.nero.crm",
-    "productName": "NERO CRM",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*",
-      "public/**/*"
-    ],
-    "mac": {
-      "category": "public.app-category.business",
-      "icon": "public/favicon.svg",
-      "target": [
-        "dmg",
-        "zip"
-      ]
-    },
-    "win": {
-      "icon": "public/favicon.svg",
-      "target": [
-        "nsis",
-        "portable"
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerIcon": "public/favicon.svg",
-      "uninstallerIcon": "public/favicon.svg"
-    }
+    "preview": "vite preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
@@ -58,12 +20,8 @@
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "concurrently": "^9.2.1",
-    "electron": "^40.1.0",
-    "electron-builder": "^26.4.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
-    "vite-plugin-pwa": "^1.2.0",
-    "wait-on": "^9.0.3"
+    "vite-plugin-pwa": "^1.2.0"
   }
 }

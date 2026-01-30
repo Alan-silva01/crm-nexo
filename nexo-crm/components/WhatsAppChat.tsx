@@ -1052,7 +1052,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border
                       ${currentAssignment
                         ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20'
-                        : 'bg-zinc-800/50 text-zinc-400 border-zinc-700/50 hover:bg-zinc-700/50'}`}
+                        : 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/50'}`}
                   >
                     <UserPlus size={14} />
                     <span>{currentAssignment ? (currentAssignment.id === userInfo?.tenantUserId ? 'Você' : currentAssignment.nome.split(' ')[0]) : 'Atribuir'}</span>
@@ -1060,14 +1060,14 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                   </button>
 
                   {showAssignDropdown && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-[#0d1419] border border-zinc-700/50 rounded-xl shadow-xl z-50 overflow-hidden">
-                      <div className="p-2 border-b border-zinc-700/30">
-                        <span className="text-[10px] text-zinc-500 uppercase font-bold">Atribuir a</span>
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#0d1419] border border-zinc-200 dark:border-zinc-700/50 rounded-xl shadow-xl z-50 overflow-hidden ring-1 ring-black/5 dark:ring-transparent">
+                      <div className="p-2 border-b border-zinc-100 dark:border-zinc-700/30">
+                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-bold">Atribuir a</span>
                       </div>
                       <button
                         onClick={() => handleAssignLead(null)}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-700/30 transition-colors flex items-center gap-2
-                          ${!currentAssignment ? 'text-emerald-400' : 'text-zinc-300'}`}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700/30 transition-colors flex items-center gap-2
+                          ${!currentAssignment ? 'text-emerald-500 font-bold' : 'text-zinc-700 dark:text-zinc-300'}`}
                       >
                         <Users size={14} />
                         <span>Ninguém (remover)</span>
@@ -1076,8 +1076,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                         <button
                           key={member.id}
                           onClick={() => handleAssignLead(member.id)}
-                          className={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-700/30 transition-colors flex items-center gap-2
-                            ${currentAssignment?.id === member.id ? 'text-emerald-400' : 'text-zinc-300'}`}
+                          className={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700/30 transition-colors flex items-center gap-2
+                            ${currentAssignment?.id === member.id ? 'text-emerald-500 font-bold' : 'text-zinc-700 dark:text-zinc-300'}`}
                         >
                           <div className={`w-2 h-2 rounded-full ${getAgentColor(member.nome)}`} />
                           <span>{member.nome}</span>

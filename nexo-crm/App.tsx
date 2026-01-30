@@ -11,7 +11,6 @@ import Broadcasts from './components/Broadcasts';
 import Labels from './components/Labels';
 import Settings from './components/Settings';
 import UserAvatar from './components/UserAvatar';
-import WindowControls from './components/WindowControls';
 import Auth from './components/Auth';
 import { Bell, Search, Calendar, LogOut, Sun, Moon, Users, ArrowUpRight, Bot } from 'lucide-react';
 import { Lead, LeadColumnHistory } from './types';
@@ -952,7 +951,6 @@ const AppContent: React.FC = () => {
               </div>
               <UserAvatar name={user?.user_metadata?.full_name} email={user?.email} size="md" className="border-2 border-indigo-500/20 shadow-sm" />
             </div>
-            <WindowControls />
           </div>
         </header>
         <div className="flex-1 overflow-hidden">
