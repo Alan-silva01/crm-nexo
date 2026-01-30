@@ -16,8 +16,8 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg'],
         manifest: {
-          name: 'Nero CRM',
-          short_name: 'NeroCRM',
+          name: 'NERO CRM',
+          short_name: 'NERO CRM',
           description: 'Gerencie seus leads e conversas do WhatsApp com um CRM moderno e intuitivo',
           theme_color: '#0c0c0e',
           background_color: '#0c0c0e',
