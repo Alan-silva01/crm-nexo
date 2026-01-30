@@ -511,10 +511,10 @@ const Kanban: React.FC<KanbanProps> = ({
                               style={{ backgroundColor: borderColor }}
                             ></div>
                           </div>
-                          <div className="flex-1 basis-0 min-w-0 overflow-hidden">
-                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-tight pr-4 w-full block" title={getLeadDisplayName(lead)}>{getLeadDisplayName(lead)}</h4>
-                            {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1 pr-4 w-full block" title={lead.company_name}>{lead.company_name}</p>}
-                            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none truncate pr-4 w-full block">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
+                          <div className="flex-1 min-w-0 flex flex-col justify-center overflow-hidden">
+                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-tight pr-4" title={getLeadDisplayName(lead)}>{getLeadDisplayName(lead)}</h4>
+                            {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1 pr-4" title={lead.company_name}>{lead.company_name}</p>}
+                            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none truncate pr-4">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
                           </div>
                         </div>
                         <button
@@ -522,7 +522,7 @@ const Kanban: React.FC<KanbanProps> = ({
                             e.stopPropagation();
                             setDeleteModal({ isOpen: true, lead });
                           }}
-                          className="text-zinc-800 hover:text-red-400 transition-all p-1.5 hover:bg-zinc-900 rounded-lg opacity-0 group-hover/card:opacity-100"
+                          className="text-zinc-800 hover:text-red-400 transition-all p-1.5 hover:bg-zinc-900 rounded-lg opacity-0 group-hover/card:opacity-100 shrink-0"
                           title="Excluir lead"
                         >
                           <Trash2 size={14} />
