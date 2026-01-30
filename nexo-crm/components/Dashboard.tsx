@@ -321,24 +321,24 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
 
   return (
     <div className="p-4 2xl:p-6 h-full flex flex-col space-y-3 2xl:space-y-4 overflow-hidden [@media(max-height:850px)]:p-3 [@media(max-height:850px)]:space-y-2">
-      <header className="flex justify-between items-center shrink-0 [@media(max-height:800px)]:mb-1">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0 [@media(max-height:800px)]:mb-1">
         <div>
-          <h1 className="text-xl [@media(max-height:800px)]:text-lg font-bold tracking-tight">Dashboard de Performance</h1>
-          <p className="text-zinc-500 text-xs [@media(max-height:800px)]:text-[10px] [@media(max-height:800px)]:hidden">Visão geral em tempo real dos seus leads e conversões.</p>
+          <h1 className="text-lg md:text-xl [@media(max-height:800px)]:text-lg font-bold tracking-tight">Dashboard</h1>
+          <p className="text-zinc-500 text-[10px] md:text-xs [@media(max-height:800px)]:text-[10px] hidden sm:block">Performance em tempo real.</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex w-full sm:w-auto justify-between sm:justify-end gap-2 md:gap-4">
           <DashboardClock />
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 2xl:px-6 py-2 bg-indigo-600 text-white rounded-xl text-[10px] 2xl:text-xs font-bold hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95 [@media(max-height:850px)]:py-1.5"
+            className="flex items-center gap-2 px-3 md:px-6 py-2 bg-indigo-600 text-white rounded-xl text-[9px] md:text-xs font-bold hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95 [@media(max-height:850px)]:py-1.5"
           >
-            Exportar CSV
+            Exportar
           </button>
         </div>
       </header>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-3 2xl:gap-4 shrink-0 [@media(max-height:850px)]:gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-2 md:gap-3 2xl:gap-4 shrink-0 overflow-x-auto pb-1">
         <StatCard title="Total de Leads" value={totalLeads.toLocaleString()} change="+12.5%" isPositive={true} icon={Users} />
         <StatCard title="Novos Leads (24h)" value={newLeads.toLocaleString()} icon={PhoneCall} change="+4.2%" isPositive={true} />
         <StatCard title="Aguardando Decisão" value={leadsWaitingDecision.toLocaleString()} change="+5.4%" isPositive={true} icon={TrendingUp} />
@@ -369,7 +369,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
             </div>
           </div>
           <div className="flex-1 w-full min-h-0 overflow-x-auto custom-scrollbar" ref={chartScrollRef}>
-            <div className="h-full min-w-[2000px]">
+            <div className="h-full min-w-[800px] md:min-w-[2000px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={areaChartData} margin={{ top: 5, right: 30, left: -25, bottom: 0 }}>
                   <defs>

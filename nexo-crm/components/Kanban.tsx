@@ -453,7 +453,7 @@ const Kanban: React.FC<KanbanProps> = ({
         {columns.map((col, colIndex) => (
           <div
             key={col.id}
-            className={`flex-shrink-0 w-80 lg:w-[22rem] xl:w-[24rem] 2xl:w-[26rem] min-w-0 flex flex-col max-h-full group transition-all duration-300
+            className={`flex-shrink-0 w-[280px] xs:w-80 lg:w-[22rem] xl:w-[24rem] 2xl:w-[26rem] min-w-0 flex flex-col max-h-full group transition-all duration-300
               ${draggingColumnId === col.id ? 'opacity-40 scale-95' : ''}`}
             onDragOver={onDragOver}
             onDrop={(e) => {

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Phone, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare, Bot, User, Pause, Play, UserPlus, ChevronDown, Users, LogOut } from 'lucide-react';
+import { Search, Phone, MoreVertical, Send, Smile, Paperclip, CheckCheck, MessageSquare, Bot, User, Pause, Play, UserPlus, ChevronDown, Users, LogOut, ChevronLeft } from 'lucide-react';
 import { Lead, SDRMessage, getLeadDisplayName } from '../types';
 import LetterAvatar from './LetterAvatar';
 import { chatsSdrService } from '../src/lib/chatsSdrService';
@@ -931,9 +931,9 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
   }
 
   return (
-    <div className="h-full flex overflow-hidden">
+    <div className="h-full flex overflow-hidden relative">
       {/* Chat List */}
-      <div className="w-80 border-r border-zinc-800/50 flex flex-col bg-white dark:bg-[#0b141a]">
+      <div className={`${selectedChatId ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-zinc-800/50 flex flex-col bg-white dark:bg-[#0b141a]`}>
         <div className="p-4 border-b border-zinc-800/50">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
@@ -1031,16 +1031,23 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
       {/* Active Chat */}
       {selectedChat ? (
-        <div className="flex-1 flex flex-col bg-white dark:bg-[#0b141a]">
-          <header className="h-[64px] px-4 border-b border-zinc-800/30 flex items-center justify-between bg-white dark:bg-[#0b141a] z-10">
-            <div className="flex items-center gap-3">
+        <div className={`${selectedChatId ? 'flex' : 'hidden md:flex'} flex-1 flex flex-col bg-white dark:bg-[#0b141a] absolute inset-0 md:relative z-20 md:z-auto`}>
+          <header className="h-[64px] px-2 md:px-4 border-b border-zinc-800/30 flex items-center justify-between bg-white dark:bg-[#0b141a] z-10 shrink-0">
+            <div className="flex items-center gap-1 md:gap-3">
+              <button
+                onClick={() => setSelectedChatId(null)}
+                className="md:hidden p-2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                title="Voltar para lista"
+              >
+                <ChevronLeft size={24} />
+              </button>
               <div className="relative">
                 <LetterAvatar name={getLeadDisplayName(selectedChat)} size="md" />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#0b141a]"></span>
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{getLeadDisplayName(selectedChat)}</h4>
-                <p className="text-[11px] text-zinc-400">{formatPhoneNumber(selectedChat.phone) || 'online'}</p>
+                <h4 className="text-xs md:text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[120px] sm:max-w-none">{getLeadDisplayName(selectedChat)}</h4>
+                <p className="text-[10px] md:text-[11px] text-zinc-400">{formatPhoneNumber(selectedChat.phone) || 'online'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 text-zinc-400 px-2">
@@ -1098,7 +1105,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
               <button
                 onClick={handleToggleAI}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${selectedChat?.ai_paused
+                className={`flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 rounded-full text-[10px] md:text-xs font-semibold transition-all border ${selectedChat?.ai_paused
                   ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20'
                   : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20'
                   }`}
@@ -1107,12 +1114,12 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
                 {selectedChat?.ai_paused ? (
                   <>
                     <Pause size={12} className="fill-current" />
-                    <span>IA Pausada</span>
+                    <span>IA Off</span>
                   </>
                 ) : (
                   <>
                     <Bot size={14} />
-                    <span>IA Ativa</span>
+                    <span>IA On</span>
                   </>
                 )}
               </button>

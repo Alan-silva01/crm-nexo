@@ -12,8 +12,8 @@ import Labels from './components/Labels';
 import Settings from './components/Settings';
 import UserAvatar from './components/UserAvatar';
 import Auth from './components/Auth';
-import { Bell, Search, Calendar, LogOut, Sun, Moon, Users, ArrowUpRight, Bot } from 'lucide-react';
-import { Lead, LeadColumnHistory } from './types';
+import { Bell, Search, Calendar, LogOut, Sun, Moon, Users, ArrowUpRight, Bot, LayoutDashboard, Kanban as KanbanIcon, MessageSquare, Settings as SettingsIcon } from 'lucide-react';
+import { Lead, LeadColumnHistory, getLeadDisplayName } from './types';
 import { formatRelativeTime } from './src/lib/formatRelativeTime';
 import { AuthProvider, useAuth } from './src/lib/AuthProvider';
 import { ThemeProvider, useTheme } from './src/lib/ThemeContext';
@@ -349,7 +349,7 @@ const AppContent: React.FC = () => {
         },
         (payload) => {
           const now = Date.now();
-          console.log('📡 REALTIME EVENT:', payload.eventType, 'for lead:', payload.new?.id || payload.old?.id);
+          console.log('📡 REALTIME EVENT:', payload.eventType, 'for lead:', (payload.new as any)?.id || (payload.old as any)?.id);
 
           if (payload.eventType === 'INSERT') {
             const newLead = payload.new as Lead;
@@ -793,6 +793,33 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const MobileNav: React.FC = () => {
+    const navItems = [
+      { id: 'dashboard', icon: LayoutDashboard, label: 'Dash' },
+      { id: 'kanban', icon: KanbanIcon, label: 'Kanban' },
+      { id: 'chats', icon: MessageSquare, label: 'Chat' },
+      { id: 'leads', icon: Users, label: 'Leads' },
+      { id: 'ajustes', icon: SettingsIcon, label: 'Setup' },
+    ];
+
+    return (
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#09090b] border-t border-zinc-800/50 flex justify-around items-center h-16 px-2 z-50">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`flex flex-col items-center justify-center gap-1 min-w-[60px] transition-all
+              ${activeTab === item.id ? 'text-indigo-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+          >
+            <item.icon size={20} className={activeTab === item.id ? 'animate-pulse' : ''} />
+            <span className="text-[9px] font-bold uppercase tracking-tighter">{item.label}</span>
+          </button>
+        ))}
+      </nav>
+    );
+  };
+
+
   return (
     <div className="flex h-screen bg-[#09090b] text-zinc-100 overflow-hidden font-sans selection:bg-indigo-500/30">
       <Sidebar
@@ -803,33 +830,33 @@ const AppContent: React.FC = () => {
         user={user}
         profile={profile}
       />
-      <main className="flex-1 flex flex-col min-w-0 bg-[#0c0c0e] relative">
-        <header className="h-16 border-b border-zinc-800/50 flex items-center justify-between px-8 bg-zinc-900/20 z-40">
-          <div className="flex items-center gap-6 flex-1">
+      <main className="flex-1 flex flex-col min-w-0 bg-[#0c0c0e] relative pb-16 md:pb-0">
+        <header className="h-16 border-b border-zinc-800/50 flex items-center justify-between px-4 md:px-8 bg-zinc-900/20 z-40">
+          <div className="flex items-center gap-3 md:gap-6 flex-1">
             {profile?.company_name && (
-              <div className="flex flex-col pr-6 border-r border-zinc-800/50">
-                <span className="text-sm font-black uppercase tracking-wider text-indigo-500 whitespace-nowrap">
+              <div className="flex flex-col pr-3 md:pr-6 border-r border-zinc-800/50">
+                <span className="text-xs md:text-sm font-black uppercase tracking-wider text-indigo-500 whitespace-nowrap">
                   {profile.company_name}
                 </span>
                 {profile.logged_user_name && (
-                  <span className="text-[11px] text-zinc-400 font-medium">
+                  <span className="text-[9px] md:text-[11px] text-zinc-400 font-medium">
                     {profile.logged_user_name}
                   </span>
                 )}
               </div>
             )}
-            <div className="relative flex-1 max-w-sm xl:max-w-md 2xl:max-w-lg">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+            <div className="relative flex-1 max-w-[150px] sm:max-w-sm xl:max-w-md 2xl:max-w-lg">
+              <Search className="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input
                 type="text"
-                placeholder="Pesquisar contatos, mensagens ou telefones..."
+                placeholder="Pesquisar..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-zinc-900/50 border border-zinc-800/50 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                className="w-full pl-8 md:pl-10 pr-2 md:pr-4 py-1.5 md:py-2 bg-zinc-900/50 border border-zinc-800/50 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
               />
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <button
               onClick={toggleTheme}
               className="p-2 text-zinc-400 hover:text-indigo-400 transition-colors bg-zinc-900 border border-zinc-800 rounded-xl"
@@ -837,9 +864,9 @@ const AppContent: React.FC = () => {
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-full text-[11px] font-medium text-zinc-500">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-full text-[11px] font-medium text-zinc-500">
               <Calendar size={12} />
-              {new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
             </div>
             <div className="relative">
               <button
@@ -942,11 +969,11 @@ const AppContent: React.FC = () => {
                 </>
               )}
             </div>
-            <div className="flex items-center gap-3 pl-4 border-l border-zinc-800">
+            <div className="hidden md:flex items-center gap-3 pl-4 border-l border-zinc-800">
               <div className="text-right">
                 <p className="text-[11px] font-semibold leading-none">{(user?.user_metadata?.full_name || session?.user?.email) ?? 'Usuário'}</p>
                 <button onClick={signOut} className="text-[9px] text-zinc-500 mt-1 flex items-center justify-end gap-1 hover:text-red-400 transition-colors">
-                  Sair da conta <LogOut size={10} />
+                  Sair <LogOut size={10} />
                 </button>
               </div>
               <UserAvatar name={user?.user_metadata?.full_name} email={user?.email} size="md" className="border-2 border-indigo-500/20 shadow-sm" />
@@ -956,6 +983,7 @@ const AppContent: React.FC = () => {
         <div className="flex-1 overflow-hidden">
           {renderContent()}
         </div>
+        <MobileNav />
       </main>
     </div>
   );
