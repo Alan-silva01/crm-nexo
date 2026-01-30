@@ -19,9 +19,10 @@ export default defineConfig(({ mode }) => {
           name: 'Nero CRM',
           short_name: 'NeroCRM',
           description: 'Gerencie seus leads e conversas do WhatsApp com um CRM moderno e intuitivo',
-          theme_color: '#6366f1',
+          theme_color: '#0c0c0e',
           background_color: '#0c0c0e',
           display: 'standalone',
+          display_override: ['window-controls-overlay', 'standalone'],
           orientation: 'any',
           start_url: '/',
           icons: [
