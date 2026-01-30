@@ -315,6 +315,19 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
 
       console.log('[WhatsAppChat] Proceeding with session ready');
 
+      // 1.5. Usar CACHE imediatamente para evitar mostrar chat anterior e permitir scroll instantâneo
+      if (messagesCache[cacheKey]) {
+        console.log('[WhatsAppChat] ✅ Found cached messages for:', cacheKey);
+        setSdrMessages(messagesCache[cacheKey].messages);
+        setHasMoreMessages(messagesCache[cacheKey].hasMore);
+        setCurrentOffset(messagesCache[cacheKey].offset);
+        setLoadingMessages(false);
+      } else {
+        console.log('[WhatsAppChat] ℹ️ No cache for:', cacheKey, '- clearing messages');
+        setSdrMessages([]);
+        setLoadingMessages(true);
+      }
+
       // Usar chatTableName passado pelo App.tsx (evita RPC que pode travar)
       let chatTableName = propChatTableName || '';
 
@@ -359,7 +372,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         }
       }
 
-      // 2. Mostrar loading
+      // 2. Mostrar loading (apenas se não tiver nada em cache)
       if (isMounted && !messagesCache[cacheKey]) {
         setLoadingMessages(true);
       }
@@ -501,40 +514,50 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     }
   }, [leads, selectedChat?.id]);
 
-  // Auto-scroll to bottom when messages load or loading state changes
+  // Auto-scroll to bottom when messages load or container resizes
   useEffect(() => {
     if (!loadingMessages && sdrMessages.length > 0 && chatContainerRef.current) {
       const container = chatContainerRef.current;
 
-      const scrollToBottom = () => {
-        if (isFirstLoad.current) {
-          // Scroll instantâneo no primeiro load
-          container.scrollTop = container.scrollHeight;
-
-          // Múltiplas tentativas para garantir que o scroll aconteça após o render completo
-          const attempts = [10, 50, 100, 300];
-          attempts.forEach(delay => {
-            setTimeout(() => {
-              if (container) container.scrollTop = container.scrollHeight;
-            }, delay);
-          });
-
-          isFirstLoad.current = false;
+      const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior });
         } else {
-          // Scroll suave para novas mensagens em tempo real
-          container.scrollTo({
-            top: container.scrollHeight,
-            behavior: 'smooth'
-          });
+          container.scrollTop = container.scrollHeight;
         }
       };
 
-      // Aguarda os frames de renderização para garantir que o DOM está pronto
-      requestAnimationFrame(() => {
-        requestAnimationFrame(scrollToBottom);
+      // Se for a primeira vez carregando este chat, rolar instantaneamente
+      if (isFirstLoad.current) {
+        scrollToBottom('auto');
+
+        // Múltiplas tentativas para garantir que o scroll aconteça após o render completo (imagens, etc)
+        const attempts = [10, 50, 100, 300, 500];
+        attempts.forEach(delay => {
+          setTimeout(() => {
+            if (container) scrollToBottom('auto');
+          }, delay);
+        });
+
+        isFirstLoad.current = false;
+      } else {
+        // Scroll suave para novas mensagens em tempo real
+        scrollToBottom('smooth');
+      }
+
+      // Configurar ResizeObserver para rolar se o conteúdo mudar (ex: imagens carregando)
+      // mas só se já estivermos perto do fundo
+      const resizeObserver = new ResizeObserver(() => {
+        const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+        if (isNearBottom) {
+          scrollToBottom('auto');
+        }
       });
+
+      resizeObserver.observe(container);
+      return () => resizeObserver.disconnect();
     }
-  }, [sdrMessages, loadingMessages]);
+  }, [sdrMessages, loadingMessages, selectedChat?.id]);
 
   // Reset isFirstLoad when changing chats
   useEffect(() => {
