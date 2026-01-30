@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-import { User, Lock, User as UserIcon, Save, CheckCircle, AlertCircle, Users, Plus, Trash2, Mail, Eye, EyeOff, X, AlertTriangle, Key, Copy, Check } from 'lucide-react';
+import { User, Lock, User as UserIcon, Save, CheckCircle, AlertCircle, Users, Plus, Trash2, Mail, Eye, EyeOff, X, AlertTriangle, Key, Copy, Check, Download, Monitor, Apple } from 'lucide-react';
 import { supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/lib/AuthProvider';
 import { tenantService, TenantUser } from '../src/lib/tenantService';
@@ -33,7 +33,7 @@ const translateError = (msg: string) => {
 
 const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
     const { userType, userInfo } = useAuth();
-    const [activeTab, setActiveTab] = useState<'perfil' | 'seguranca' | 'equipe' | 'api'>('perfil');
+    const [activeTab, setActiveTab] = useState<'perfil' | 'seguranca' | 'equipe' | 'api' | 'instalar'>('perfil');
     const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -52,6 +52,12 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
     const [apiPassword, setApiPassword] = useState('');
     const [showApiKeys, setShowApiKeys] = useState(false);
     const [copiedField, setCopiedField] = useState<string | null>(null);
+
+    // PWA Install state
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const [canInstall, setCanInstall] = useState(false);
+    const [isInstalling, setIsInstalling] = useState(false);
+    const [isStandalone, setIsStandalone] = useState(false);
 
     // Auto-lock timer
     useEffect(() => {
@@ -76,6 +82,33 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
         onConfirm: () => void;
         variant: 'danger' | 'warning';
     }>({ show: false, title: '', message: '', onConfirm: () => { }, variant: 'danger' });
+
+    // PWA Install setup
+    useEffect(() => {
+        // Check if already running as standalone app
+        const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
+            || (window.navigator as any).standalone
+            || document.referrer.includes('android-app://');
+        setIsStandalone(isStandaloneMode);
+
+        // Listen for beforeinstallprompt event
+        const handleBeforeInstallPrompt = (e: Event) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+            setCanInstall(true);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(console.error);
+        }
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
+    }, []);
 
     // Carregar maxMembers na inicialização para determinar se mostra aba Equipe
     useEffect(() => {
@@ -227,6 +260,25 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
         setTimeout(() => setCopiedField(null), 2000);
     };
 
+    const handleInstallApp = async () => {
+        if (!deferredPrompt) return;
+
+        setIsInstalling(true);
+        try {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+
+            if (outcome === 'accepted') {
+                setStatus({ type: 'success', message: 'App instalado com sucesso! Você pode encontrá-lo na sua área de trabalho.' });
+                setCanInstall(false);
+                setDeferredPrompt(null);
+            }
+        } catch (error) {
+            console.error('Installation error:', error);
+        }
+        setIsInstalling(false);
+    };
+
     const isAdmin = userInfo?.isOwnerOrAdmin || userType === 'admin';
 
     // Só mostra aba Equipe se for admin E tiver slots de atendentes disponíveis
@@ -236,7 +288,8 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
         { id: 'perfil' as const, label: 'Perfil', icon: UserIcon },
         { id: 'seguranca' as const, label: 'Segurança', icon: Lock },
         ...(showEquipeTab ? [{ id: 'equipe' as const, label: 'Equipe', icon: Users }] : []),
-        ...(isAdmin ? [{ id: 'api' as const, label: 'API & Integrações', icon: Key }] : [])
+        ...(isAdmin ? [{ id: 'api' as const, label: 'API & Integrações', icon: Key }] : []),
+        { id: 'instalar' as const, label: 'Instalar App', icon: Download }
     ];
 
     return (
@@ -622,6 +675,97 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
                     </section>
                 )}
 
+                {/* Instalar Tab */}
+                {activeTab === 'instalar' && (
+                    <section className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] max-w-2xl">
+                        <h2 className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest flex items-center gap-2">
+                            <Download size={16} /> Instalar Aplicativo
+                        </h2>
+
+                        {isStandalone ? (
+                            <div className="text-center py-8">
+                                <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <CheckCircle size={32} className="text-emerald-500" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-zinc-200 mb-2">App já instalado!</h3>
+                                <p className="text-zinc-500 text-sm">Você já está usando o Nero CRM como aplicativo.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+                                    <p className="text-sm text-indigo-300">
+                                        Instale o Nero CRM no seu computador para acesso rápido e uma experiência de aplicativo nativo.
+                                    </p>
+                                </div>
+
+                                {/* Instalação PWA */}
+                                {canInstall && (
+                                    <div className="space-y-4">
+                                        <button
+                                            onClick={handleInstallApp}
+                                            disabled={isInstalling}
+                                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-sm font-bold transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-3 disabled:opacity-50"
+                                        >
+                                            <Download size={20} />
+                                            {isInstalling ? 'Instalando...' : 'Instalar Nero CRM'}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Instruções manuais */}
+                                <div className="space-y-6 pt-4">
+                                    <h3 className="text-sm font-semibold text-zinc-300 flex items-center gap-2">
+                                        {!canInstall && 'Como instalar:'}
+                                    </h3>
+
+                                    {/* Mac Instructions */}
+                                    <div className="p-5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="p-2 bg-zinc-800 rounded-xl">
+                                                <Apple size={20} className="text-zinc-300" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-zinc-200">macOS</h4>
+                                                <p className="text-xs text-zinc-500">Chrome, Edge ou Safari</p>
+                                            </div>
+                                        </div>
+                                        <ol className="text-sm text-zinc-400 space-y-2 list-decimal list-inside">
+                                            <li>Abra o Nero CRM no navegador</li>
+                                            <li>No Chrome/Edge: Clique no ícone de instalar <span className="text-zinc-300">⊕</span> na barra de endereço</li>
+                                            <li>No Safari: Clique em <span className="text-zinc-300">Arquivo → Adicionar ao Dock</span></li>
+                                            <li>Clique em "Instalar" para confirmar</li>
+                                        </ol>
+                                    </div>
+
+                                    {/* Windows Instructions */}
+                                    <div className="p-5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="p-2 bg-zinc-800 rounded-xl">
+                                                <Monitor size={20} className="text-zinc-300" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-zinc-200">Windows</h4>
+                                                <p className="text-xs text-zinc-500">Chrome ou Edge</p>
+                                            </div>
+                                        </div>
+                                        <ol className="text-sm text-zinc-400 space-y-2 list-decimal list-inside">
+                                            <li>Abra o Nero CRM no navegador</li>
+                                            <li>Clique no ícone de instalar <span className="text-zinc-300">⊕</span> na barra de endereço</li>
+                                            <li>Ou clique no menu <span className="text-zinc-300">⋮</span> → "Instalar Nero CRM..."</li>
+                                            <li>Clique em "Instalar" para confirmar</li>
+                                        </ol>
+                                    </div>
+
+                                    <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                                        <p className="text-xs text-amber-500/80">
+                                            <strong>Dica:</strong> Após instalar, o app ficará disponível no menu Iniciar (Windows) ou Launchpad (Mac), e você pode fixá-lo na barra de tarefas/dock.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </section>
+                )}
 
             </div>
         </>
