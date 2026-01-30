@@ -511,10 +511,10 @@ const Kanban: React.FC<KanbanProps> = ({
                               style={{ backgroundColor: borderColor }}
                             ></div>
                           </div>
-                          <div className="flex-1 min-w-0 overflow-hidden">
-                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-tight pr-4 block" title={getLeadDisplayName(lead)}>{getLeadDisplayName(lead)}</h4>
-                            {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1 pr-4 block" title={lead.company_name}>{lead.company_name}</p>}
-                            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none truncate pr-4 block">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
+                          <div className="flex-1 basis-0 min-w-0 overflow-hidden">
+                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-tight pr-4 w-full block" title={getLeadDisplayName(lead)}>{getLeadDisplayName(lead)}</h4>
+                            {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1 pr-4 w-full block" title={lead.company_name}>{lead.company_name}</p>}
+                            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none truncate pr-4 w-full block">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
                           </div>
                         </div>
                         <button
