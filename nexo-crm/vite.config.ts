@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['logo.svg'],
+        includeAssets: ['favicon.svg'],
         manifest: {
           name: 'NERO CRM',
           short_name: 'NERO CRM',
@@ -27,22 +27,10 @@ export default defineConfig(({ mode }) => {
           start_url: '/',
           icons: [
             {
-              src: 'logo.svg',
-              sizes: '192x192',
+              src: 'favicon.svg',
+              sizes: '48x48 72x72 96x96 128x128 192x192 256x256 512x512',
               type: 'image/svg+xml',
               purpose: 'any'
-            },
-            {
-              src: 'logo.svg',
-              sizes: '512x512',
-              type: 'image/svg+xml',
-              purpose: 'any'
-            },
-            {
-              src: 'logo.svg',
-              sizes: '512x512',
-              type: 'image/svg+xml',
-              purpose: 'maskable'
             }
           ]
         },
