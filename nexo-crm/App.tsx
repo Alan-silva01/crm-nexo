@@ -864,6 +864,13 @@ const AppContent: React.FC = () => {
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
+            <button
+              onClick={signOut}
+              className="md:hidden p-2 text-zinc-400 hover:text-red-400 transition-colors bg-zinc-900 border border-zinc-800 rounded-xl"
+              title="Sair"
+            >
+              <LogOut size={18} />
+            </button>
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-full text-[11px] font-medium text-zinc-500">
               <Calendar size={12} />
               {new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}

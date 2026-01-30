@@ -335,19 +335,19 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
                 </div>
             )}
 
-            <div className="p-8 h-full overflow-y-auto space-y-8 custom-scrollbar">
+            <div className="p-4 md:p-8 h-full overflow-y-auto space-y-6 md:space-y-8 custom-scrollbar">
                 <header>
                     <h1 className="text-2xl font-semibold tracking-tight">Ajustes</h1>
                     <p className="text-zinc-500 text-sm">Gerencie seu perfil e segurança da conta.</p>
                 </header>
 
                 {/* Tabs */}
-                <div className="flex gap-2 border-b border-zinc-800/50 pb-2">
+                <div className="flex gap-2 border-b border-zinc-800/50 pb-2 overflow-x-auto scrollbar-hide shrink-0">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap
                             ${activeTab === tab.id
                                     ? 'bg-indigo-600 text-white'
                                     : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
@@ -367,7 +367,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
 
                 {/* Perfil Tab */}
                 {activeTab === 'perfil' && (
-                    <section className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] max-w-xl">
+                    <section className="bg-[#0c0c0e] border border-zinc-800/50 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] max-w-xl">
                         <h2 className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest flex items-center gap-2">
                             <UserIcon size={16} /> Informações do Perfil
                         </h2>
@@ -392,7 +392,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
 
                 {/* Segurança Tab */}
                 {activeTab === 'seguranca' && (
-                    <section className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] max-w-xl">
+                    <section className="bg-[#0c0c0e] border border-zinc-800/50 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] max-w-xl">
                         <h2 className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest flex items-center gap-2">
                             <Lock size={16} /> Segurança
                         </h2>
@@ -435,7 +435,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
 
                         {/* Formulário de adicionar */}
                         {showAddForm && (
-                            <section className="bg-[#0c0c0e] border border-indigo-500/30 p-6 rounded-2xl">
+                            <section className="bg-[#0c0c0e] border border-indigo-500/30 p-4 md:p-6 rounded-2xl">
                                 <h3 className="text-sm font-bold text-zinc-300 mb-4">Cadastrar Novo Atendente</h3>
                                 <form onSubmit={handleAddMember} className="space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -524,7 +524,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
                                 {tenantMembers.map(member => (
                                     <div
                                         key={member.id}
-                                        className="flex items-center justify-between p-4 bg-[#0c0c0e] border border-zinc-800/50 rounded-2xl transition-all"
+                                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-[#0c0c0e] border border-zinc-800/50 rounded-2xl transition-all gap-4"
                                     >
                                         <div className="flex items-center gap-4">
                                             <UserAvatar name={member.nome} size="md" className="border-2 border-zinc-800" />
@@ -553,7 +553,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
 
                 {/* API Tab */}
                 {activeTab === 'api' && isAdmin && (
-                    <section className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] max-w-2xl">
+                    <section className="bg-[#0c0c0e] border border-zinc-800/50 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] max-w-2xl">
                         <h2 className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest flex items-center gap-2">
                             <Key size={16} /> Credenciais de API
                         </h2>
@@ -672,7 +672,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
 
                 {/* Instalar Tab */}
                 {activeTab === 'instalar' && (
-                    <section className="bg-[#0c0c0e] border border-zinc-800/50 p-8 rounded-[3rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] max-w-2xl">
+                    <section className="bg-[#0c0c0e] border border-zinc-800/50 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] max-w-2xl">
                         <h2 className="text-sm font-bold text-zinc-400 mb-8 uppercase tracking-widest flex items-center gap-2">
                             <Download size={16} /> Instalar Aplicativo
                         </h2>

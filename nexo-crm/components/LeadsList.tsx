@@ -285,26 +285,26 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
   }, [filteredLeads]);
 
   return (
-    <div className="p-8 h-full flex flex-col space-y-8 overflow-y-auto custom-scrollbar bg-[#0c0c0e]">
-      <header className="flex justify-between items-center shrink-0">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">Base de Contatos</h1>
-          <p className="text-zinc-500 text-sm">Gerencie todos os seus leads e clientes em um ambiente seguro.</p>
+    <div className="p-4 md:p-8 h-full flex flex-col space-y-4 md:space-y-8 overflow-y-auto custom-scrollbar bg-[#0c0c0e]">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 shrink-0">
+        <div className="max-w-xl">
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-zinc-100">Base de Contatos</h1>
+          <p className="text-zinc-500 text-xs md:text-sm">Gerencie todos os seus leads e clientes em um ambiente seguro.</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-2 md:gap-4 w-full lg:w-auto">
           <button
             onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 rounded-xl text-xs font-bold text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-emerald-600 rounded-xl text-[10px] md:text-xs font-bold text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
           >
             <Database size={14} />
-            Importar Contatos
+            <span className="whitespace-nowrap">Importar</span>
           </button>
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 rounded-xl text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-indigo-600 rounded-xl text-[10px] md:text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
           >
             <Download size={14} />
-            Exportar CSV
+            <span className="whitespace-nowrap">Exportar</span>
           </button>
           <button
             onClick={() => {
@@ -313,10 +313,10 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
               setShowSuccess(false);
               setShowNewLeadForm(true);
             }}
-            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 rounded-xl text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+            className="w-full lg:w-auto flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-indigo-600 rounded-xl text-[10px] md:text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
           >
             <UserPlus size={14} />
-            Novo Contato
+            <span className="whitespace-nowrap">Novo Contato</span>
           </button>
         </div>
       </header>
@@ -451,10 +451,10 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
         onImportComplete={handleImportComplete}
       />
 
-      <div className="bg-[#0c0c0e] border border-zinc-800/40 rounded-[2.5rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] overflow-hidden flex flex-col flex-1 min-h-0">
+      <div className="bg-[#0c0c0e] border border-zinc-800/40 rounded-[1.5rem] md:rounded-[2.5rem] shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] overflow-hidden flex flex-col flex-1 min-h-0">
         {/* Header da Tabela com Busca e Ações em Massa */}
-        <div className="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between gap-4 shrink-0 bg-zinc-900/10">
-          <div className="flex items-center gap-6">
+        <div className="px-4 md:px-8 py-4 md:py-6 border-b border-zinc-800/50 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shrink-0 bg-zinc-900/10">
+          <div className="flex flex-wrap items-center gap-4 md:gap-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-indigo-500/10 rounded-lg">
                 <Users size={16} className="text-indigo-400" />
@@ -544,7 +544,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
             )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4 w-full lg:w-auto">
             {showLocalSearch && (
               <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="relative">
@@ -555,7 +555,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                     placeholder="Filtrar por nome, tel, status ou etiqueta..."
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="pl-9 pr-10 py-2 bg-zinc-950/50 border border-zinc-800 rounded-xl text-xs w-80 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-bold"
+                    className="pl-9 pr-10 py-2 bg-zinc-950/50 border border-zinc-800 rounded-xl text-xs w-full sm:w-80 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-bold"
                   />
                   {searchQuery && (
                     <button
@@ -615,10 +615,10 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
             )}
             <button
               onClick={() => setShowLocalSearch(!showLocalSearch)}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-bold transition-all active:scale-95 ${showLocalSearch ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:text-zinc-200'}`}
+              className={`flex items-center justify-center gap-2 px-4 py-2 border rounded-xl text-xs font-bold transition-all active:scale-95 ${showLocalSearch ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:text-zinc-200'}`}
             >
               <Filter size={14} className={showLocalSearch ? 'text-white' : 'text-indigo-400'} />
-              {showLocalSearch ? 'Fechar Filtro' : 'Filtros Avançados'}
+              <span>{showLocalSearch ? 'Fechar Filtro' : 'Filtros Avançados'}</span>
             </button>
           </div>
         </div>
@@ -627,22 +627,22 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
           <table className="w-full text-left border-separate border-spacing-0">
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#0c0c0e] border-b border-zinc-800/50">
-                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 w-10">
+                <th className="px-4 md:px-8 py-4 md:py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 w-10">
                   <button onClick={toggleSelectAll} className="p-1 hover:text-indigo-400 transition-colors">
                     {selectedLeadIds.length === filteredLeads.length && filteredLeads.length > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
                   </button>
                 </th>
-                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 min-w-[200px]">Contato</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 w-48">Status Estratégico</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 min-w-[200px]">Informações</th>
-                {showTags && <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 min-w-[150px]">Etiquetas</th>}
-                <th className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 text-center w-64">Ações</th>
+                <th className="px-4 md:px-8 py-4 md:py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 min-w-[180px]">Contato</th>
+                <th className="px-4 md:px-8 py-4 md:py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 w-40 md:w-48">Status Estratégico</th>
+                <th className="px-4 md:px-8 py-4 md:py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 min-w-[200px]">Informações</th>
+                {showTags && <th className="px-4 md:px-8 py-4 md:py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 min-w-[150px]">Etiquetas</th>}
+                <th className="px-4 md:px-8 py-4 md:py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 text-center w-64">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/20">
               {filteredLeads.map(lead => (
                 <tr key={lead.id} className={`hover:bg-zinc-800/10 transition-colors group ${selectedLeadIds.includes(lead.id) ? 'bg-indigo-500/5' : ''}`}>
-                  <td className="px-8 py-5 whitespace-nowrap">
+                  <td className="px-4 md:px-8 py-4 md:py-5 whitespace-nowrap">
                     <button onClick={() => toggleSelectLead(lead.id)} className={`p-1 transition-colors ${selectedLeadIds.includes(lead.id) ? 'text-indigo-400' : 'text-zinc-700 group-hover:text-zinc-500'}`}>
                       {selectedLeadIds.includes(lead.id) ? <CheckSquare size={16} /> : <Square size={16} />}
                     </button>
@@ -656,7 +656,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                       </div>
                     </div>
                   </td>
-                  <td className="px-8 py-5 whitespace-nowrap">
+                  <td className="px-4 md:px-8 py-4 md:py-5 whitespace-nowrap">
                     <div className="flex items-center">
                       <span className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-tight border shadow-sm ${lead.status === 'AGUARDANDO DECISAO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-amber-500/5' :
                         lead.status === 'SEM INTERESSE' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
@@ -667,14 +667,14 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                       </span>
                     </div>
                   </td>
-                  <td className="px-8 py-5 text-[11px] text-zinc-500 whitespace-nowrap font-medium">
+                  <td className="px-4 md:px-8 py-4 md:py-5 text-[11px] text-zinc-500 whitespace-nowrap font-medium">
                     <div className="flex flex-col gap-1">
                       <span className="text-zinc-400">{lead.email || 'Nenhum e-mail'}</span>
                       {lead.company_name && <span className="text-indigo-400/80 text-[10px] font-bold uppercase tracking-tighter">{lead.company_name}</span>}
                     </div>
                   </td>
                   {showTags && (
-                    <td className="px-8 py-5 whitespace-nowrap">
+                    <td className="px-4 md:px-8 py-4 md:py-5 whitespace-nowrap">
                       <div className="flex flex-wrap gap-1.5 max-w-[200px]">
                         {lead.tags && lead.tags.length > 0 ? (
                           lead.tags.map((tagName) => {
@@ -743,8 +743,8 @@ const LeadsList: React.FC<LeadsListProps> = ({ searchQuery, onSearchChange, filt
                       </div>
                     </td>
                   )}
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-1 group-hover:translate-x-0">
+                  <td className="px-4 md:px-8 py-4 md:py-5 whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 lg:translate-x-1 lg:group-hover:translate-x-0">
                       <button
                         onClick={() => onViewDetails(lead)}
                         className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] font-bold text-zinc-400 hover:text-white hover:border-indigo-500/30 transition-all shadow-lg active:scale-95 uppercase tracking-tighter"
