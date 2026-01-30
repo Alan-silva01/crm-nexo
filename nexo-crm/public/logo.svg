@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="main-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#a855f7"/>
+    </linearGradient>
+    <linearGradient id="shadow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4f46e5"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Ribbon N Design -->
+  <g transform="translate(100, 80) scale(0.65)">
+    <!-- Bridge (Diagonal) - Bottom Layer -->
+    <path d="M100 0 C100 0 100 500 100 500 L250 500 L450 150 L450 0 Z" fill="url(#shadow-grad)" opacity="0.8"/>
+    
+    <!-- Left Stem -->
+    <path d="M0 50 C0 20 20 0 50 0 L150 0 L150 450 C150 480 130 500 100 500 C70 500 50 480 50 450 L50 100 C50 70 30 50 0 50 Z" fill="url(#main-grad)"/>
+    
+    <!-- Right Stem -->
+    <path d="M350 50 L350 400 C350 430 370 450 400 450 C430 450 450 430 450 400 L450 50 C450 20 470 0 500 0 C530 0 550 20 550 50 L550 500 L400 500 L400 100 C400 70 380 50 350 50 Z" fill="url(#main-grad)"/>
+    
+    <!-- Bridge (Diagonal) - Top Layer for 3D Effect -->
+    <path d="M150 50 L400 450 L400 350 L150 0 Z" fill="url(#main-grad)"/>
+  </g>
+</svg>
