@@ -453,7 +453,7 @@ const Kanban: React.FC<KanbanProps> = ({
         {columns.map((col, colIndex) => (
           <div
             key={col.id}
-            className={`flex-shrink-0 w-80 lg:w-[22rem] xl:w-[24rem] 2xl:w-[26rem] flex flex-col max-h-full group transition-all duration-300
+            className={`flex-shrink-0 w-80 lg:w-[22rem] xl:w-[24rem] 2xl:w-[26rem] min-w-0 flex flex-col max-h-full group transition-all duration-300
               ${draggingColumnId === col.id ? 'opacity-40 scale-95' : ''}`}
             onDragOver={onDragOver}
             onDrop={(e) => {
@@ -503,7 +503,7 @@ const Kanban: React.FC<KanbanProps> = ({
                   >
                     <div className="p-4 2xl:p-6 [@media(max-height:850px)]:p-3">
                       <div className="flex justify-between items-start mb-3 2xl:mb-4 [@media(max-height:850px)]:mb-2">
-                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                        <div className="flex items-center gap-4 min-w-0 flex-1 overflow-hidden">
                           <div className="relative shrink-0">
                             <LetterAvatar name={getLeadDisplayName(lead)} size="lg" />
                             <div
@@ -511,10 +511,10 @@ const Kanban: React.FC<KanbanProps> = ({
                               style={{ backgroundColor: borderColor }}
                             ></div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-tight pr-4" title={getLeadDisplayName(lead)}>{getLeadDisplayName(lead)}</h4>
-                            {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1 pr-4" title={lead.company_name}>{lead.company_name}</p>}
-                            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none truncate pr-4">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-tight pr-4 block" title={getLeadDisplayName(lead)}>{getLeadDisplayName(lead)}</h4>
+                            {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1 pr-4 block" title={lead.company_name}>{lead.company_name}</p>}
+                            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none truncate pr-4 block">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
                           </div>
                         </div>
                         <button
