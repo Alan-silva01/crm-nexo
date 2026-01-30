@@ -28,9 +28,15 @@ export default defineConfig(({ mode }) => {
           icons: [
             {
               src: 'favicon.svg',
-              sizes: '48x48 72x72 96x96 128x128 192x192 256x256 512x512',
+              sizes: '512x512',
               type: 'image/svg+xml',
               purpose: 'any'
+            },
+            {
+              src: 'favicon.svg',
+              sizes: '512x512',
+              type: 'image/svg+xml',
+              purpose: 'maskable'
             }
           ]
         },
