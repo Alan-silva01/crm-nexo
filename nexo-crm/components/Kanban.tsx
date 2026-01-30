@@ -503,8 +503,8 @@ const Kanban: React.FC<KanbanProps> = ({
                   >
                     <div className="p-4 2xl:p-6 [@media(max-height:850px)]:p-3">
                       <div className="flex justify-between items-start mb-3 2xl:mb-4 [@media(max-height:850px)]:mb-2">
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                          <div className="relative shrink-0">
                             <LetterAvatar name={getLeadDisplayName(lead)} size="lg" />
                             <div
                               className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#0c0c0e] shadow-sm"
@@ -512,9 +512,9 @@ const Kanban: React.FC<KanbanProps> = ({
                             ></div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-tight pr-2" title={getLeadDisplayName(lead)}>{getLeadDisplayName(lead)}</h4>
-                            {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1" title={lead.company_name}>{lead.company_name}</p>}
-                            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
+                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-tight pr-4" title={getLeadDisplayName(lead)}>{getLeadDisplayName(lead)}</h4>
+                            {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1 pr-4" title={lead.company_name}>{lead.company_name}</p>}
+                            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none truncate pr-4">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
                           </div>
                         </div>
                         <button
