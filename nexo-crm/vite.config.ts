@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
@@ -9,7 +10,50 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: '0.0.0.0',
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.svg'],
+        manifest: {
+          name: 'Nero CRM',
+          short_name: 'NeroCRM',
+          description: 'Gerencie seus leads e conversas do WhatsApp com um CRM moderno e intuitivo',
+          theme_color: '#6366f1',
+          background_color: '#0c0c0e',
+          display: 'standalone',
+          orientation: 'any',
+          start_url: '/',
+          icons: [
+            {
+              src: 'favicon.svg',
+              sizes: '48x48 72x72 96x96 128x128 192x192 256x256 512x512',
+              type: 'image/svg+xml',
+              purpose: 'any'
+            }
+          ]
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'supabase-api',
+                expiration: {
+                  maxEntries: 100,
+                  maxAgeSeconds: 60 * 60 * 24 // 24 hours
+                }
+              }
+            }
+          ]
+        },
+        devOptions: {
+          enabled: true
+        }
+      })
+    ],
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)

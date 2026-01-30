@@ -100,11 +100,6 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-        // Register service worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(console.error);
-        }
-
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         };
