@@ -320,7 +320,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
   };
 
   return (
-    <div className="p-4 2xl:p-6 h-full flex flex-col space-y-3 2xl:space-y-4 overflow-hidden [@media(max-height:850px)]:p-3 [@media(max-height:850px)]:space-y-2">
+    <div className="p-4 2xl:p-6 h-full flex flex-col space-y-3 2xl:space-y-4 overflow-y-auto md:overflow-hidden [@media(max-height:850px)]:p-3 [@media(max-height:850px)]:space-y-2">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0 [@media(max-height:800px)]:mb-1">
         <div>
           <h1 className="text-lg md:text-xl [@media(max-height:800px)]:text-lg font-bold tracking-tight">Dashboard</h1>
@@ -348,7 +348,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 [@media(max-height:800px)]:gap-3 flex-1 min-h-0">
-        <div className="col-span-2 bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/50 p-4 [@media(max-height:800px)]:p-3 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-xl dark:shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
+        <div className="col-span-1 lg:col-span-2 bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/50 p-4 [@media(max-height:800px)]:p-3 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-xl dark:shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-[350px] md:min-h-0">
           <div className="flex justify-between items-center mb-4 [@media(max-height:800px)]:mb-2 shrink-0">
             <h3 className="text-[10px] [@media(max-height:800px)]:text-[9px] font-bold text-zinc-400 uppercase tracking-widest pl-2 border-l-4 border-indigo-500">
               Fluxo Estratégico
@@ -412,7 +412,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/50 p-4 [@media(max-height:800px)]:p-3 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-xl dark:shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-0">
+        <div className="bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800/50 p-4 [@media(max-height:800px)]:p-3 rounded-[1.5rem] [@media(max-height:800px)]:rounded-xl shadow-xl dark:shadow-[15px_15px_30px_#050506,-15px_-15px_30px_#131316] flex flex-col min-h-[400px] md:min-h-0">
           <h3 className="text-[10px] [@media(max-height:800px)]:text-[9px] font-bold text-zinc-400 mb-2 uppercase tracking-widest pl-2 border-l-4 border-indigo-500 shrink-0">
             Distribuição por Status
           </h3>
@@ -447,13 +447,13 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
                 </Pie>
                 {activeIndex === null && (
                   <g style={{ transition: 'all 0.3s ease' }}>
-                    <text x="50%" y="50%" dy={-35} textAnchor="middle" fill="#71717a" fontSize={9} fontWeight="bold" className="uppercase tracking-widest" style={{ transition: 'all 0.3s ease' }}>
+                    <text x="50%" y="50%" dy={-25} textAnchor="middle" fill="#71717a" className="text-[8px] uppercase tracking-widest font-bold" style={{ transition: 'all 0.3s ease' }}>
                       Colunas do Kanban
                     </text>
-                    <text x="50%" y="50%" dy={10} textAnchor="middle" fill={isDark ? "#fff" : "#18181b"} fontSize={24} fontWeight="bold" style={{ transition: 'all 0.3s ease' }}>
+                    <text x="50%" y="50%" dy={10} textAnchor="middle" fill={isDark ? "#fff" : "#18181b"} className="text-lg md:text-2xl font-bold" style={{ transition: 'all 0.3s ease' }}>
                       100%
                     </text>
-                    <text x="50%" y="50%" dy={30} textAnchor="middle" fill="#10b981" fontSize={11} fontWeight="bold" style={{ transition: 'all 0.3s ease' }}>
+                    <text x="50%" y="50%" dy={25} textAnchor="middle" fill="#10b981" className="text-[10px] font-bold" style={{ transition: 'all 0.3s ease' }}>
                       Visão Geral
                     </text>
                   </g>

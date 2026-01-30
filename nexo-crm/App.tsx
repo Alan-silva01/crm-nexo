@@ -89,9 +89,9 @@ const AppContent: React.FC = () => {
     window.location.reload();
   };
 
-  // If no chat selected yet and leads are loaded, select first lead
+  // If no chat selected yet and leads are loaded, select first lead (Desktop only)
   useEffect(() => {
-    if (!selectedChatId && leads.length > 0) {
+    if (!selectedChatId && leads.length > 0 && window.innerWidth >= 768) {
       setSelectedChatId(leads[0].id);
     }
   }, [leads, selectedChatId]);

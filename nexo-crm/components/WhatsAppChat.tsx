@@ -544,12 +544,8 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     isFirstLoad.current = true;
   }, [selectedChat?.id]);
 
-  // Set initial selected chat
-  useEffect(() => {
-    if (leads.length > 0 && !selectedChatId) {
-      setSelectedChatId(leads[0].id);
-    }
-  }, [leads, selectedChatId]);
+  // No longer auto-selecting chat here to avoid breaking mobile "back" button logic.
+  // App.tsx handles initial selection if needed.
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || !selectedChat?.phone) return;
