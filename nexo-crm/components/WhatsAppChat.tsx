@@ -501,30 +501,27 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
     }
   }, [leads, selectedChat?.id]);
 
-  // Auto-scroll to bottom when messages load
+  // Auto-scroll to bottom when messages load or loading state changes
   useEffect(() => {
-    if (sdrMessages.length > 0 && chatContainerRef.current) {
+    if (!loadingMessages && sdrMessages.length > 0 && chatContainerRef.current) {
       const container = chatContainerRef.current;
 
-      // Usar requestAnimationFrame + setTimeout para garantir que o DOM foi atualizado
       const scrollToBottom = () => {
         if (isFirstLoad.current) {
-          // Scroll instantâneo no primeiro load - usar múltiplas tentativas para garantir
+          // Scroll instantâneo no primeiro load
           container.scrollTop = container.scrollHeight;
 
-          // Segunda tentativa após um pequeno delay para garantir que imagens/conteúdo carregaram
-          setTimeout(() => {
-            container.scrollTop = container.scrollHeight;
-          }, 50);
-
-          // Terceira tentativa para casos de conteúdo pesado
-          setTimeout(() => {
-            container.scrollTop = container.scrollHeight;
-          }, 150);
+          // Múltiplas tentativas para garantir que o scroll aconteça após o render completo
+          const attempts = [10, 50, 100, 300];
+          attempts.forEach(delay => {
+            setTimeout(() => {
+              if (container) container.scrollTop = container.scrollHeight;
+            }, delay);
+          });
 
           isFirstLoad.current = false;
         } else {
-          // Scroll suave para novas mensagens
+          // Scroll suave para novas mensagens em tempo real
           container.scrollTo({
             top: container.scrollHeight,
             behavior: 'smooth'
@@ -532,12 +529,12 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ leads, onLeadsUpdate, selec
         }
       };
 
-      // Aguardar o próximo frame de renderização
+      // Aguarda os frames de renderização para garantir que o DOM está pronto
       requestAnimationFrame(() => {
         requestAnimationFrame(scrollToBottom);
       });
     }
-  }, [sdrMessages]);
+  }, [sdrMessages, loadingMessages]);
 
   // Reset isFirstLoad when changing chats
   useEffect(() => {
