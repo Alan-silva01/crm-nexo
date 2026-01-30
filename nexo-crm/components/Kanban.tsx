@@ -512,8 +512,8 @@ const Kanban: React.FC<KanbanProps> = ({
                             ></div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase line-clamp-2 leading-tight">{getLeadDisplayName(lead)}</h4>
-                            {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1">{lead.company_name}</p>}
+                            <h4 className="text-[14px] font-bold tracking-tight text-zinc-900 dark:text-zinc-200 group-hover/card:text-indigo-600 dark:group-hover/card:text-white transition-colors uppercase truncate leading-tight pr-2" title={getLeadDisplayName(lead)}>{getLeadDisplayName(lead)}</h4>
+                            {lead.company_name && <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-tighter truncate mt-1" title={lead.company_name}>{lead.company_name}</p>}
                             <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium mt-1 uppercase leading-none">{formatPhoneNumber(lead.phone) || 'Sem telefone'}</p>
                           </div>
                         </div>
@@ -655,15 +655,15 @@ const Kanban: React.FC<KanbanProps> = ({
                                     const isMoto = k.includes('moto') || (k.includes('tipo') && k.includes('veiculo') && String(value).toLowerCase().includes('moto'));
 
                                     return (
-                                      <div key={key} className="flex items-center gap-2 overflow-hidden">
+                                      <div key={key} className="flex items-center gap-2 min-w-0">
                                         {isMoto ? (
                                           <span className="text-[12px]">🏍️</span>
                                         ) : (
                                           <config.icon size={12} className={`${config.color} shrink-0`} />
                                         )}
-                                        <div className="flex flex-col">
-                                          <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter opacity-70">{formatLabel(key)}</span>
-                                          <span className="text-[10px] text-zinc-800 dark:text-zinc-300 font-bold truncate leading-tight">
+                                        <div className="flex flex-col min-w-0 flex-1">
+                                          <span className="text-[8px] text-zinc-400 dark:text-zinc-500 uppercase font-bold tracking-tighter opacity-70 truncate" title={formatLabel(key)}>{formatLabel(key)}</span>
+                                          <span className="text-[10px] text-zinc-800 dark:text-zinc-300 font-bold truncate leading-tight" title={displayValue}>
                                             {displayValue}
                                           </span>
                                         </div>
