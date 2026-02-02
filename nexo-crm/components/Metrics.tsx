@@ -223,45 +223,52 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
             const temposHumanos: Record<string, number[]> = {};
 
             Object.values(conversas).forEach(msgs => {
-                for (let i = 1; i < msgs.length; i++) {
-                    const msgAnterior = msgs[i - 1];
-                    const msgAtual = msgs[i];
+                let lastHumanMsgTime: Date | null = null;
+
+                for (let i = 0; i < msgs.length; i++) {
+                    const msg = msgs[i];
 
                     // Parse message se for string
-                    const prevMessage = typeof msgAnterior.message === 'string'
-                        ? JSON.parse(msgAnterior.message)
-                        : msgAnterior.message;
-                    const currMessage = typeof msgAtual.message === 'string'
-                        ? JSON.parse(msgAtual.message)
-                        : msgAtual.message;
+                    const parsedMessage = typeof msg.message === 'string'
+                        ? JSON.parse(msg.message)
+                        : msg.message;
 
-                    // Cliente enviou mensagem (type: human)
-                    if (prevMessage?.type === 'human') {
-                        // Calcular tempo em minutos
-                        const tempoResposta = (new Date(msgAtual.created_at).getTime() - new Date(msgAnterior.created_at).getTime()) / (1000 * 60);
+                    // Se é mensagem do cliente, guardar o timestamp
+                    if (parsedMessage?.type === 'human') {
+                        lastHumanMsgTime = new Date(msg.created_at);
+                    }
+                    // Se é resposta (IA ou atendente) e tinha uma mensagem do cliente antes
+                    else if (parsedMessage?.type === 'ai' && lastHumanMsgTime) {
+                        const currentTime = new Date(msg.created_at);
+                        const tempoResposta = (currentTime.getTime() - lastHumanMsgTime.getTime()) / (1000 * 60);
 
-                        // Resposta da IA: type === 'ai' E atendente é null/undefined
-                        // IA responde em segundos/poucos minutos - filtrar até 10 min
-                        if (currMessage?.type === 'ai' && !msgAtual.atendente) {
-                            if (tempoResposta > 0 && tempoResposta <= 10) {
+                        // Resposta da IA automática: atendente é null
+                        if (!msg.atendente) {
+                            // IA responde em segundos - filtrar até 5 min
+                            if (tempoResposta > 0 && tempoResposta <= 5) {
                                 temposAI.push(tempoResposta);
                             }
                         }
                         // Resposta de atendente humano: atendente tem valor
-                        // Humanos podem demorar mais - filtrar até 60 min
-                        else if (msgAtual.atendente) {
-                            if (tempoResposta > 0 && tempoResposta <= 60) {
-                                const atendente = msgAtual.atendente;
+                        else {
+                            // Humanos podem demorar mais - filtrar até 120 min (2h)
+                            if (tempoResposta > 0 && tempoResposta <= 120) {
+                                const atendente = msg.atendente;
                                 if (!temposHumanos[atendente]) temposHumanos[atendente] = [];
                                 temposHumanos[atendente].push(tempoResposta);
                             }
                         }
+
+                        // Resetar após primeira resposta para não contar duplicado
+                        lastHumanMsgTime = null;
                     }
                 }
             });
 
             console.log('Tempos IA (em minutos):', temposAI.slice(0, 10)); // Debug
             console.log('Total respostas IA:', temposAI.length);
+            console.log('Atendentes humanos:', Object.keys(temposHumanos));
+            console.log('Tempos humanos:', temposHumanos);
 
             const avgAI = temposAI.length > 0 ? temposAI.reduce((a, b) => a + b, 0) / temposAI.length : 0;
             console.log('Média IA (minutos):', avgAI); // Debug
