@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Calendar,
   Send,
-  Tag
+  Tag,
+  Activity
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -39,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isCollapsed,
     { id: 'etiquetas', icon: Tag, label: 'Etiquetas', permission: profile?.disparos === true },
     { id: 'broadcasts', icon: Send, label: 'Disparos', permission: profile?.disparos === true },
     { id: 'analytics', icon: BarChart3, label: 'Relatórios' },
+    { id: 'metricas', icon: Activity, label: 'Métricas' },
   ].filter(item => item.permission !== false);
 
   return (

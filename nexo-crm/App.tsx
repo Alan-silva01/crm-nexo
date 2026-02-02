@@ -10,6 +10,7 @@ import DetailedAnalytics from './components/DetailedAnalytics';
 import Broadcasts from './components/Broadcasts';
 import Labels from './components/Labels';
 import Settings from './components/Settings';
+import Metrics from './components/Metrics';
 import UserAvatar from './components/UserAvatar';
 import Auth from './components/Auth';
 import { Bell, Search, Calendar, LogOut, Sun, Moon, Users, ArrowUpRight, Bot, LayoutDashboard, Kanban as KanbanIcon, MessageSquare, Settings as SettingsIcon } from 'lucide-react';
@@ -776,6 +777,8 @@ const AppContent: React.FC = () => {
         );
       case 'analytics':
         return <DetailedAnalytics leads={leads} onAction={handleAnalysisAction} />;
+      case 'metricas':
+        return <Metrics leads={leads} profile={profile} />;
       case 'etiquetas':
         return <Labels tags={tags} onTagsUpdate={setTags} />;
       case 'broadcasts':
