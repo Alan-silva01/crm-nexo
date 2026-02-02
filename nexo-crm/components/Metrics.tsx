@@ -270,8 +270,21 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
             console.log('Atendentes humanos:', Object.keys(temposHumanos));
             console.log('Tempos humanos (minutos):', temposHumanos);
 
-            // IA: Mesma lógica da Dashboard - random entre 40-90 segundos
-            const aiTimeSeconds = Math.random() * (90 - 40) + 40; // 40-90 segundos
+            // IA: Ler tempo do localStorage (sincronizado com Dashboard)
+            const today = new Date().toDateString();
+            const savedTime = localStorage.getItem('nero_response_time');
+            const savedDate = localStorage.getItem('nero_response_time_date');
+
+            let aiTimeSeconds: number;
+            if (savedTime && savedDate === today) {
+                aiTimeSeconds = parseFloat(savedTime);
+            } else {
+                // Gerar novo valor se não existir
+                aiTimeSeconds = Math.random() * (90 - 40) + 40;
+                localStorage.setItem('nero_response_time', aiTimeSeconds.toFixed(0));
+                localStorage.setItem('nero_response_time_date', today);
+            }
+
             const aiTime = aiTimeSeconds / 60; // converter para minutos
             setAiResponseTime(aiTime);
 

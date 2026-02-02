@@ -304,7 +304,23 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
     );
   };
 
-  const [responseTime] = React.useState(() => (Math.random() * (90 - 40) + 40).toFixed(0));
+  // Gerar tempo de resposta e salvar no localStorage para sincronizar com Metrics
+  const [responseTime] = React.useState(() => {
+    // Verificar se já existe um valor salvo para hoje
+    const today = new Date().toDateString();
+    const saved = localStorage.getItem('nero_response_time');
+    const savedDate = localStorage.getItem('nero_response_time_date');
+
+    if (saved && savedDate === today) {
+      return saved;
+    }
+
+    // Gerar novo valor e salvar
+    const newTime = (Math.random() * (90 - 40) + 40).toFixed(0);
+    localStorage.setItem('nero_response_time', newTime);
+    localStorage.setItem('nero_response_time_date', today);
+    return newTime;
+  });
 
   const handleExportCSV = () => {
     if (leads.length === 0) return;
