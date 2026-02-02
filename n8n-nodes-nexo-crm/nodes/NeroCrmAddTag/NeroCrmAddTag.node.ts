@@ -23,6 +23,20 @@ export class NeroCrmAddTag implements INodeType {
         outputs: ['main'],
         // @ts-ignore - n8n internal property for AI Agent tools
         usableAsTool: true,
+        // @ts-ignore - n8n codex for AI understanding
+        codex: {
+            categories: ['Sales'],
+            subcategories: {
+                Sales: ['CRM'],
+            },
+            resources: {
+                primaryDocumentation: [
+                    {
+                        url: 'https://github.com/Alan-silva01/crm-nexo',
+                    },
+                ],
+            },
+        },
         credentials: [
             {
                 name: 'neroCrmApi',
@@ -206,11 +220,15 @@ export class NeroCrmAddTag implements INodeType {
                 );
                 returnData.push(...executionData);
             } catch (error) {
-                if (this.continueOnFail()) {
-                    returnData.push({ json: { error: (error as Error).message }, pairedItem: i });
-                    continue;
-                }
-                throw new NodeOperationError(this.getNode(), error as Error, { itemIndex: i });
+                // Always return error as data to AI Agent can handle it
+                returnData.push({
+                    json: {
+                        success: false,
+                        error: (error as Error).message,
+                        message: `Erro ao adicionar tag: ${(error as Error).message}`,
+                    },
+                    pairedItem: i
+                });
             }
         }
 

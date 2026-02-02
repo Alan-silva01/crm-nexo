@@ -1,6 +1,6 @@
 {
     "name": "n8n-nodes-nero-crm",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "description": "n8n Community Nodes para o Nero CRM - Gerencie leads e colunas do Kanban",
     "keywords": [
         "n8n-community-node-package",

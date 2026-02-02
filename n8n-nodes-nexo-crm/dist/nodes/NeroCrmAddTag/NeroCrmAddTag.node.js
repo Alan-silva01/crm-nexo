@@ -18,6 +18,20 @@ class NeroCrmAddTag {
         outputs: ['main'],
         // @ts-ignore - n8n internal property for AI Agent tools
         usableAsTool: true,
+        // @ts-ignore - n8n codex for AI understanding
+        codex: {
+            categories: ['Sales'],
+            subcategories: {
+                Sales: ['CRM'],
+            },
+            resources: {
+                primaryDocumentation: [
+                    {
+                        url: 'https://github.com/Alan-silva01/crm-nexo',
+                    },
+                ],
+            },
+        },
         credentials: [
             {
                 name: 'neroCrmApi',
@@ -184,11 +198,15 @@ class NeroCrmAddTag {
                 returnData.push(...executionData);
             }
             catch (error) {
-                if (this.continueOnFail()) {
-                    returnData.push({ json: { error: error.message }, pairedItem: i });
-                    continue;
-                }
-                throw new n8n_workflow_1.NodeOperationError(this.getNode(), error, { itemIndex: i });
+                // Always return error as data to AI Agent can handle it
+                returnData.push({
+                    json: {
+                        success: false,
+                        error: error.message,
+                        message: `Erro ao adicionar tag: ${error.message}`,
+                    },
+                    pairedItem: i
+                });
             }
         }
         return [returnData];

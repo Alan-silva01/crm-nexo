@@ -23,6 +23,13 @@ export class NeroCrmNotifyHuman implements INodeType {
         outputs: ['main'],
         // @ts-ignore - n8n internal property for AI Agent tools
         usableAsTool: true,
+        // @ts-ignore - n8n codex for AI understanding
+        codex: {
+            categories: ['Sales'],
+            subcategories: {
+                Sales: ['CRM'],
+            },
+        },
         credentials: [
             {
                 name: 'neroCrmApi',
