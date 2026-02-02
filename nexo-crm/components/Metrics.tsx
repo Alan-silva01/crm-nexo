@@ -52,6 +52,27 @@ const formatTime = (minutes: number): string => {
     return `${days}d ${remainingHours}h`;
 };
 
+// Custom Tooltip component that properly handles dark mode
+const CustomTooltip = ({ active, payload, label, isDark }: any) => {
+    if (!active || !payload || !payload.length) return null;
+
+    return (
+        <div
+            className={`px-3 py-2 rounded-xl border shadow-lg ${isDark
+                ? 'bg-zinc-900 border-zinc-700 text-white'
+                : 'bg-white border-zinc-200 text-zinc-900'
+                }`}
+        >
+            <p className="font-bold text-xs mb-1">{label}</p>
+            {payload.map((entry: any, index: number) => (
+                <p key={index} className="text-[10px]" style={{ color: entry.color }}>
+                    {entry.name}: {entry.value}
+                </p>
+            ))}
+        </div>
+    );
+};
+
 const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
     const { effectiveUserId } = useAuth();
     const [loading, setLoading] = useState(true);
@@ -207,14 +228,17 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                     if (msgAnterior.message?.type === 'human') {
                         const tempoResposta = (new Date(msgAtual.created_at).getTime() - new Date(msgAnterior.created_at).getTime()) / (1000 * 60);
 
-                        // Apenas tempos razoáveis (entre 0 e 24 horas)
-                        if (tempoResposta > 0 && tempoResposta < 1440) {
-                            // Resposta da IA: type === 'ai' E atendente é null/undefined
-                            if (msgAtual.message?.type === 'ai' && !msgAtual.atendente) {
+                        // Resposta da IA: type === 'ai' E atendente é null/undefined
+                        // IA responde em segundos/poucos minutos - filtrar até 10 min
+                        if (msgAtual.message?.type === 'ai' && !msgAtual.atendente) {
+                            if (tempoResposta > 0 && tempoResposta <= 10) {
                                 temposAI.push(tempoResposta);
                             }
-                            // Resposta de atendente humano: atendente tem valor
-                            else if (msgAtual.atendente) {
+                        }
+                        // Resposta de atendente humano: atendente tem valor
+                        // Humanos podem demorar mais - filtrar até 60 min
+                        else if (msgAtual.atendente) {
+                            if (tempoResposta > 0 && tempoResposta <= 60) {
                                 const atendente = msgAtual.atendente;
                                 if (!temposHumanos[atendente]) temposHumanos[atendente] = [];
                                 temposHumanos[atendente].push(tempoResposta);
@@ -445,23 +469,7 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e4e4e7" className="dark:stroke-zinc-800" opacity={0.3} />
                                 <XAxis dataKey="day" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} />
                                 <YAxis tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: isDarkMode ? '#18181b' : '#ffffff',
-                                        border: `1px solid ${isDarkMode ? '#27272a' : '#e4e4e7'}`,
-                                        borderRadius: '12px',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                                    }}
-                                    labelStyle={{
-                                        color: isDarkMode ? '#ffffff' : '#18181b',
-                                        fontWeight: 'bold',
-                                        fontSize: '11px'
-                                    }}
-                                    itemStyle={{
-                                        fontSize: '10px',
-                                        color: isDarkMode ? '#a1a1aa' : '#52525b'
-                                    }}
-                                />
+                                <Tooltip content={<CustomTooltip isDark={isDarkMode} />} />
                                 <Area type="monotone" dataKey="atendidos" name="Atendidos" stroke="#6366f1" fill="#6366f1" fillOpacity={0.2} />
                                 <Area type="monotone" dataKey="novos" name="Novos" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
                             </AreaChart>
@@ -553,21 +561,7 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                                 width={120}
                             />
                             <Tooltip
-                                contentStyle={{
-                                    backgroundColor: isDarkMode ? '#18181b' : '#ffffff',
-                                    border: `1px solid ${isDarkMode ? '#27272a' : '#e4e4e7'}`,
-                                    borderRadius: '12px',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                                }}
-                                labelStyle={{
-                                    color: isDarkMode ? '#ffffff' : '#18181b',
-                                    fontWeight: 'bold',
-                                    fontSize: '11px'
-                                }}
-                                itemStyle={{
-                                    fontSize: '10px',
-                                    color: isDarkMode ? '#a1a1aa' : '#52525b'
-                                }}
+                                content={<CustomTooltip isDark={isDarkMode} />}
                                 formatter={(value: any) => [`${value} leads`, 'Quantidade']}
                             />
                             <Bar dataKey="count" radius={[0, 8, 8, 0]}>
