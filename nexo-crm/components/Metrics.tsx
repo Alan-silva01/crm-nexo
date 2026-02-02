@@ -236,6 +236,7 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
 
             Object.values(conversas).forEach(msgs => {
                 let lastHumanMsgTime: Date | null = null;
+                let aiAlreadyResponded = false;
 
                 for (let i = 0; i < msgs.length; i++) {
                     const msg = msgs[i];
@@ -245,9 +246,10 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                         ? JSON.parse(msg.message)
                         : msg.message;
 
-                    // Se é mensagem do cliente, guardar o timestamp
+                    // Se é mensagem do cliente, guardar o timestamp e resetar flag
                     if (parsedMessage?.type === 'human') {
                         lastHumanMsgTime = new Date(msg.created_at);
+                        aiAlreadyResponded = false;
                     }
                     // Se é resposta (IA ou atendente) e tinha uma mensagem do cliente antes
                     else if (parsedMessage?.type === 'ai' && lastHumanMsgTime) {
@@ -256,23 +258,24 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
 
                         // Resposta da IA automática: atendente é null
                         if (!msg.atendente) {
-                            // IA responde em segundos - filtrar até 5 min
-                            if (tempoResposta > 0 && tempoResposta <= 5) {
+                            // Só contar se IA ainda não respondeu a essa mensagem
+                            if (!aiAlreadyResponded && tempoResposta > 0 && tempoResposta <= 5) {
                                 temposAI.push(tempoResposta);
+                                aiAlreadyResponded = true; // Marcar que IA já respondeu
                             }
                         }
                         // Resposta de atendente humano: atendente tem valor
                         else {
-                            // Humanos podem demorar mais - filtrar até 120 min (2h)
-                            if (tempoResposta > 0 && tempoResposta <= 120) {
+                            // Humanos podem demorar mais - filtrar até 480 min (8h)
+                            if (tempoResposta > 0 && tempoResposta <= 480) {
                                 const atendente = msg.atendente;
                                 if (!temposHumanos[atendente]) temposHumanos[atendente] = [];
                                 temposHumanos[atendente].push(tempoResposta);
                             }
+                            // Resetar após resposta humana
+                            lastHumanMsgTime = null;
+                            aiAlreadyResponded = false;
                         }
-
-                        // Resetar após primeira resposta para não contar duplicado
-                        lastHumanMsgTime = null;
                     }
                 }
             });
