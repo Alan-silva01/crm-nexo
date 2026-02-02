@@ -281,8 +281,8 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
             if (savedTime && savedTimestamp && (now - parseInt(savedTimestamp)) < NINETY_MINUTES) {
                 aiTimeSeconds = parseFloat(savedTime);
             } else {
-                // Gerar novo valor se não existir ou expirou
-                aiTimeSeconds = Math.random() * (90 - 40) + 40;
+                // Gerar novo valor se não existir ou expirou (40-73 segundos)
+                aiTimeSeconds = Math.random() * (73 - 40) + 40;
                 localStorage.setItem('nero_response_time', aiTimeSeconds.toFixed(0));
                 localStorage.setItem('nero_response_time_ts', now.toString());
             }

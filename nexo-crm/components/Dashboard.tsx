@@ -317,8 +317,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
       return saved;
     }
 
-    // Gerar novo valor e salvar com timestamp
-    const newTime = (Math.random() * (90 - 40) + 40).toFixed(0);
+    // Gerar novo valor e salvar com timestamp (40-73 segundos)
+    const newTime = (Math.random() * (73 - 40) + 40).toFixed(0);
     localStorage.setItem('nero_response_time', newTime);
     localStorage.setItem('nero_response_time_ts', now.toString());
     return newTime;
