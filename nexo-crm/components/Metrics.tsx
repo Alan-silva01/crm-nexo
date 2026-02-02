@@ -271,18 +271,20 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
             console.log('Tempos humanos (minutos):', temposHumanos);
 
             // IA: Ler tempo do localStorage (sincronizado com Dashboard)
-            const today = new Date().toDateString();
+            // O valor persiste por 90 minutos antes de regenerar
+            const now = Date.now();
             const savedTime = localStorage.getItem('nero_response_time');
-            const savedDate = localStorage.getItem('nero_response_time_date');
+            const savedTimestamp = localStorage.getItem('nero_response_time_ts');
+            const NINETY_MINUTES = 90 * 60 * 1000; // 1h30 em ms
 
             let aiTimeSeconds: number;
-            if (savedTime && savedDate === today) {
+            if (savedTime && savedTimestamp && (now - parseInt(savedTimestamp)) < NINETY_MINUTES) {
                 aiTimeSeconds = parseFloat(savedTime);
             } else {
-                // Gerar novo valor se não existir
+                // Gerar novo valor se não existir ou expirou
                 aiTimeSeconds = Math.random() * (90 - 40) + 40;
                 localStorage.setItem('nero_response_time', aiTimeSeconds.toFixed(0));
-                localStorage.setItem('nero_response_time_date', today);
+                localStorage.setItem('nero_response_time_ts', now.toString());
             }
 
             const aiTime = aiTimeSeconds / 60; // converter para minutos

@@ -305,20 +305,22 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, leadsHistory }) =
   };
 
   // Gerar tempo de resposta e salvar no localStorage para sincronizar com Metrics
+  // O valor persiste por 6 horas antes de regenerar
   const [responseTime] = React.useState(() => {
-    // Verificar se já existe um valor salvo para hoje
-    const today = new Date().toDateString();
+    const now = Date.now();
     const saved = localStorage.getItem('nero_response_time');
-    const savedDate = localStorage.getItem('nero_response_time_date');
+    const savedTimestamp = localStorage.getItem('nero_response_time_ts');
+    const NINETY_MINUTES = 90 * 60 * 1000; // 1h30 em ms
 
-    if (saved && savedDate === today) {
+    // Se existe valor salvo e está dentro de 1h30, usar ele
+    if (saved && savedTimestamp && (now - parseInt(savedTimestamp)) < NINETY_MINUTES) {
       return saved;
     }
 
-    // Gerar novo valor e salvar
+    // Gerar novo valor e salvar com timestamp
     const newTime = (Math.random() * (90 - 40) + 40).toFixed(0);
     localStorage.setItem('nero_response_time', newTime);
-    localStorage.setItem('nero_response_time_date', today);
+    localStorage.setItem('nero_response_time_ts', now.toString());
     return newTime;
   });
 
