@@ -42,7 +42,10 @@ interface ConversionMetrics {
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#0ea5e9', '#f97316', '#22c55e'];
 
 const formatTime = (minutes: number): string => {
-    if (minutes < 1) return '< 1 min';
+    if (minutes < 1) {
+        const seconds = Math.round(minutes * 60);
+        return seconds <= 0 ? '< 1s' : `${seconds}s`;
+    }
     if (minutes < 60) return `${Math.round(minutes)} min`;
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
@@ -224,13 +227,22 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                     const msgAnterior = msgs[i - 1];
                     const msgAtual = msgs[i];
 
+                    // Parse message se for string
+                    const prevMessage = typeof msgAnterior.message === 'string'
+                        ? JSON.parse(msgAnterior.message)
+                        : msgAnterior.message;
+                    const currMessage = typeof msgAtual.message === 'string'
+                        ? JSON.parse(msgAtual.message)
+                        : msgAtual.message;
+
                     // Cliente enviou mensagem (type: human)
-                    if (msgAnterior.message?.type === 'human') {
+                    if (prevMessage?.type === 'human') {
+                        // Calcular tempo em minutos
                         const tempoResposta = (new Date(msgAtual.created_at).getTime() - new Date(msgAnterior.created_at).getTime()) / (1000 * 60);
 
                         // Resposta da IA: type === 'ai' E atendente é null/undefined
                         // IA responde em segundos/poucos minutos - filtrar até 10 min
-                        if (msgAtual.message?.type === 'ai' && !msgAtual.atendente) {
+                        if (currMessage?.type === 'ai' && !msgAtual.atendente) {
                             if (tempoResposta > 0 && tempoResposta <= 10) {
                                 temposAI.push(tempoResposta);
                             }
@@ -248,7 +260,11 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                 }
             });
 
+            console.log('Tempos IA (em minutos):', temposAI.slice(0, 10)); // Debug
+            console.log('Total respostas IA:', temposAI.length);
+
             const avgAI = temposAI.length > 0 ? temposAI.reduce((a, b) => a + b, 0) / temposAI.length : 0;
+            console.log('Média IA (minutos):', avgAI); // Debug
             setAiResponseTime(avgAI);
 
             const responseData: ResponseTimeData[] = [];
