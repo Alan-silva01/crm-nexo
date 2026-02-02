@@ -420,7 +420,9 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                         <span className="text-[10px] font-bold uppercase tracking-widest">Resposta Humana</span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{formatTime(humanResponseTime)}</span>
+                        <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                            {humanResponseTime > 0 ? formatTime(humanResponseTime) : '-'}
+                        </span>
                     </div>
                     <p className="text-[10px] text-zinc-500 mt-2">Média dos atendentes</p>
                 </div>
