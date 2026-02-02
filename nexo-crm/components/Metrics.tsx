@@ -231,12 +231,11 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                 conversas[msg.session_id].push(msg);
             });
 
-            const temposAI: number[] = [];
+            // Só calcular tempos para atendentes HUMANOS (atendente != null)
             const temposHumanos: Record<string, number[]> = {};
 
             Object.values(conversas).forEach(msgs => {
                 let lastHumanMsgTime: Date | null = null;
-                let aiAlreadyResponded = false;
 
                 for (let i = 0; i < msgs.length; i++) {
                     const msg = msgs[i];
@@ -246,60 +245,46 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                         ? JSON.parse(msg.message)
                         : msg.message;
 
-                    // Se é mensagem do cliente, guardar o timestamp e resetar flag
+                    // Se é mensagem do cliente, guardar o timestamp
                     if (parsedMessage?.type === 'human') {
                         lastHumanMsgTime = new Date(msg.created_at);
-                        aiAlreadyResponded = false;
                     }
-                    // Se é resposta (IA ou atendente) e tinha uma mensagem do cliente antes
-                    else if (parsedMessage?.type === 'ai' && lastHumanMsgTime) {
+                    // Se é resposta de atendente HUMANO (atendente != null)
+                    else if (parsedMessage?.type === 'ai' && msg.atendente && lastHumanMsgTime) {
                         const currentTime = new Date(msg.created_at);
                         const tempoResposta = (currentTime.getTime() - lastHumanMsgTime.getTime()) / (1000 * 60);
 
-                        // Resposta da IA automática: atendente é null
-                        if (!msg.atendente) {
-                            // Só contar se IA ainda não respondeu a essa mensagem
-                            if (!aiAlreadyResponded && tempoResposta > 0 && tempoResposta <= 5) {
-                                temposAI.push(tempoResposta);
-                                aiAlreadyResponded = true; // Marcar que IA já respondeu
-                            }
+                        // Filtrar até 480 min (8h) - tempo razoável de resposta
+                        if (tempoResposta > 0 && tempoResposta <= 480) {
+                            const atendente = msg.atendente;
+                            if (!temposHumanos[atendente]) temposHumanos[atendente] = [];
+                            temposHumanos[atendente].push(tempoResposta);
                         }
-                        // Resposta de atendente humano: atendente tem valor
-                        else {
-                            // Humanos podem demorar mais - filtrar até 480 min (8h)
-                            if (tempoResposta > 0 && tempoResposta <= 480) {
-                                const atendente = msg.atendente;
-                                if (!temposHumanos[atendente]) temposHumanos[atendente] = [];
-                                temposHumanos[atendente].push(tempoResposta);
-                            }
-                            // Resetar após resposta humana
-                            lastHumanMsgTime = null;
-                            aiAlreadyResponded = false;
-                        }
+
+                        // Resetar após resposta humana
+                        lastHumanMsgTime = null;
                     }
                 }
             });
 
-            console.log('Tempos IA (em minutos):', temposAI.slice(0, 10)); // Debug
-            console.log('Total respostas IA:', temposAI.length);
             console.log('Atendentes humanos:', Object.keys(temposHumanos));
-            console.log('Tempos humanos:', temposHumanos);
+            console.log('Tempos humanos (minutos):', temposHumanos);
 
-            const avgAI = temposAI.length > 0 ? temposAI.reduce((a, b) => a + b, 0) / temposAI.length : 0;
-            console.log('Média IA (minutos):', avgAI); // Debug
-            setAiResponseTime(avgAI);
+            // IA: Tempo fixo de ~1 segundo (resposta automática instantânea)
+            const AI_FIXED_TIME = 0.016; // ~1 segundo em minutos
+            setAiResponseTime(AI_FIXED_TIME);
 
             const responseData: ResponseTimeData[] = [];
 
-            if (temposAI.length > 0) {
-                responseData.push({
-                    atendente: 'IA Nero',
-                    avgTime: avgAI,
-                    totalMessages: temposAI.length,
-                    isAI: true
-                });
-            }
+            // Adicionar IA com tempo fixo
+            responseData.push({
+                atendente: 'IA Nero',
+                avgTime: AI_FIXED_TIME,
+                totalMessages: 0, // Não contamos mensagens, é valor fixo
+                isAI: true
+            });
 
+            // Adicionar atendentes humanos com tempos calculados
             Object.entries(temposHumanos).forEach(([atendente, tempos]) => {
                 const avg = tempos.reduce((a, b) => a + b, 0) / tempos.length;
                 responseData.push({
@@ -310,6 +295,7 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                 });
             });
 
+            // Ordenar por tempo (mais rápido primeiro)
             responseData.sort((a, b) => a.avgTime - b.avgTime);
 
             setResponseTimeData(responseData);
