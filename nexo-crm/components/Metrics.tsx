@@ -233,6 +233,7 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
 
             // Só calcular tempos para atendentes HUMANOS (atendente != null)
             const temposHumanos: Record<string, number[]> = {};
+            let aiMessageCount = 0;
 
             Object.values(conversas).forEach(msgs => {
                 let lastHumanMsgTime: Date | null = null;
@@ -248,6 +249,10 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                     // Se é mensagem do cliente, guardar o timestamp
                     if (parsedMessage?.type === 'human') {
                         lastHumanMsgTime = new Date(msg.created_at);
+                    }
+                    // Se é resposta da IA (type='ai' SEM atendente)
+                    else if (parsedMessage?.type === 'ai' && !msg.atendente) {
+                        aiMessageCount++;
                     }
                     // Se é resposta de atendente HUMANO (atendente != null)
                     else if (parsedMessage?.type === 'ai' && msg.atendente && lastHumanMsgTime) {
@@ -296,7 +301,7 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
             responseData.push({
                 atendente: 'IA Nero',
                 avgTime: aiTime,
-                totalMessages: 0,
+                totalMessages: aiMessageCount,
                 isAI: true
             });
 
