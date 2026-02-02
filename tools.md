@@ -69,6 +69,7 @@ Content-Type: application/json
 {
   "phone": "11999998888",
   "message": "Cliente solicitou falar com atendente",
+  "resumo_ia": "Cliente perguntou sobre preços e demonstrou interesse no plano premium",
   "user_id": "SEU_USER_ID"
 }
 ```
@@ -80,6 +81,7 @@ curl -X POST 'https://jreklrhamersmamdmjna.supabase.co/functions/v1/notify-human
   -d '{
     "phone": "11999998888",
     "message": "Cliente solicitou falar com atendente",
+    "resumo_ia": "Cliente perguntou sobre preços e demonstrou interesse no plano premium",
     "user_id": "SEU_USER_ID"
   }'
 ```
@@ -89,6 +91,7 @@ curl -X POST 'https://jreklrhamersmamdmjna.supabase.co/functions/v1/notify-human
 |-------|------|-------------|-----------|
 | phone | string | ✅ | Telefone do cliente |
 | message | string | ❌ | Motivo da transferência |
+| resumo_ia | string | ❌ | Resumo da conversa feito pela IA |
 | user_id | string | ✅ | ID do usuário no CRM |
 
 ---
