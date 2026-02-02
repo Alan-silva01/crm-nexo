@@ -38,7 +38,10 @@
             "dist/credentials/NeroCrmApi.credentials.js"
         ],
         "nodes": [
-            "dist/nodes/NeroCrm/NeroCrm.node.js"
+            "dist/nodes/NeroCrm/NeroCrm.node.js",
+            "dist/nodes/NeroCrmNotifyHuman/NeroCrmNotifyHuman.node.js",
+            "dist/nodes/NeroCrmAddTag/NeroCrmAddTag.node.js",
+            "dist/nodes/NeroCrmUpdateLead/NeroCrmUpdateLead.node.js"
         ]
     },
     "devDependencies": {

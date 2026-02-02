@@ -6,7 +6,7 @@ class NeroCrm {
     description = {
         displayName: 'Nero CRM',
         name: 'neroCrm',
-        icon: 'file:nerocrm.svg',
+        icon: 'file:logo-nero.png',
         group: ['transform'],
         version: 1,
         subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',

@@ -11,7 +11,7 @@ export class NeroCrm implements INodeType {
     description: INodeTypeDescription = {
         displayName: 'Nero CRM',
         name: 'neroCrm',
-        icon: 'file:nerocrm.svg',
+        icon: 'file:logo-nero.png',
         group: ['transform'],
         version: 1,
         subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
