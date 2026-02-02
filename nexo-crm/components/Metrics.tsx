@@ -203,14 +203,19 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                     const msgAnterior = msgs[i - 1];
                     const msgAtual = msgs[i];
 
+                    // Cliente enviou mensagem (type: human)
                     if (msgAnterior.message?.type === 'human') {
                         const tempoResposta = (new Date(msgAtual.created_at).getTime() - new Date(msgAnterior.created_at).getTime()) / (1000 * 60);
 
+                        // Apenas tempos razoáveis (entre 0 e 24 horas)
                         if (tempoResposta > 0 && tempoResposta < 1440) {
-                            if (msgAtual.message?.type === 'ai') {
+                            // Resposta da IA: type === 'ai' E atendente é null/undefined
+                            if (msgAtual.message?.type === 'ai' && !msgAtual.atendente) {
                                 temposAI.push(tempoResposta);
-                            } else if (msgAtual.atendente || msgAtual.message?.type === 'agent') {
-                                const atendente = msgAtual.atendente || msgAtual.message?.agent_name || 'Agente';
+                            }
+                            // Resposta de atendente humano: atendente tem valor
+                            else if (msgAtual.atendente) {
+                                const atendente = msgAtual.atendente;
                                 if (!temposHumanos[atendente]) temposHumanos[atendente] = [];
                                 temposHumanos[atendente].push(tempoResposta);
                             }
