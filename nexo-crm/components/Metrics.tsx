@@ -55,6 +55,7 @@ const formatTime = (minutes: number): string => {
 const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
     const { effectiveUserId } = useAuth();
     const [loading, setLoading] = useState(true);
+    const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
     const [responseTimeData, setResponseTimeData] = useState<ResponseTimeData[]>([]);
     const [leadMetrics, setLeadMetrics] = useState<LeadMetrics>({
         hoje: 0, semana: 0, mes: 0,
@@ -72,6 +73,15 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
     const startOfWeek = new Date(startOfDay);
     startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Monitor dark mode changes
+    useEffect(() => {
+        const observer = new MutationObserver(() => {
+            setIsDarkMode(document.documentElement.classList.contains('dark'));
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
         if (!leads || leads.length === 0) return;
@@ -431,9 +441,21 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                                 <XAxis dataKey="day" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} />
                                 <YAxis tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: 'var(--tooltip-bg, #fff)', border: '1px solid var(--tooltip-border, #e4e4e7)', borderRadius: '12px' }}
-                                    labelStyle={{ color: 'var(--tooltip-text, #18181b)', fontWeight: 'bold', fontSize: '11px' }}
-                                    itemStyle={{ fontSize: '10px' }}
+                                    contentStyle={{
+                                        backgroundColor: isDarkMode ? '#18181b' : '#ffffff',
+                                        border: `1px solid ${isDarkMode ? '#27272a' : '#e4e4e7'}`,
+                                        borderRadius: '12px',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                                    }}
+                                    labelStyle={{
+                                        color: isDarkMode ? '#ffffff' : '#18181b',
+                                        fontWeight: 'bold',
+                                        fontSize: '11px'
+                                    }}
+                                    itemStyle={{
+                                        fontSize: '10px',
+                                        color: isDarkMode ? '#a1a1aa' : '#52525b'
+                                    }}
                                 />
                                 <Area type="monotone" dataKey="atendidos" name="Atendidos" stroke="#6366f1" fill="#6366f1" fillOpacity={0.2} />
                                 <Area type="monotone" dataKey="novos" name="Novos" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
@@ -526,8 +548,21 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
                                 width={120}
                             />
                             <Tooltip
-                                contentStyle={{ backgroundColor: 'var(--tooltip-bg, #fff)', border: '1px solid var(--tooltip-border, #e4e4e7)', borderRadius: '12px' }}
-                                labelStyle={{ color: 'var(--tooltip-text, #18181b)', fontWeight: 'bold', fontSize: '11px' }}
+                                contentStyle={{
+                                    backgroundColor: isDarkMode ? '#18181b' : '#ffffff',
+                                    border: `1px solid ${isDarkMode ? '#27272a' : '#e4e4e7'}`,
+                                    borderRadius: '12px',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                                }}
+                                labelStyle={{
+                                    color: isDarkMode ? '#ffffff' : '#18181b',
+                                    fontWeight: 'bold',
+                                    fontSize: '11px'
+                                }}
+                                itemStyle={{
+                                    fontSize: '10px',
+                                    color: isDarkMode ? '#a1a1aa' : '#52525b'
+                                }}
                                 formatter={(value: any) => [`${value} leads`, 'Quantidade']}
                             />
                             <Bar dataKey="count" radius={[0, 8, 8, 0]}>
