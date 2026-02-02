@@ -270,17 +270,18 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
             console.log('Atendentes humanos:', Object.keys(temposHumanos));
             console.log('Tempos humanos (minutos):', temposHumanos);
 
-            // IA: Tempo fixo de ~1 segundo (resposta automática instantânea)
-            const AI_FIXED_TIME = 0.016; // ~1 segundo em minutos
-            setAiResponseTime(AI_FIXED_TIME);
+            // IA: Usar o mesmo tempo médio de agendamento (já calculado)
+            // O tempo está em horas, converter para minutos
+            const aiTime = conversionMetrics.tempoMedioAgendamento * 60; // horas -> minutos
+            setAiResponseTime(aiTime);
 
             const responseData: ResponseTimeData[] = [];
 
-            // Adicionar IA com tempo fixo
+            // Adicionar IA com tempo médio de agendamento
             responseData.push({
                 atendente: 'IA Nero',
-                avgTime: AI_FIXED_TIME,
-                totalMessages: 0, // Não contamos mensagens, é valor fixo
+                avgTime: aiTime,
+                totalMessages: 0,
                 isAI: true
             });
 
