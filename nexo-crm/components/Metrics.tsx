@@ -270,9 +270,8 @@ const Metrics: React.FC<MetricsProps> = ({ leads, profile }) => {
             console.log('Atendentes humanos:', Object.keys(temposHumanos));
             console.log('Tempos humanos (minutos):', temposHumanos);
 
-            // IA: Tempo realista de resposta automática (1-3 segundos)
-            // Gerar valor entre 1 e 3 segundos, convertido para minutos
-            const aiTimeSeconds = 1 + Math.random() * 2; // 1-3 segundos
+            // IA: Mesma lógica da Dashboard - random entre 40-90 segundos
+            const aiTimeSeconds = Math.random() * (90 - 40) + 40; // 40-90 segundos
             const aiTime = aiTimeSeconds / 60; // converter para minutos
             setAiResponseTime(aiTime);
 
