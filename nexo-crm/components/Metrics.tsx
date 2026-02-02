@@ -59,6 +59,18 @@ const formatTime = (minutes: number): string => {
 const CustomTooltip = ({ active, payload, label, isDark }: any) => {
     if (!active || !payload || !payload.length) return null;
 
+    // Traduzir nomes para português
+    const translateName = (name: string) => {
+        const translations: Record<string, string> = {
+            'count': 'Quantidade',
+            'atendidos': 'Atendidos',
+            'novos': 'Novos',
+            'Atendidos': 'Atendidos',
+            'Novos': 'Novos'
+        };
+        return translations[name] || name;
+    };
+
     return (
         <div
             className={`px-3 py-2 rounded-xl border shadow-lg ${isDark
@@ -69,7 +81,7 @@ const CustomTooltip = ({ active, payload, label, isDark }: any) => {
             <p className="font-bold text-xs mb-1">{label}</p>
             {payload.map((entry: any, index: number) => (
                 <p key={index} className="text-[10px]" style={{ color: entry.color }}>
-                    {entry.name}: {entry.value}
+                    {translateName(entry.name)}: {entry.value}
                 </p>
             ))}
         </div>
