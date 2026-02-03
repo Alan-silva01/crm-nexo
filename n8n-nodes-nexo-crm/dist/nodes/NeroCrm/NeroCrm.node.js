@@ -411,29 +411,26 @@ class NeroCrm {
                         const monthly_revenue = this.getNodeParameter('monthly_revenue', i);
                         const dadosRaw = this.getNodeParameter('dados', i, {});
                         const dados = typeof dadosRaw === 'string' ? (dadosRaw.trim() ? JSON.parse(dadosRaw) : null) : (Object.keys(dadosRaw).length > 0 ? dadosRaw : null);
-                        // Check if column exists, create if not
-                        const existingColumns = await this.helpers.request({
+                        // Check if column exists (case-insensitive), create if not
+                        const allExistingColumns = await this.helpers.request({
                             method: 'GET',
-                            url: `${supabaseUrl}/rest/v1/kanban_columns?user_id=eq.${userId}&name=eq.${encodeURIComponent(status)}`,
+                            url: `${supabaseUrl}/rest/v1/kanban_columns?tenant_id=eq.${userId}`,
                             headers: {
                                 'apikey': apiKey,
                                 'Authorization': `Bearer ${apiKey}`,
                             },
                             json: true,
                         });
-                        // If column doesn't exist, create it
+                        // Find column case-insensitively
+                        const normalizedStatus = status.trim().toUpperCase();
+                        const existingColumns = allExistingColumns.filter((col) => col.name.trim().toUpperCase() === normalizedStatus);
+                        // If column doesn't exist, create it; otherwise use existing
+                        let finalStatus = status;
                         if (!existingColumns || existingColumns.length === 0) {
-                            // Get max position
-                            const allColumns = await this.helpers.request({
-                                method: 'GET',
-                                url: `${supabaseUrl}/rest/v1/kanban_columns?user_id=eq.${userId}&order=position.desc&limit=1`,
-                                headers: {
-                                    'apikey': apiKey,
-                                    'Authorization': `Bearer ${apiKey}`,
-                                },
-                                json: true,
-                            });
-                            const maxPosition = allColumns && allColumns.length > 0 ? allColumns[0].position + 1 : 0;
+                            // Get max position from all columns we already fetched
+                            const maxPosition = allExistingColumns.length > 0
+                                ? Math.max(...allExistingColumns.map(c => c.position || 0)) + 1
+                                : 0;
                             await this.helpers.request({
                                 method: 'POST',
                                 url: `${supabaseUrl}/rest/v1/kanban_columns`,
@@ -444,11 +441,16 @@ class NeroCrm {
                                 },
                                 body: {
                                     user_id: userId,
+                                    tenant_id: userId,
                                     name: status,
                                     position: maxPosition,
                                 },
                                 json: true,
                             });
+                        }
+                        else {
+                            // Use the existing column's exact name to maintain consistency
+                            finalStatus = existingColumns[0].name;
                         }
                         responseData = await this.helpers.request({
                             method: 'POST',
@@ -464,7 +466,7 @@ class NeroCrm {
                                 name,
                                 phone: phone || null,
                                 email: email || null,
-                                status,
+                                status: finalStatus,
                                 last_message: description || null,
                                 company_name: company_name || null,
                                 monthly_revenue: monthly_revenue || null,
@@ -576,22 +578,42 @@ class NeroCrm {
                     if (operation === 'create') {
                         const columnName = this.getNodeParameter('columnName', i);
                         const position = this.getNodeParameter('position', i);
-                        responseData = await this.helpers.request({
-                            method: 'POST',
-                            url: `${supabaseUrl}/rest/v1/kanban_columns`,
+                        // Check if column already exists (case-insensitive)
+                        const allColumns = await this.helpers.request({
+                            method: 'GET',
+                            url: `${supabaseUrl}/rest/v1/kanban_columns?tenant_id=eq.${userId}`,
                             headers: {
                                 'apikey': apiKey,
                                 'Authorization': `Bearer ${apiKey}`,
-                                'Content-Type': 'application/json',
-                                'Prefer': 'return=representation',
-                            },
-                            body: {
-                                user_id: userId,
-                                name: columnName,
-                                position,
                             },
                             json: true,
                         });
+                        const normalizedName = columnName.trim().toUpperCase();
+                        const existingColumn = allColumns.find((col) => col.name.trim().toUpperCase() === normalizedName);
+                        if (existingColumn) {
+                            // Return existing column instead of creating duplicate
+                            responseData = [existingColumn];
+                        }
+                        else {
+                            // Create new column
+                            responseData = await this.helpers.request({
+                                method: 'POST',
+                                url: `${supabaseUrl}/rest/v1/kanban_columns`,
+                                headers: {
+                                    'apikey': apiKey,
+                                    'Authorization': `Bearer ${apiKey}`,
+                                    'Content-Type': 'application/json',
+                                    'Prefer': 'return=representation',
+                                },
+                                body: {
+                                    user_id: userId,
+                                    tenant_id: userId,
+                                    name: columnName,
+                                    position,
+                                },
+                                json: true,
+                            });
+                        }
                     }
                     else if (operation === 'list') {
                         responseData = await this.helpers.request({
