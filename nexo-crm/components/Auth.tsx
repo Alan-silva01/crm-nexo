@@ -61,7 +61,17 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
         if (error) {
           console.error('Login error:', error);
-          setErrorMessage('E-mail ou senha incorretos. Verifique suas credenciais.');
+          const errMsg = error.message || '';
+
+          if (errMsg.includes('Invalid login credentials')) {
+            setErrorMessage('E-mail ou senha incorretos. Verifique suas credenciais.');
+          } else if (errMsg.includes('Email not confirmed')) {
+            setErrorMessage('E-mail ainda não verificado. Por favor, confirme seu cadastro no e-mail recebido.');
+          } else if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError') || errMsg.includes('URL')) {
+            setErrorMessage('Erro de conexão com o Supabase. Verifique suas configurações de ambiente (.env).');
+          } else {
+            setErrorMessage(errMsg || 'Erro ao realizar login. Tente novamente.');
+          }
           setIsLoading(false);
           return;
         }
